@@ -1,15 +1,18 @@
 import { ProductBrowser, GroupedProduct, DbVariant } from '@/components/ProductBrowser'
 import { MasterUniversalSKU } from '@/types/masterSchema'
+import { GET } from '@/app/api/products/route'
+import { NextRequest } from 'next/server'
 
 export const revalidate = 60 // Revalidate cache every 60 seconds
 
 export default async function Home() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
   let data: MasterUniversalSKU[] = []
   let errorMsg = ''
 
   try {
-    const res = await fetch(`${baseUrl}/api/products`, { next: { revalidate: 60 } })
+    const req = new NextRequest(new URL(`${baseUrl}/api/products`))
+    const res = await GET(req)
     if (!res.ok) {
       errorMsg = `HTTP error! status: ${res.status}`
     } else {
@@ -17,7 +20,7 @@ export default async function Home() {
       data = json.data || []
     }
   } catch (err: any) {
-    errorMsg = err.message || 'Failed to fetch'
+    errorMsg = err.message || 'Failed to fetch data'
   }
 
   if (errorMsg) {
