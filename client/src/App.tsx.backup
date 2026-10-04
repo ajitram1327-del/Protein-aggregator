@@ -1,0 +1,600 @@
+import { useState, useEffect, useMemo } from 'react'
+import { createClient } from '@supabase/supabase-js'
+import { generateAffiliateUrl } from './utils/affiliate'
+import './App.css'
+
+// Initialize Supabase Client
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+interface DbPriceListing {
+  source: string;
+  price_inr: number;
+  source_url: string;
+  seller_name?: string;
+  is_authorized_seller?: boolean;
+}
+
+// Sub-interface for the variant data stored in our Relational DB
+interface DbVariant {
+  sku_id: string;
+  flavor: string;
+  weight_grams: number;
+  lowest_price_inr: number;
+  best_value_metric: number;
+  raw_json_data: any; // Holds packaging, nutritional profile, etc.
+  price_listings: DbPriceListing[];
+  has_bot_reviews?: boolean;
+  authenticity_score?: number;
+}
+
+// Interface mapping to our Supabase 'products' table
+interface GroupedProduct {
+  id: string;
+  brand: string;
+  baseProductName: string;
+  categorySilo: string;
+  proteinSource: string;
+  imageUrl: string;
+  variants: DbVariant[];
+  lowestPrice: number;
+  bestValueMetric: number;
+  isFairyDusted?: boolean;
+  labVerified?: boolean;
+  trustScore?: number;
+  labReportUrl?: string;
+}
+
+// Sneakopedia / StockX inspired clean UI design
+function App() {
+  const [groupedProducts, setGroupedProducts] = useState<GroupedProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // --- NAVIGATION STATE ---
+  const [activeSilo, setActiveSilo] = useState("protein");
+
+  // --- FILTER & SORT STATE ---
+  const [filterSource, setFilterSource] = useState("All");
+  const [sortBy, setSortBy] = useState("value");
+
+  // --- SEARCH STATE ---
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  // --- MODAL STATE ---
+  const [selectedGroup, setSelectedGroup] = useState<GroupedProduct | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<DbVariant | null>(null);
+
+  // FETCH FROM CLOUD DATABASE
+  useEffect(() => {
+    async function fetchFromSupabase() {
+      setLoading(true);
+      // Execute Relational Joined Query
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          id, brand, base_name, category_silo, protein_source, image_url, is_fairy_dusted, lab_verified, trust_score, lab_report_url,
+          variants ( 
+            sku_id, flavor, weight_grams, lowest_price_inr, best_value_metric, raw_json_data, has_bot_reviews, authenticity_score,
+            price_listings ( source, price_inr, source_url, seller_name, is_authorized_seller )
+          )
+        `);
+      
+      if (error) {
+        console.error("Supabase Error:", error);
+      } else if (data) {
+        // Map DB snake_case to our frontend camelCase requirements
+        const formatted: GroupedProduct[] = data.map((p: any) => {
+          let lowestPrice = Infinity;
+          let bestValue = Infinity;
+          
+          p.variants.forEach((v: any) => {
+             if (v.lowest_price_inr < lowestPrice) lowestPrice = v.lowest_price_inr;
+             if (v.best_value_metric < bestValue) bestValue = v.best_value_metric;
+          });
+
+          return {
+            id: p.id,
+            brand: p.brand,
+            baseProductName: p.base_name,
+            categorySilo: p.category_silo,
+            proteinSource: p.protein_source || "Unknown",
+            imageUrl: p.image_url,
+            variants: p.variants,
+            lowestPrice,
+            bestValueMetric: bestValue,
+            isFairyDusted: p.is_fairy_dusted,
+            labVerified: p.lab_verified,
+            trustScore: p.trust_score,
+            labReportUrl: p.lab_report_url
+          };
+        });
+        setGroupedProducts(formatted);
+      }
+      setLoading(false);
+    }
+    fetchFromSupabase();
+  }, []);
+
+  // Derived state: Filter groups dynamically for the main grid
+  const displayedGroups = useMemo(() => {
+    return groupedProducts
+      .filter(g => g.categorySilo === activeSilo)
+      .filter(g => filterSource === "All" || g.proteinSource === filterSource)
+      .sort((a, b) => {
+         if (sortBy === 'value') {
+            if (a.bestValueMetric === Infinity) return 1;
+            if (b.bestValueMetric === Infinity) return -1;
+            return a.bestValueMetric - b.bestValueMetric;
+         }
+         if (sortBy === 'price_asc') return a.lowestPrice - b.lowestPrice;
+         if (sortBy === 'price_desc') return b.lowestPrice - a.lowestPrice;
+         return 0;
+      });
+  }, [groupedProducts, activeSilo, filterSource, sortBy]);
+
+  // Derived state: Filter groups dynamically as the user types
+  const searchResults = searchQuery.trim() === "" 
+    ? [] 
+    : displayedGroups.filter(g => 
+        g.baseProductName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        g.brand.toLowerCase().includes(searchQuery.toLowerCase())
+      ).slice(0, 5); // Limit to top 5 for clean UI
+
+  return (
+    <div className="min-h-screen bg-white text-black font-sans selection:bg-black selection:text-white">
+      
+      {/* Top Navigation */}
+      <nav className="border-b border-gray-100 px-6 py-4 flex justify-between items-center sticky top-0 bg-white/80 backdrop-blur-md z-50">
+        <div className="font-black text-2xl tracking-tighter cursor-pointer">PRTNDX</div>
+        <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 w-full md:w-auto">
+            <nav className="flex gap-6 md:gap-8 text-sm font-bold text-gray-500 tracking-wide overflow-x-auto pb-2 md:pb-0 w-full md:w-auto">
+              {[
+                { id: 'protein', label: 'Proteins' },
+                { id: 'mass_gainer', label: 'Mass Gainer' },
+                { id: 'creatine', label: 'Creatine' },
+                { id: 'pre_workout', label: 'Pre-Workout' },
+                { id: 'vitamins', label: 'Vitamins' }
+              ].map(tab => (
+                 <button 
+                   key={tab.id}
+                   onClick={() => { setActiveSilo(tab.id); setFilterSource("All"); }}
+                   className={`transition-colors whitespace-nowrap focus:outline-none ${activeSilo === tab.id ? 'text-black border-b-2 border-black pb-1' : 'hover:text-black'}`}
+                 >
+                   {tab.label}
+                 </button>
+              ))}
+            </nav>
+        </div>
+        <div className="hidden md:flex text-sm font-bold border border-black px-4 py-2 rounded-full cursor-pointer hover:bg-black hover:text-white transition">
+          Market Dashboard
+        </div>
+      </nav>
+
+      {/* Hero Search Section */}
+      <div className="pt-24 pb-16 px-6 max-w-3xl mx-auto text-center relative z-20">
+        <h1 className="text-5xl md:text-6xl font-black tracking-tighter mb-4 leading-tight">
+          India's Protein Archive.
+        </h1>
+        <p className="text-gray-500 text-lg md:text-xl mb-10 font-medium tracking-tight">
+          Browse, compare, and find the best true value per gram across global and local brands. Prices in INR.
+        </p>
+        
+        <div className="relative group max-w-2xl mx-auto text-left">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
+            <svg className="w-5 h-5 text-gray-400 group-focus-within:text-black transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </div>
+          <input 
+            type="text" 
+            role="combobox"
+            aria-label="Search for protein products by brand or name"
+            aria-expanded={isSearchFocused && searchResults.length > 0}
+            aria-controls="search-listbox"
+            aria-autocomplete="list"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)} // Delay allows click on dropdown
+            className="block w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-lg font-medium outline-none focus:bg-white focus:border-black focus:ring-2 focus:ring-black/5 transition-all shadow-sm relative z-10"
+            placeholder="Search brand, product, or category..."
+          />
+
+          {/* Typeahead Dropdown */}
+          {isSearchFocused && searchResults.length > 0 && (
+            <ul 
+              id="search-results"
+              role="listbox"
+              className="absolute w-full top-full mt-2 bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200"
+            >
+              {searchResults.map((result) => (
+                <li 
+                  key={result.id} 
+                  role="option" 
+                  aria-selected={false}
+                  tabIndex={0}
+                  className="px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none cursor-pointer flex items-center gap-4 border-b border-gray-50 last:border-0 transition-colors"
+                  onClick={() => {
+                     setSearchQuery(""); // clear search
+                     setSelectedGroup(result); // Open modal directly
+                     setSelectedVariant(result.variants.length > 0 ? result.variants[0] : null);
+                  }}
+                >
+                  {result.imageUrl ? (
+                    <img src={result.imageUrl} alt="" className="w-10 h-10 object-contain rounded-md bg-gray-100 p-1" aria-hidden="true" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-md bg-gray-100 p-1 flex items-center justify-center text-gray-300" aria-hidden="true">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-gray-400 uppercase tracking-widest truncate">{result.brand}</div>
+                    <div className="text-sm font-bold text-gray-900 truncate">{result.baseProductName}</div>
+                  </div>
+                  <div className="text-right pl-4">
+                    <div className="text-sm font-black">₹{result.lowestPrice === Infinity ? 'N/A' : result.lowestPrice}</div>
+                    <div className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded inline-block mt-0.5">
+                      ₹{result.bestValueMetric === Infinity ? 'N/A' : result.bestValueMetric.toFixed(2)}/g
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      {/* Grid Section */}
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pb-24 relative z-10">
+        
+        {/* Filter and Sort Bar */}
+        <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center mb-8 border-b border-gray-100 pb-6">
+          <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0" role="group" aria-label="Filter by Protein Source">
+            {['All', 'Whey', 'Plant', 'Yeast'].map(source => (
+              <button 
+                key={source}
+                onClick={() => setFilterSource(source)}
+                aria-pressed={filterSource === source}
+                className={`px-5 py-2.5 rounded-full text-sm font-black tracking-tight whitespace-nowrap transition-all duration-200 border ${
+                  filterSource === source 
+                    ? 'bg-black text-white border-black shadow-md' 
+                    : 'bg-white text-gray-500 border-gray-200 hover:border-black hover:text-black'
+                }`}
+              >
+                {source}
+              </button>
+            ))}
+          </div>
+
+          <div className="w-full md:w-auto flex items-center gap-3">
+            <label htmlFor="sort-select" className="text-[10px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">
+              Sort By
+            </label>
+            <div className="relative">
+              <select 
+                id="sort-select"
+                value={sortBy} 
+                onChange={e => setSortBy(e.target.value)}
+                className="appearance-none bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black block w-full pl-4 pr-10 py-2.5 font-bold cursor-pointer transition-colors shadow-sm"
+              >
+                <option value="value">Best True Value</option>
+                <option value="price_asc">Price: Low to High</option>
+                <option value="price_desc">Price: High to Low</option>
+                <option value="qty_asc">Quantity: Low to High</option>
+                <option value="qty_desc">Quantity: High to Low</option>
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-20"><div className="animate-pulse w-8 h-8 bg-black rounded-full"></div></div>
+        ) : displayedGroups.length === 0 ? (
+          <div className="py-32 text-center">
+            <div className="text-gray-400 text-lg font-bold">No products found for this filter.</div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            {displayedGroups.map(g => (
+              <div 
+                key={g.id} 
+                className="group flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden cursor-pointer hover:border-black hover:shadow-xl transition-all duration-300"
+                onClick={() => {
+                  setSelectedGroup(g);
+                  setSelectedVariant(g.variants.length > 0 ? g.variants[0] : null);
+                }}
+              >
+                
+                {/* Image & Badges */}
+                <div className="bg-gray-50 aspect-square p-6 relative flex items-center justify-center">
+                  <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest text-gray-600 border border-gray-200">
+                    {g.proteinSource}
+                  </div>
+                  {g.variants.length > 1 && (
+                    <div className="absolute top-3 right-3 bg-black text-white px-2 py-1 rounded-md text-[10px] font-bold tracking-wide shadow-sm">
+                      {g.variants.length} Flavors
+                    </div>
+                  )}
+                  {/* Omni-Channel Count Badge */}
+                  {g.variants.some(v => v.price_listings?.length > 0) && (
+                    <div className="absolute bottom-3 right-3 bg-blue-600 text-white px-2 py-1 rounded-md text-[10px] font-black tracking-wide shadow-sm">
+                      {new Set(g.variants.flatMap(v => v.price_listings?.map(l => l.source) || [])).size} Platforms
+                    </div>
+                  )}
+                  {g.imageUrl ? (
+                    <img 
+                      src={g.imageUrl} 
+                      alt={g.baseProductName} 
+                      className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">
+                      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    </div>
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className="p-5 flex flex-col flex-1">
+                  <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">{g.brand}</div>
+                  <h3 className="text-sm font-bold text-gray-900 leading-snug mb-4 line-clamp-2">{g.baseProductName}</h3>
+                  
+                  <div className="mt-auto pt-4 border-t border-gray-100 flex justify-between items-end">
+                    <div>
+                      <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Starting at</div>
+                      <div className="text-lg font-black tracking-tight">₹{g.lowestPrice === Infinity ? '-' : g.lowestPrice}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Best Value</div>
+                      <div className="text-sm font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-100 inline-block">
+                        ₹{g.bestValueMetric === Infinity ? 'N/A' : g.bestValueMetric.toFixed(2)}/g
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-200 py-12 text-center text-gray-400 text-sm font-medium">
+        PRTNDX © 2026. Prices are approximate. Always check the retailer site.
+      </footer>
+
+      {/* PRODUCT MODAL OVERLAY */}
+      {selectedGroup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedGroup(null)}></div>
+          
+          <div className="bg-[#F8F9FA] text-[#111827] font-sans antialiased rounded-xl w-full max-w-5xl max-h-[90vh] overflow-y-auto relative z-10 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
+            {/* Close Button */}
+            <button 
+              onClick={() => setSelectedGroup(null)}
+              className="absolute top-4 right-4 bg-white border border-[#E5E7EB] hover:bg-gray-100 text-gray-900 w-8 h-8 flex items-center justify-center transition-colors z-20 font-mono text-xs font-bold"
+            >
+              X
+            </button>
+
+            {/* System Status Banner */}
+            <div className="border-b border-[#E5E7EB] bg-white px-6 py-3 flex items-center justify-between text-xs font-mono">
+              <div className="font-bold tracking-tight">INDEX // PROTEIN-FEED-TERMINAL</div>
+              <div className="flex items-center gap-2 text-[#4B5563]">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>REALTIME FEED: ACTIVE</span>
+              </div>
+            </div>
+
+            <div className="max-w-7xl w-full mx-auto px-6 py-6">
+              {/* Breadcrumb / SKU metadata */}
+              <div className="text-xs font-mono text-[#6B7280] mb-2 uppercase">
+                {selectedGroup.brand} &gt; {selectedGroup.baseProductName} &gt; {selectedGroup.categorySilo}
+              </div>
+
+              {/* Warning Banner */}
+              {selectedGroup.isFairyDusted && (
+                <div className="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm font-mono flex items-center gap-2">
+                  <span className="font-bold text-red-600">⚠️ PROPRIETARY BLEND ALERT:</span>
+                  This product has been algorithmically flagged for "Fairy-Dusting" (cheap fillers like maltodextrin/taurine are listed before premium ingredients).
+                </div>
+              )}
+
+              {/* Header and Quick Stats */}
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-end pb-6 border-b border-[#E5E7EB] gap-4">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-2xl font-black uppercase tracking-tight text-[#111827]">{selectedGroup.baseProductName}</h1>
+                    {selectedGroup.labVerified && (
+                      <a href={selectedGroup.labReportUrl} target="_blank" rel="noopener noreferrer" className="bg-yellow-50 border border-yellow-200 text-yellow-800 text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 uppercase tracking-wider hover:bg-yellow-100 cursor-pointer">
+                        🛡️ 3rd-Party Lab Verified
+                      </a>
+                    )}
+                  </div>
+                  <p className="text-xs font-mono text-[#6B7280] mt-1">Source formulation: {selectedGroup.proteinSource}</p>
+                </div>
+                <div className="bg-white border border-[#E5E7EB] p-3 min-w-[240px]">
+                  <div className="text-[10px] font-mono text-[#6B7280] uppercase tracking-wider">Lowest Active Ask</div>
+                  <div className="text-2xl font-mono font-bold tracking-tight text-[#111827]">
+                    {selectedGroup.lowestPrice !== Infinity ? `₹${selectedGroup.lowestPrice}` : "OUT OF STOCK"}
+                  </div>
+                  {selectedVariant && selectedVariant.raw_json_data?.analytics?.effective_cost_per_bioavailable_g_inr && (
+                    <div className="text-[10px] font-mono text-emerald-700 font-semibold">
+                      ₹{selectedVariant.raw_json_data.analytics.effective_cost_per_bioavailable_g_inr.toFixed(2)} / Bioavailable Gram
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Variant Matrix */}
+              <div className="my-6">
+                <div className="text-xs font-mono font-bold uppercase text-[#374151] mb-2">Select Flavor</div>
+                
+                {(() => {
+                   const groups: Record<string, typeof selectedGroup.variants> = {};
+                   selectedGroup.variants.forEach(v => {
+                       let cleanFlavor = v.flavor;
+                       const parts = cleanFlavor.split('/').map(p => p.trim());
+                       const nonWeight = parts.filter(p => !p.toLowerCase().match(/^\d+(?:\.\d+)?\s*(kg|g|lbs|l)$/i));
+                       if (nonWeight.length > 0 && nonWeight.length < parts.length) {
+                           cleanFlavor = nonWeight.join(' / ');
+                       } else if (cleanFlavor.toLowerCase() === 'varies') {
+                           cleanFlavor = "Default";
+                       }
+                       if (!groups[cleanFlavor]) groups[cleanFlavor] = [];
+                       groups[cleanFlavor].push(v);
+                   });
+                   const flavorKeys = Object.keys(groups);
+                   
+                   let activeFlavor = flavorKeys[0];
+                   if (selectedVariant) {
+                       const actParts = selectedVariant.flavor.split('/').map(p => p.trim());
+                       const actNonWeight = actParts.filter(p => !p.toLowerCase().match(/^\d+(?:\.\d+)?\s*(kg|g|lbs|l)$/i));
+                       let tempFlavor = actNonWeight.length > 0 && actNonWeight.length < actParts.length ? actNonWeight.join(' / ') : (selectedVariant.flavor.toLowerCase() === 'varies' ? 'Default' : selectedVariant.flavor);
+                       if (groups[tempFlavor]) activeFlavor = tempFlavor;
+                   }
+
+                   return (
+                     <>
+                       <div className="flex flex-wrap gap-2 mb-6">
+                         {flavorKeys.map(fk => (
+                            <button
+                              key={fk}
+                              onClick={() => setSelectedVariant(groups[fk][0])}
+                              className={`px-3 py-1.5 font-mono text-xs border ${
+                                activeFlavor === fk ? "bg-[#111827] text-white border-[#111827]" : "bg-white text-[#111827] border-[#E5E7EB] hover:border-[#9CA3AF]"
+                              }`}
+                            >
+                              {fk}
+                            </button>
+                         ))}
+                       </div>
+                       
+                       {selectedVariant?.has_bot_reviews && (
+                         <div className="mb-4 bg-orange-50 border border-orange-200 text-orange-800 px-3 py-2 rounded-md text-[11px] font-mono flex items-center gap-2">
+                           <span className="font-bold">BOT RISK:</span>
+                           Authenticity Score {selectedVariant.authenticity_score}/100. High lexical overlap detected in recent 5-star reviews.
+                         </div>
+                       )}
+                       <div className="text-xs font-mono font-bold uppercase text-[#374151] mb-2">Available Sizes</div>
+                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                         {groups[activeFlavor]
+                            .sort((a, b) => a.weight_grams - b.weight_grams)
+                            .map(v => {
+                            const active = selectedVariant?.sku_id === v.sku_id;
+                            const minPrice = v.lowest_price_inr;
+                            const ocrData = v.raw_json_data?.ocr_data;
+                            
+                            // Sort price listings to show lowest first
+                            const listings = [...(v.price_listings || [])].sort((a, b) => a.price_inr - b.price_inr);
+                            
+                            return (
+                              <button
+                                key={v.sku_id}
+                                onClick={() => setSelectedVariant(v)}
+                                className={`text-left p-3 border transition-none font-mono text-xs ${
+                                  active ? "bg-[#111827] text-white border-[#111827]" : "bg-white border-[#E5E7EB] text-[#111827] hover:border-[#9CA3AF]"
+                                }`}
+                              >
+                                <div className="flex justify-between font-bold">
+                                  <span>{v.weight_grams >= 1000 ? (v.weight_grams/1000) + 'kg' : v.weight_grams + 'g'}</span>
+                                  <span>{minPrice !== Infinity ? `₹${minPrice}` : 'N/A'}</span>
+                                </div>
+                                <div className={`text-[11px] mt-1 ${active ? "text-gray-300" : "text-[#6B7280]"}`}>
+                                  {ocrData ? `${ocrData.total_servings} Servings (${ocrData.protein_per_serving_g}g/srv)` : "Pending OCR..."}
+                                </div>
+                                <div className={`mt-2 pt-2 border-t text-[10px] space-y-1 ${active ? "border-gray-700" : "border-gray-100"}`}>
+                                  {listings.length > 0 ? listings.map((l, i) => (
+                                    <div key={i} className="flex justify-between">
+                                      <span className={active ? "text-gray-400" : "text-gray-500"}>{l.source}</span>
+                                      <span className={active ? "text-gray-200" : "text-gray-900"}>₹{l.price_inr}</span>
+                                    </div>
+                                  )) : (
+                                    <span className="text-gray-400">No active sellers</span>
+                                  )}
+                                </div>
+                              </button>
+                            );
+                         })}
+                       </div>
+                     </>
+                   )
+                })()}
+              </div>
+
+              {/* Aggregated Listings Table */}
+              <div className="bg-white border border-[#E5E7EB]">
+                <div className="p-3 border-b border-[#E5E7EB] flex justify-between items-center bg-[#FAFAFA] font-mono text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#6B7280]">Realtime Platform Bids</span>
+                  </div>
+                </div>
+
+                <table className="w-full text-left font-mono text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#E5E7EB] bg-[#F9FAFB] text-[#6B7280] uppercase text-[11px]">
+                      <th className="p-3 font-semibold">Retailer / Seller</th>
+                      <th className="p-3 font-semibold">Stock</th>
+                      <th className="p-3 font-semibold">Cost / Bio-G</th>
+                      <th className="p-3 font-semibold text-right">Price</th>
+                      <th className="p-3 font-semibold text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E5E7EB]">
+                    {selectedVariant?.price_listings?.sort((a, b) => a.price_inr - b.price_inr).map((offer, idx) => {
+                      const isBest = offer.price_inr === Math.min(...(selectedVariant?.price_listings?.filter(l => l.is_authorized_seller !== false).map(l => l.price_inr) || [])) && offer.is_authorized_seller !== false;
+                      const outboundUrl = generateAffiliateUrl(offer.source_url || '#', offer.source);
+                      return (
+                        <tr key={idx} className={`hover:bg-[#F9FAFB]`}>
+                          <td className="p-3">
+                            <div className="font-bold text-[#111827] flex items-center gap-2">
+                              {offer.source}
+                              {offer.is_authorized_seller === false && (
+                                <span className="bg-red-100 text-red-700 text-[9px] px-1.5 py-0.5 rounded">UNAUTHORIZED</span>
+                              )}
+                            </div>
+                            {offer.seller_name && <div className="text-[10px] text-gray-500 mt-0.5">Sold by: {offer.seller_name}</div>}
+                          </td>
+                          <td className="p-3">
+                            <span className="text-emerald-700 font-bold">AVAILABLE</span>
+                          </td>
+                          <td className="p-3 font-bold text-[#111827]">
+                            {selectedVariant.raw_json_data?.analytics?.effective_cost_per_bioavailable_g_inr 
+                              ? `₹${selectedVariant.raw_json_data.analytics.effective_cost_per_bioavailable_g_inr.toFixed(2)}` 
+                              : "N/A"}
+                          </td>
+                          <td className="p-3 text-right">
+                            <div className="text-sm font-bold text-[#111827]">₹{offer.price_inr}</div>
+                            {isBest && <div className="text-[10px] font-bold text-emerald-600">BEST ASK</div>}
+                          </td>
+                          <td className="p-3 text-right">
+                            <a
+                              href={outboundUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`inline-block px-3 py-1.5 font-bold uppercase text-[11px] bg-[#111827] text-white hover:bg-black`}
+                            >
+                              Buy {'->'}
+                            </a>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  )
+}
+
+export default App

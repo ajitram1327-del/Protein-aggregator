@@ -1,0 +1,721 @@
+{
+  "summary": {
+    "total": 142,
+    "passed": 142,
+    "failed": 0,
+    "success_rate": "100.0%",
+    "all_passed": true
+  },
+  "results": [
+    {
+      "status": "PASS",
+      "test": "Migration 0001 exists",
+      "detail": "C:\\Users\\ajith\\.gemini\\antigravity\\worktrees\\Protein aggregator\\add_pdf_reader_skill\\supabase\\migrations\\0001_initial_proteindx_schema.sql"
+    },
+    {
+      "status": "PASS",
+      "test": "Migration 0002 exists",
+      "detail": "C:\\Users\\ajith\\.gemini\\antigravity\\worktrees\\Protein aggregator\\add_pdf_reader_skill\\supabase\\migrations\\0002_proteindex_v3_schema_alignment.sql"
+    },
+    {
+      "status": "PASS",
+      "test": "Migration 0001 defines baseline products and offers tables",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Migration 0002 contains NO destructive SQL (Drop/Truncate banned)",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Migration 0002 extends products with category_silo and trust columns",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Migration 0002 extends variants with deterministic hash and optical metrics",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Migration 0002 creates price_listings table for omni-channel scraper",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Migration 0002 creates comparison_snapshots table for Compare Engine",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Migration 0002 provides backwards-compatible sync trigger from offers to price_listings",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Weight Parser: '1 kg' -> 1000g",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Weight Parser: '500g' -> 500g",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Weight Parser: '2.2 lbs' -> 1000g",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Weight Parser: '4.4 lb' -> 2000g",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Weight Parser: fallback default 1000g",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Multipack: '2 x 1kg' -> 2000g",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Multipack: '2x1kg' -> 2000g",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Multipack: '2 x 500g' -> 1000g",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Multipack: '3 x 2 lbs' -> 2722g",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Multipack: 'Pack of 2 (1kg each)' -> 2000g",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Multipack: 'Pack of 2, 500g' -> 1000g",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Multipack: '2 tubs of 1kg' -> 2000g",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Volume: '16 fl oz' -> 473g",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Volume: '500 ml' -> 500g",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Edge Case: empty string -> 1000g",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Edge Case: None -> 1000g",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Edge Case: dirty unicode whitespace cleaned",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Flavor: 'Rich Chocolate Fudge' -> chocolate",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Flavor: 'Alphonso Mango Swirl' -> mango",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Flavor: 'French Vanilla Creme' -> vanilla",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Flavor: 'Cafe Mocha Frappe' -> coffee",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Flavor: 'Raw Unflavored 80%' -> unflavored",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Flavor: 'Cookies & Cream' -> cookies_and_cream",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Flavor: 'Green Apple' -> green_apple",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Flavor: 'Blue Raspberry' -> blue_raspberry",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Flavor: 'Watermelon' -> watermelon",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Flavor: empty -> unflavored",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Deterministic Hash: Idempotent repeat calls produce identical SHA256",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Deterministic Hash: Output length is valid 64-char SHA256 hex string",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Deterministic Hash: Different weight produces distinct hash",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Deterministic Hash: Different flavor produces distinct hash",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Normalizer execute() returns valid NormalizedVariant",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "NormalizedVariant supports dict() serialization",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Legacy calculate_metrics: Whey Isolate DIAAS score is 1.09",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Legacy calculate_metrics: Scoop purity is 83.33%",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Legacy calculate_metrics: Effective cost per bioavailable gram computed",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Silo 1: Metric label is \u20b9/g bioavailable protein",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Silo 1: Secondary metric is Purity %",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Silo 1: Primary metric computed correctly",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Silo 2 (Mass Gainer): Cost per 1,000 kcal is exactly \u20b9320.0",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Silo 2 (Mass Gainer): Carb:Protein ratio is 5.0 (75g carbs / 15g protein)",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Silo 3 (Creatine): Cost per gram of pure creatine is \u20b92.41",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Silo 4 (Pre-Workout): Cost per scoop is exactly \u20b950.0",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "IngredientAuditor: Flags cheap filler listed before active",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "IngredientAuditor: Applies trust penalty score",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "IngredientAuditor: Clean isolate passes without deductions",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Useful Dose Engine: Detects free-form amino spiking (Glycine/Taurine)",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Useful Dose Engine: Fails MPS threshold due to spiking/low leucine",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Expiry Engine: Rejects clearance when expiry delta < consumption + 1 month buffer",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Expiry Engine: Approves clearance when sufficient consumption safety buffer exists",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Universal Schema: Successfully validates exact PRD v2.1 JSON schema contract",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Universal Schema: Packaging fields typed and verified",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Universal Schema: Nutritional fields verified",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Universal Schema: Verification tier matches contract",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "API Route: /api/products implemented",
+      "detail": "C:\\Users\\ajith\\.gemini\\antigravity\\worktrees\\Protein aggregator\\add_pdf_reader_skill\\client\\src\\app\\api\\products\\route.ts"
+    },
+    {
+      "status": "PASS",
+      "test": "API Route: /api/compare implemented",
+      "detail": "C:\\Users\\ajith\\.gemini\\antigravity\\worktrees\\Protein aggregator\\add_pdf_reader_skill\\client\\src\\app\\api\\compare\\route.ts"
+    },
+    {
+      "status": "PASS",
+      "test": "Frontend: /compare page implemented",
+      "detail": "C:\\Users\\ajith\\.gemini\\antigravity\\worktrees\\Protein aggregator\\add_pdf_reader_skill\\client\\src\\app\\compare\\page.tsx"
+    },
+    {
+      "status": "PASS",
+      "test": "Frontend: CompareTray component implemented",
+      "detail": "C:\\Users\\ajith\\.gemini\\antigravity\\worktrees\\Protein aggregator\\add_pdf_reader_skill\\client\\src\\components\\CompareTray.tsx"
+    },
+    {
+      "status": "PASS",
+      "test": "Monetization: Outbound affiliate sanitizer implemented",
+      "detail": "C:\\Users\\ajith\\.gemini\\antigravity\\worktrees\\Protein aggregator\\add_pdf_reader_skill\\client\\src\\utils\\affiliate.ts"
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Route Sanitizer: Injects Amazon Associate tag",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Route Sanitizer: Wraps HealthKart URL via CueLinks redirect",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Sync Trigger: Clamps non-positive / NULL price to 0.0 to prevent CHECK constraint violations",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Sync Trigger: Defensively guards against NULL variant_id",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Sync Trigger: Case-insensitive stock status evaluation",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Sync Trigger: Defensively coalesces empty platform to default",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Engine Proxy Config: Supports commercial rotating residential proxy environment variables",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Engine Proxy Config: Supports DISABLE_FREE_PROXIES flag",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Engine Logger: Logger initialized BEFORE get_proxy_pool() invocation",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Engine Resilience: Provides direct connection fallback when proxy rotation fails",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Engine Rule 4: Enforces protein <= serving size validation invariant",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Compare API Bug Guard: isEasyDigest logic is NOT inverted",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Products API Bug Guard: Math.min protected against empty array Infinity",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Compare Page Bug Guard: isEasyDigest logic is NOT inverted",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Compare Page Bug Guard: Unit cost bar chart Math.min protected against empty array",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Equalizer: Zero calories in mass gainer returns 0.0 without division error",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Equalizer: Zero protein in mass gainer returns carb:protein ratio 0.0",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Equalizer: Zero servings in packaging clamped to at least 1",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Equalizer: Zero protein returns 0.0 cost and 0.0 purity",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Equalizer: Zero serving size returns 0.0 purity without division error",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Equalizer: Negative price clamped to 0.0",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Equalizer: Extreme price (999M INR) computes cleanly without overflow",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Equalizer: packaging=None handled gracefully with default values",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Equalizer: nutritional_profile=None handled gracefully with default values",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Equalizer: silo=None safely defaults to protein silo",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Equalizer: Malformed non-numeric strings handled without exceptions",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Equalizer: Impossible protein > serving size clamped to 100.0% purity",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Equalizer: Double-negative inputs clamped, avoiding synthetic positive protein pool",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Equalizer: Correctly computes flavor tax % when unflavored price is provided",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Sanitizer: Strictly enforces http: and https: protocols",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Sanitizer: Defines defense against dangerous protocols (XSS injection)",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Sanitizer: Strips competitor and tracking parameters before tag injection",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Sanitizer: Routes network partners through CueLinks linksredirect.com",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Sanitizer: Protects against double-wrapping already wrapped affiliate links",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Security: Blocks 'javascript:' protocol injection",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Security: Blocks 'data:' protocol injection",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Security: Blocks 'file://' scheme access",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Security: Blocks 'vbscript:' scheme",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Sanitizer: Whitespace-only string returns empty string",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Sanitizer: Missing protocol automatically prepends https://",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Sanitizer: Strips competitor associate tag and ascsubtag",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Sanitizer: Auto-detects Amazon platform from hostname when platform is direct",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Sanitizer: Auto-detects HealthKart platform from hostname when platform is direct",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Sanitizer: Prevents double-wrapping already wrapped redirect URLs",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Schema Index: idx_products_category_silo defined on products(category_silo)",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Schema Index: idx_price_listings_variant_id defined on price_listings(variant_id)",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Schema Index: idx_variants_variant_hash defined on variants(variant_hash)",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Schema Foreign Key Index: idx_independent_lab_tests_product_id defined on independent_lab_tests(product_id)",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Schema Index: idx_products_silo_brand composite index defined",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Schema Index: idx_variants_best_value defined on variants",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Schema Index: idx_variants_lowest_price defined on variants",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Sync Trigger: Handles row deletions from legacy offers to price_listings",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Sync Trigger: Trigger hooked to INSERT, UPDATE, and DELETE operations",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Sync Trigger: Propagates lowest_price_inr updates to variants table",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Products API: Validates silo parameter against permissible categories (rejects invalid silos with 400)",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Products API: Clamps and validates limit parameter against negative, NaN, or DOS values",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Products API: Sanitizes search and brand parameters against PostgREST injection syntax",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Compare API: Enforces UUID syntax validation on variant IDs and snapshotId",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Compare API: Deduplicates requested variant IDs before comparison",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Compare API: Enforces comparison target boundary between 2 and 4 distinct items",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Compare API: Handles nonexistent variants (< 2 matches in DB) with 404 response",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Compare Page: Protects efficiency chart against maxCost <= 0 division by zero",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Compare Page: Deduplicates and bounds incoming URL variant IDs to maximum of 4",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Equalizer Invariant: Explicit zero protein preserves 0.0 purity and 0.0 cost",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Equalizer Invariant: Explicit zero serving size preserves 0.0 purity",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Equalizer Invariant: Servings=0 safely clamped to >= 1 serving",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Security: ftp:// scheme rejected",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Security: blob: scheme rejected",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Security: data:text/javascript scheme rejected",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Security: http:// protocol preserved and tagged",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Affiliate Security: Protocol-relative // URL normalized to https:// and tagged",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Database Migration Invariant: Lowest price recomputation on DELETE in sync trigger",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Cross-Tier Contract: ProductListingView has all required PRD fields",
+      "detail": ""
+    },
+    {
+      "status": "PASS",
+      "test": "Compare Tray UI: Capped multi-item selection tray generates valid /compare URL",
+      "detail": ""
+    }
+  ]
+}

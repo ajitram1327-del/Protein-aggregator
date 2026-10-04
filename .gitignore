@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Node
+node_modules/
+dist/
+build/
+coverage/
+
+# Editor and OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Large downloads
+*.zip
+.vercel
+.env*

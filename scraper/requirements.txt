@@ -1,0 +1,4 @@
+scrapling
+supabase
+groq
+python-dotenv

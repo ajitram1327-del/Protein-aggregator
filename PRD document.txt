@@ -1,0 +1,1303 @@
+Here is the complete, self-contained System Specification and PRD. You can copy this entire response directly into a `proteindex-master-prd.md` file in your Antigravity workspace to initialize the autonomous build.
+
+---
+
+# SYSTEM SPECIFICATION & IMPLEMENTATION CONTRACT: PROTEINDEX
+
+**Document Identifier:** `SPEC-PROTEINDEX-V2-AUTONOMOUS`
+**Target Execution Environment:** Google Antigravity Agent Runtime / Linux Docker Sandbox
+**Execution Paradigm:** Sequential deterministic pipeline execution, strict typing, schema-enforced I/O contracts.
+
+---
+
+## 1. Relational Database Schema & Deterministic Hashing (PostgreSQL / Supabase)
+
+### 1.1 Deterministic Hashing Specification
+
+To eliminate duplicate variants across divergent e-commerce listings, the system MUST compute a deterministic hash string before variant insertion. The input text MUST be normalized: lowercased, whitespace-trimmed, and non-alphanumeric characters stripped.
+
+The variant hash is computed as:
+
+
+$$\text{Variant Hash} = \text{SHA256}(\text{product\_id} \mathbin{\Vert} \text{weight\_in\_grams} \mathbin{\Vert} \text{canonical\_flavor})$$
+
+### 1.2 DDL Specifications (SQL)
+
+```sql
+-- Enable cryptographic extensions
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Table 1: Base Products
+CREATE TABLE products (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    brand_name VARCHAR(100) NOT NULL,
+    product_name VARCHAR(255) NOT NULL,
+    category VARCHAR(50) NOT NULL CHECK (category IN ('whey_isolate', 'whey_concentrate', 'plant_blend', 'yeast_protein', 'casein', 'creatine', 'mass_gainer')),
+    silo VARCHAR(20) NOT NULL CHECK (silo IN ('protein', 'creatine', 'gainer', 'wellness')),
+    baseline_diaas_score NUMERIC(3, 2) NOT NULL DEFAULT 1.00,
+    fssai_license_number VARCHAR(14) CHECK (fssai_license_number ~ '^[0-9]{14}$'),
+    fssai_warning_active BOOLEAN NOT NULL DEFAULT FALSE,
+    fssai_last_verified_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Table 2: Product Variants (Standardized SKUs)
+CREATE TABLE variants (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    variant_hash CHAR(64) UNIQUE NOT NULL,
+    weight_grams INTEGER NOT NULL CHECK (weight_grams > 0),
+    flavor_name VARCHAR(100) NOT NULL DEFAULT 'unflavored',
+    is_unflavored BOOLEAN GENERATED ALWAYS AS (flavor_name = 'unflavored') STORED,
+    
+    -- Label & Optical Extraction Metrics
+    label_serving_size_g NUMERIC(5, 2),
+    label_protein_per_serving_g NUMERIC(5, 2),
+    label_total_servings INTEGER,
+    calculated_purity_pct NUMERIC(5, 2) GENERATED ALWAYS AS (
+        ROUND((label_protein_per_serving_g / NULLIF(label_serving_size_g, 0)) * 100, 2)
+    ) STORED,
+    ocr_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    ocr_image_url TEXT,
+    
+    -- Digestive Matrix
+    has_digestive_enzymes BOOLEAN NOT NULL DEFAULT FALSE,
+    detected_enzymes TEXT[] DEFAULT '{}',
+    is_lactose_free BOOLEAN NOT NULL DEFAULT FALSE,
+    
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Table 3: Real-Time Price Listings
+CREATE TABLE price_listings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    variant_id UUID NOT NULL REFERENCES variants(id) ON DELETE CASCADE,
+    platform_name VARCHAR(50) NOT NULL CHECK (platform_name IN (
+        'amazon', 'flipkart', 'healthkart', 'nutrabay', 'hyugalife', 
+        'nutriride', 'tata_1mg', 'apollo_pharmacy', 'pharmeasy', 
+        'netmeds', 'jiomart', 'nykaa', 'cultstore', 'd2c_brand'
+    )),
+    listing_url TEXT NOT NULL,
+    current_price_inr NUMERIC(10, 2) NOT NULL CHECK (current_price_inr > 0),
+    is_in_stock BOOLEAN NOT NULL DEFAULT TRUE,
+    raw_payload JSONB NOT NULL DEFAULT '{}',
+    scraped_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Indexing for Query Latency Optimization
+CREATE INDEX idx_products_silo ON products(silo);
+CREATE INDEX idx_variants_product_id ON variants(product_id);
+CREATE INDEX idx_listings_variant_price ON price_listings(variant_id, current_price_inr ASC);
+
+```
+
+---
+
+## 2. Ingestion Pipeline & Scraper Infrastructure (Python)
+
+### 2.1 Variant Normalization Module
+
+* **File Path:** `src/pipeline/normalizer.py`
+* **External Libraries:** `re`, `hashlib`, `typing`, `pydantic`
+
+```python
+import re
+import hashlib
+from pydantic import BaseModel
+
+class NormalizedVariant(BaseModel):
+    weight_grams: int
+    canonical_flavor: str
+    variant_hash: str
+
+class VariantNormalizer:
+    FLAVOR_CANONICAL_MAP = {
+        r"rich choco.*|double rich.*|belgian choco.*|chocolate fudge|dark choco.*": "chocolate",
+        r"vanilla.*|french vanilla|creamy vanilla": "vanilla",
+        r"alphonso mango|mango swirl|mango": "mango",
+        r"cafe mocha|coffee|espresso|cappuccino": "coffee",
+        r"unflavored|raw|natural|naked": "unflavored",
+        r"strawberry.*|berries": "strawberry",
+        r"kulfi|kesar pista": "kesar_pista"
+    }
+
+    @staticmethod
+    def parse_weight(raw_title: str) -> int:
+        match = re.search(r"(\d+(?:\.\d+)?)\s*(kg|g|lbs|lb|oz)", raw_title, re.IGNORECASE)
+        if not match:
+            return 1000
+
+        val, unit = float(match.group(1)), match.group(2).lower()
+        if unit == 'kg': return int(val * 1000)
+        elif unit == 'g': return int(val)
+        elif unit in ('lb', 'lbs'): return int(val * 453.592)
+        elif unit == 'oz': return int(val * 28.3495)
+        return 1000
+
+    @classmethod
+    def parse_flavor(cls, raw_title: str) -> str:
+        for pattern, canonical in cls.FLAVOR_CANONICAL_MAP.items():
+            if re.search(pattern, raw_title, re.IGNORECASE):
+                return canonical
+        return "unflavored"
+
+    @classmethod
+    def execute(cls, product_id: str, raw_title: str) -> NormalizedVariant:
+        weight_g = cls.parse_weight(raw_title)
+        flavor = cls.parse_flavor(raw_title)
+        raw_signature = f"{product_id}_{weight_g}_{flavor}".lower().strip()
+        v_hash = hashlib.sha256(raw_signature.encode('utf-8')).hexdigest()
+        
+        return NormalizedVariant(weight_grams=weight_g, canonical_flavor=flavor, variant_hash=v_hash)
+
+```
+
+### 2.2 Universal DOM Tree-Walking Extraction
+
+* **File Path:** `src/scraper/engine.py`
+* **Tools:** `Scrapling`, `lxml.html`
+* **Algorithmic Procedure:**
+1. Parse HTML tree via XPath root.
+2. Search text nodes matching keyword anchors.
+3. Ascend DOM tree iteratively to find the containing product-card block.
+4. Execute sub-tree query for Price, Image, and Title.
+5. Execute Junk Regex Exclusion. If Title matches non-supplement categories, terminate branch processing.
+
+
+
+---
+
+## 3. Vision AI Label Extraction & Audit Module
+
+### 3.1 OCR Pipeline
+
+* **File Path:** `src/vision/label_auditor.py`
+* **API Client:** Google GenAI SDK (`google-genai`)
+* **Execution Strategy:** Multi-modal image analysis with structured JSON schema output constraint.
+
+```python
+import json
+from google import genai
+from google.genai import types
+from pydantic import BaseModel, Field
+
+class NutritionLabelSchema(BaseModel):
+    serving_size_g: float = Field(..., description="Weight of one scoop in grams")
+    protein_per_serving_g: float = Field(..., description="Grams of protein per single scoop")
+    total_servings: int = Field(..., description="Total number of scoops/servings per container")
+    detected_enzymes: list[str] = Field(default=[], description="Detected digestive enzymes: DigeZyme, Lactase, Papain, etc.")
+    contains_lactose: bool = Field(..., description="Flag indicating presence of whey concentrate or lactose")
+
+class VisionLabelAuditor:
+    def __init__(self, api_key: str):
+        self.client = genai.Client(api_key=api_key)
+
+    def extract_label_data(self, image_bytes: bytes) -> NutritionLabelSchema:
+        prompt = """
+        Analyze this dietary supplement nutritional panel.
+        Extract exact quantitative values for serving size, protein per serving, and total servings.
+        Identify any listed digestive enzyme complexes.
+        Adhere strictly to the JSON schema.
+        """
+        response = self.client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[types.Part.from_bytes(data=image_bytes, mime_type='image/jpeg'), prompt],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=NutritionLabelSchema,
+                temperature=0.0
+            )
+        )
+        return NutritionLabelSchema.model_validate_json(response.text)
+
+```
+
+### 3.2 Label Discrepancy Logic
+
+To ensure accuracy, the pipeline compares the parsed OCR metrics against the scraped retailer text:
+
+
+$$\Delta_{\text{servings}} = \vert{}\text{scraped\_servings} - \text{ocr\_servings}\vert{}$$
+
+
+If $\Delta_{\text{servings}} > 0$ or the protein variance exceeds 1.0g, the system persists the OCR values as the canonical source-of-truth.
+
+---
+
+## 4. Scientific Analytics & Equalizer Computation Engine
+
+### 4.1 Bioavailability Mathematical Specifications
+
+The analytics engine standardizes all products into an absolute cost of biologically useful protein.
+
+$$\text{Absorbed Protein (g)} = \text{Label Protein per Serving (g)} \times \text{DIAAS Multiplier}$$
+
+$$\text{Effective Yield Cost (₹/g)} = \frac{\text{Current Lowest Price (INR)}}{\text{Total Servings} \times \text{Absorbed Protein (g)}}$$
+
+$$\text{Flavor Tax (\%)} = \left( \frac{\text{Effective Yield Cost}_{\text{flavored}}}{\text{Effective Yield Cost}_{\text{unflavored}}} - 1 \right) \times 100$$
+
+### 4.2 Analytical Calculator Implementation
+
+* **File Path:** `src/analytics/equalizer.py`
+
+```python
+class EqualizerEngine:
+    # Based on FAO-recommended clinical digestibility standards
+    DIAAS_INDEX = {
+        "whey_isolate": 1.09,
+        "whey_concentrate": 0.98,
+        "casein": 1.18,
+        "soy": 0.90,
+        "plant_blend": 0.85, # Synergistic Pea + Rice formulation
+        "pea_isolate": 0.82,
+        "rice_protein": 0.42
+    }
+
+    @classmethod
+    def calculate_metrics(
+        cls, 
+        category: str, 
+        price_inr: float, 
+        label_protein_g: float, 
+        serving_size_g: float, 
+        total_servings: int,
+        unflavored_cost_per_g: float = None
+    ) -> dict:
+        diaas = cls.DIAAS_INDEX.get(category, 0.80)
+        absorbed_protein_per_serving = round(label_protein_g * diaas, 2)
+        total_absorbed_protein = absorbed_protein_per_serving * total_servings
+        effective_cost_per_g = round(price_inr / total_absorbed_protein, 2) if total_absorbed_protein > 0 else 0.0
+        purity_pct = round((label_protein_g / serving_size_g) * 100, 2) if serving_size_g > 0 else 0.0
+
+        flavor_tax_pct = 0.0
+        if unflavored_cost_per_g and unflavored_cost_per_g > 0:
+            flavor_tax_pct = round(((effective_cost_per_g / unflavored_cost_per_g) - 1.0) * 100, 2)
+
+        return {
+            "diaas_score": diaas,
+            "absorbed_protein_per_serving_g": absorbed_protein_per_serving,
+            "total_absorbed_protein_pool_g": total_absorbed_protein,
+            "effective_cost_per_bioavailable_g_inr": effective_cost_per_g,
+            "scoop_purity_pct": purity_pct,
+            "flavor_tax_pct": max(flavor_tax_pct, 0.0)
+        }
+
+```
+
+---
+
+## 5. Trust, Safety & Outbound Monetization Systems
+
+### 5.1 FSSAI FoSCoS Enforcement Monitor
+
+* **Trigger:** Weekly Scheduled Cloud Function.
+* **Execution Logic:** Queries the Supabase `products` table for distinct `fssai_license_number`. Dispatches programmatic POST requests to the public FoSCoS search endpoint. If the brand appears on the active recall ledger, the system sets `fssai_warning_active = true` for a 90-day penalty period.
+
+### 5.2 Outbound Affiliate Route Sanitizer
+
+* **File Path:** `src/utils/affiliate.ts`
+
+```typescript
+export function generateAffiliateUrl(rawUrl: string, platform: string): string {
+  const url = new URL(rawUrl);
+  
+  switch (platform.toLowerCase()) {
+    case 'amazon':
+      url.searchParams.set('tag', process.env.NEXT_PUBLIC_AMAZON_ASSOCIATE_TAG || 'proteindex-21');
+      return url.toString();
+      
+    case 'healthkart':
+    case 'flipkart':
+    case 'tata_1mg':
+      const baseUrl = 'https://linksredirect.com/';
+      const affiliateSubId = 'proteindex_web';
+      return `${baseUrl}?pub_id=${process.env.NEXT_PUBLIC_CUELINKS_ID}&url=${encodeURIComponent(url.toString())}&subid=${affiliateSubId}`;
+      
+    default:
+      return rawUrl;
+  }
+}
+
+```
+
+---
+
+## 6. Frontend Presentation Layer (Next.js & React)
+
+### 6.1 TypeScript Core Domain Models
+
+* **File Path:** `types/screener.ts`
+
+```typescript
+export interface ProductListingView {
+  productId: string;
+  variantId: string;
+  brandName: string;
+  productName: string;
+  category: string;
+  weightGrams: number;
+  flavorName: string;
+  purityPct: number;
+  diaasScore: number;
+  effectiveCostPerBioavailableGram: number;
+  lowestPriceInr: number;
+  bestPlatform: string;
+  isEasyDigest: boolean;
+  hasFssaiWarning: boolean;
+  ocrVerified: boolean;
+}
+
+```
+
+### 6.2 Screener Terminal & Analytics Components
+
+* **Screener DataTable:** Uses `@tanstack/react-table` to render high-density records with client-side sorting hooks bound to `effectiveCostPerBioavailableGram`.
+* **Run-Rate Calculator:** An interactive stateful widget estimating the `monthlyCostInr` based on target deficits minus dietary baseline intake.
+
+---
+
+## 7. Agent Execution Matrix
+
+The autonomous code agent MUST execute development in the following linear sequences:
+
+1. **Phase 1: DDL Execution**
+* Execute SQL script in Supabase Database to configure tables and `pgcrypto`.
+
+
+2. **Phase 2: Scraper Normalization & Ingestion**
+* Deploy `normalizer.py`. Run Scrapling engine to populate raw listings.
+
+
+3. **Phase 3: Label Vision Pipeline Integration**
+* Configure Gemini API client. Wire Vision AI output to variants DB updates.
+
+
+4. **Phase 4: Analytics Engine Activation**
+* Deploy `equalizer.py`. Backfill DIAAS scores and computed effective yield metrics across the DB.
+
+
+5. **Phase 5: Frontend Screener & Monetization Build**
+* Scaffold Next.js App Router workspace with Tailwind CSS and TanStack Table.
+Here is the precise, AI-optimized specification for the Advanced Proactive Multimodal Scraper. It is formatted as an extension of the existing PRD, utilizing strict execution logic, state-machine directives, and typed interfaces to ensure zero context loss when ingested by an autonomous code agent.
+
+Copy this block and append it to your `proteindex-master-prd.md` file or provide it directly to the Antigravity agent.
+
+---
+
+## 8. ADVANCED OMNI-CHANNEL INGESTION ENGINE (PROACTIVE MULTIMODAL ARCHITECTURE)
+
+**Objective:** Upgrade the baseline Tree-Walker to a state-aware, multimodal agent capable of navigating JavaScript-rendered permutations, visually auditing ground-truth nutritional data, and autonomously repairing fragile DOM traversal logic.
+
+### 8.1 Agentic Browser Interaction (Dynamic Variant Extraction)
+
+* **File Path:** `src/scraper/agentic_driver.py`
+* **Frameworks:** `Playwright`, `Stagehand SDK` (or equivalent Agentic UI driver), `asyncio`
+* **Execution Paradigm:** State-Space Exploration for E-commerce SKUs.
+* **Algorithmic Procedure:**
+1. **Initialize Headless Context:** Launch Playwright instance with anti-detect fingerprinting.
+2. **Locate Variant Nodes:** Instruct the visual agent to identify interactive DOM nodes matching `['flavor', 'flavour', 'weight', 'size']` parameters.
+3. **Permutation Matrix:** Generate a matrix of all clickable variant combinations (e.g., `Chocolate` $\times$ `1kg`, `Mango` $\times$ `2kg`).
+4. **Mutation Observer Loop:**
+* Execute programmatic `click()` on target node.
+* Await DOM mutation event (`networkidle` or `price_element` re-render).
+* Execute data siphoning (Title, Price, Stock Status).
+
+
+5. **Pass to Normalizer:** Pipe extracted strings to `VariantNormalizer` to generate the deterministic `variant_hash`.
+
+
+
+```python
+import asyncio
+from typing import List, Dict
+from pydantic import BaseModel
+
+class VariantState(BaseModel):
+    selected_flavor: str
+    selected_weight: str
+    current_price_inr: float
+    is_in_stock: bool
+
+class AgenticVariantExplorer:
+    async def traverse_permutations(self, page_context, product_url: str) -> List[VariantState]:
+        """
+        AI Directive: Use Playwright to navigate to URL.
+        Identify variant radio buttons or dropdowns.
+        Iteratively click through all permutations.
+        Await price DOM mutation after each click.
+        Yield VariantState for each successful mutation.
+        """
+        pass # Implementation handled by Antigravity Agent
+
+```
+
+### 8.2 Multimodal Vision Ground-Truth Pipeline (Secondary Image Extraction)
+
+* **File Path:** `src/vision/multimodal_auditor.py`
+* **Integration:** `google-genai` SDK (`gemini-1.5-pro` for complex image-to-tabular reasoning).
+* **Execution Logic:**
+1. **Gallery Siphoning:** Scraper extracts all `img src` URLs from the product carousel.
+2. **Pre-filter:** Reject primary product renders. Target images with high text-density or matching keywords (`label`, `nutrition`, `facts`, `back`).
+3. **LLM Vision Routing:** Pass the raw image bytes to the Vision model with strict `response_schema` constraints.
+4. **Data Overwrite Directive:** If the OCR-extracted `serving_size_g` and `protein_per_serving_g` conflict with the retailer's scraped HTML text description, the system MUST enforce the OCR data as the canonical ground truth and trigger the Equalizer Engine recalculation.
+
+
+
+```python
+from pydantic import BaseModel, Field
+
+class OCRNutritionMatrix(BaseModel):
+    serving_size_g: float = Field(..., description="Weight of one serving scoop in grams")
+    protein_yield_g: float = Field(..., description="Grams of protein per scoop")
+    amino_acid_profile_detected: bool = Field(..., description="Is a detailed BCAA/EAA breakdown present?")
+    leucine_mg: float = Field(default=0.0, description="Extracted Leucine content in mg, if present")
+    
+# AI Directive: Construct Gemini API call enforcing OCRNutritionMatrix output.
+
+```
+
+### 8.3 Self-Healing CSS Selectors (Closed-Loop Automation)
+
+* **File Path:** `src/scraper/healing_router.py`
+* **Database Requirement:** Append table `scraper_rules` to Supabase schema.
+* **Execution Logic:**
+1. **Primary Pass:** Attempt extraction via cached CSS/XPath selectors from `scraper_rules` table.
+2. **Fallback Evaluation:** If extraction yields `None` (indicating a layout change), trigger LLM DOM Parsing fallback.
+3. **LLM Repair Prompting:** Pass the raw HTML chunk to the LLM with the directive: *"Extract the Price. Then, provide the exact, unique CSS Selector or XPath that points to this price node."*
+4. **Database Upsert:** Cache the newly generated LLM selector back into the `scraper_rules` table mapped to the specific `platform_name`.
+5. **Cost Mitigation:** On subsequent runs for this platform, the system MUST use the cached LLM-generated selector, bypassing the LLM API to conserve tokens until the next layout breakage.
+
+
+
+```sql
+-- DDL for Self-Healing Rules Cache
+CREATE TABLE scraper_rules (
+    platform_name VARCHAR(50) PRIMARY KEY,
+    price_selector TEXT NOT NULL,
+    title_selector TEXT NOT NULL,
+    out_of_stock_selector TEXT,
+    last_healed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+```
+
+```python
+class SelfHealingScraper:
+    def execute_extraction(self, html_payload: str, platform: str) -> dict:
+        """
+        AI Directive: 
+        1. Fetch cached rules for `platform`.
+        2. Attempt lxml.html extraction.
+        3. On failure, route html_payload to LLM.
+        4. Extract data + new selector from LLM JSON response.
+        5. Trigger async DB update to scraper_rules.
+        """
+        pass # Implementation handled by Antigravity Agent
+
+```
+
+---
+
+### Execution Handshake for Agent
+* **Priority Queue for Phase 8:** Implement 8.2 (Multimodal Vision) first to feed the Equalizer, followed by 8.1 (Agentic Variant Exploration), leaving 8.3 (Self-Healing) for late-stage production optimization.	
+
+
+
+
+```python
+# Let's generate a clean markdown document or doc format that the user can directly copy-paste,
+# but the prompt specifically says: "write me a prd statement which focuses on telling the agent what i want and how while also explaining it what specifically i dont want in a launguage best understood by ai ...give it in a doc format for me to easy copy paste"
+# Also checking file guidelines: "When the user asks to generate a data file... default to .pdf only when intent is ambiguous (e.g. 'report', 'article', 'letter', 'product pitch')."
+# Here the user said "give it in a doc format for me to easy copy paste" - doc format could be markdown in text, or a downloadable Markdown / text / PDF. Providing both a downloadable markdown file (.md) or generating a clean markdown file, or text output is standard. But wait! The user asked "give it in a doc format for me to easy copy paste".
+# Let's check if the system prompt requires calling python interpreter to generate files:
+# "YOU MUST ALWAYS CALL `google:ds_python_interpreter` to execute python code to generate files. Do NOT just output code as text — always execute it using `google:ds_python_interpreter`. Failure to execute the code means no file is generated."
+# "When fulfilling requests to generate files (PDF, Markdown, TXT, LaTeX, CSV, XLSX), adhere to the following..."
+# If the user says "in a doc format for me to easy copy paste", generating a structured Markdown (.md) or PDF file AND providing the copy-pasteable markdown text directly in the response is the most thorough and compliant approach!
+
+doc_content = """# PRODUCT REQUIREMENTS DOCUMENT (PRD)
+
+**Document Reference:** PRD-AGG-PROT-001  
+**Project Name:** PureSpec (Protein Aggregator & Real-Time Deal Terminal)  
+**Target Agent Role:** Senior Full-Stack Engineer & High-Density UI/UX Designer  
+**Status:** Approved for Implementation  
+
+---
+
+## 1. System Objective & Core Vision
+
+Build a high-density, real-time commodity and retail price aggregator for sports nutrition (specifically whey isolate, whey concentrate, casein, and plant proteins). 
+
+The platform must operate similarly to Sneakopedia, PCPartPicker, or a financial market terminal: instead of functioning as an e-commerce storefront or consumer review blog, it operates as a multi-merchant intelligence matrix mapping SKUs across granular variant attributes (flavor, weight, formulation) and tracking the lowest real-time market ask, unit efficiency (cost per gram of pure protein), and historical retailer stock.
+
+---
+
+## 2. Hard Anti-Patterns ("WHAT SPECIFICALLY NOT TO DO")
+
+*To prevent typical AI generation defaults, the agent must strictly avoid the following patterns:*
+
+
+```
+
+[BANNED PATTERNS: UI/UX & STYLING]
+❌ NO Glassmorphism or backdrop-blur tricks (e.g., bg-white/10 backdrop-blur-md).
+❌ NO Floating bubble/card grids with exaggerated rounded corners (rounded-2xl, rounded-3xl).
+❌ NO Purple-to-blue / neon-pink / rainbow gradient buttons or background blurs.
+❌ NO Oversized decorative hero illustrations, stock 3D renders, or generic marketing fluff.
+❌ NO Low-contrast light grey text on white backgrounds (#9CA3AF on white for body text).
+❌ NO Monotonous star ratings (5 yellow stars), testimonial carousels, or fake urgency countdowns.
+❌ NO Mobile-first jumbo paddings (py-24, p-12) that push actionable data below the fold.
+
+[BANNED PATTERNS: ARCHITECTURE & LOGIC]
+❌ NO Flat product listings: Do not lump different flavors and sizes into a single flat price. (Prices must be mapped to distinct flavor + weight variants).
+❌ NO Missing unit economics: Never display price alone without calculating cost-per-gram of pure protein.
+❌ NO Dead affiliate buttons: Actions must reflect live inventory status (disabled/dimmed when Out of Stock).
+
+```
+
+---
+
+## 3. Mandatory Engineering & Design Directives ("WHAT TO DO & HOW")
+
+### 3.1 Design System & Aesthetic Foundation
+1. **Structural Grid & Border Layout:**
+   - Use strict 1px solid borders (`#E5E7EB` in light mode, `#262626` in dark mode).
+   - Use sharp micro-radii (0px / square or max 2px `rounded-sm`).
+   - Use high-contrast, clean neutral palettes: pure off-white background (`#F8F9FA` or `#0A0A0A`), pitch dark text (`#111827` or `#F9FAFB`).
+2. **Typography & Data Alignment:**
+   - Primary sans-serif for titles: System sans / Inter / Geist (`font-sans`).
+   - Monospaced typography for all data fields: `JetBrains Mono`, `Roboto Mono`, or system monospaced (`font-mono`) for SKUs, prices, nutritional specs, timestamps, and stock status.
+3. **Information Density First:**
+   - Display actionable tabular data within the first screen height (above the fold).
+   - Use compact table rows (`py-2.5` to `py-3`) rather than large individual cards.
+   - Variant selector must emulate an interactive stock matrix (e.g., Sneakopedia size grid), displaying flavor, tub weight, serving count, and minimum ask price per variant tile.
+
+---
+
+## 4. Key Functional Modules
+
+### Module 4.1: Variant Matrix & Selector
+- Users must select variants across two axes: **Flavor** and **Container Size / Weight** (e.g., 2 lbs vs 5 lbs).
+- Each selector button must render:
+  - Variant Name (e.g., "Double Rich Chocolate")
+  - Weight & Total Servings (e.g., "2.27 kg • 73 servings")
+  - Lowest In-Stock Price currently available across all indexed stores.
+
+### Module 4.2: Unit Efficiency Engine (Protein Index)
+- Calculate and prominently display the **Cost per 100g of Pure Protein**:
+  $$\text{Efficiency Ratio} = \frac{\text{Retail Price}}{\text{Servings Count} \times \text{Protein Grams per Serving}} \times 100$$
+- This metric normalizes pricing across brands, fillers, and differing container sizes.
+
+### Module 4.3: Real-Time Merchant Feed Table
+- Renders an indexed table of retailers scraping/streaming offers for the selected SKU variant:
+  - **Merchant Name & Verification Timestamp** (e.g., "NutriCart — Indexed 12m ago")
+  - **Live Inventory Status** (`IN STOCK` with green indicator or `OUT OF STOCK`)
+  - **Fulfillment / Shipping terms** (e.g., "Next Day", "Free Over $50")
+  - **Calculated Unit Cost** ($/100g pure protein)
+  - **Base Price & Lowest Price Badge**
+  - **Direct Affiliation / Deep-Link Action Button** (disabled when out of stock)
+
+---
+
+## 5. Reference Technical Architecture & Implementation
+
+### 5.1 Database Schema (Prisma ORM)
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id          String         @id @default(cuid())
+  sku         String         @unique
+  brand       String
+  title       String
+  category    String         // e.g., Whey Isolate, Casein
+  source      String         // e.g., Bovine Milk, Pea/Rice
+  variants    Variant[]
+  createdAt   DateTime       @default(now())
+}
+
+model Variant {
+  id                     String        @id @default(cuid())
+  productId              String
+  product                Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  flavor                 String
+  weightGrams            Float
+  weightLabel            String        // e.g., "2.27 kg (5.0 lbs)"
+  servingsCount          Int
+  proteinGramsPerServing Float
+  offers                 MarketOffer[]
+
+  @@unique([productId, flavor, weightGrams])
+}
+
+model MarketOffer {
+  id          String   @id @default(cuid())
+  variantId   String
+  variant     Variant  @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  retailer    String
+  externalUrl String
+  price       Decimal  @db.Decimal(10, 2)
+  inStock     Boolean  @default(true)
+  shipping    String   // e.g., "Next Day", "$4.99 Standard"
+  lastChecked DateTime @default(now())
+
+  @@index([variantId, price])
+}
+
+```
+
+### 5.2 UI Implementation Component (Next.js / React + Tailwind CSS)
+
+```tsx
+import React, { useState, useMemo } from 'react';
+
+export interface Offer {
+  id: string;
+  retailer: string;
+  price: number;
+  inStock: boolean;
+  shipping: string;
+  verifiedAt: string;
+  url: string;
+}
+
+export interface Variant {
+  id: string;
+  name: string;
+  weight: string;
+  servings: number;
+  proteinPerServing: number;
+  offers: Offer[];
+}
+
+export interface ProductData {
+  sku: string;
+  brand: string;
+  name: string;
+  type: string;
+  source: string;
+  variants: Variant[];
+}
+
+export function ProteinTerminal({ product }: { product: ProductData }) {
+  const [selectedVariantIdx, setSelectedVariantIdx] = useState(0);
+  const [inStockOnly, setInStockOnly] = useState(false);
+  const [sortAsc, setSortAsc] = useState(true);
+
+  const currentVariant = product.variants[selectedVariantIdx];
+
+  const sortedOffers = useMemo(() => {
+    let list = [...currentVariant.offers];
+    if (inStockOnly) list = list.filter((o) => o.inStock);
+    return list.sort((a, b) => (sortAsc ? a.price - b.price : b.price - a.price));
+  }, [currentVariant, inStockOnly, sortAsc]);
+
+  const lowestAsk = useMemo(() => {
+    const stock = currentVariant.offers.filter((o) => o.inStock);
+    return stock.length ? Math.min(...stock.map((o) => o.price)) : null;
+  }, [currentVariant]);
+
+  const calcEfficiency = (price: number) => {
+    const totalPureProtein = currentVariant.servings * currentVariant.proteinPerServing;
+    return totalPureProtein > 0 ? ((price / totalPureProtein) * 100).toFixed(2) : "0.00";
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F8F9FA] text-[#111827] font-sans antialiased">
+      {/* System Status Banner */}
+      <div className="border-b border-[#E5E7EB] bg-white px-6 py-3 flex items-center justify-between text-xs font-mono">
+        <div className="font-bold tracking-tight">INDEX // PROTEIN-FEED-TERMINAL</div>
+        <div className="flex items-center gap-2 text-[#4B5563]">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span>REALTIME FEED: ACTIVE</span>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* Breadcrumb / SKU metadata */}
+        <div className="text-xs font-mono text-[#6B7280] mb-2 uppercase">
+          {product.brand} &gt; {product.sku} &gt; {product.type}
+        </div>
+
+        {/* Header and Quick Stats */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end pb-6 border-b border-[#E5E7EB] gap-4">
+          <div>
+            <h1 className="text-2xl font-black uppercase tracking-tight text-[#111827]">{product.name}</h1>
+            <p className="text-xs font-mono text-[#6B7280] mt-1">Source formulation: {product.source}</p>
+          </div>
+          <div className="bg-white border border-[#E5E7EB] p-3 min-w-[240px]">
+            <div className="text-[10px] font-mono text-[#6B7280] uppercase tracking-wider">Lowest Active Ask</div>
+            <div className="text-2xl font-mono font-bold tracking-tight text-[#111827]">
+              {lowestAsk ? `$${lowestAsk.toFixed(2)}` : "OUT OF STOCK"}
+            </div>
+            {lowestAsk && (
+              <div className="text-[10px] font-mono text-emerald-700 font-semibold">
+                ${calcEfficiency(lowestAsk)} / 100g Pure Protein
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Variant Matrix */}
+        <div className="my-6">
+          <div className="text-xs font-mono font-bold uppercase text-[#374151] mb-2">Variant / Flavor Matrix</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {product.variants.map((v, i) => {
+              const active = selectedVariantIdx === i;
+              const minPrice = Math.min(...v.offers.map((o) => o.price));
+              return (
+                <button
+                  key={v.id}
+                  onClick={() => setSelectedVariantIdx(i)}
+                  className={`text-left p-3 border transition-none font-mono text-xs ${
+                    active ? "bg-[#111827] text-white border-[#111827]" : "bg-white border-[#E5E7EB] text-[#111827] hover:border-[#9CA3AF]"
+                  }`}
+                >
+                  <div className="flex justify-between font-bold">
+                    <span>{v.name}</span>
+                    <span>${minPrice.toFixed(2)}</span>
+                  </div>
+                  <div className={`text-[11px] mt-1 ${active ? "text-gray-300" : "text-[#6B7280]"}`}>
+                    {v.weight} • {v.servings} Servings ({v.proteinPerServing}g/srv)
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Aggregated Listings Table */}
+        <div className="bg-white border border-[#E5E7EB]">
+          <div className="p-3 border-b border-[#E5E7EB] flex justify-between items-center bg-[#FAFAFA] font-mono text-xs">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={inStockOnly}
+                onChange={(e) => setInStockOnly(e.target.checked)}
+                className="rounded-none border-[#D1D5DB]"
+              />
+              Filter In-Stock Only
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="text-[#6B7280]">Sort:</span>
+              <button
+                onClick={() => setSortAsc(!sortAsc)}
+                className="border border-[#D1D5DB] px-2 py-0.5 bg-white font-mono hover:border-[#111827]"
+              >
+                Price: {sortAsc ? "Low → High" : "High → Low"}
+              </button>
+            </div>
+          </div>
+
+          <table className="w-full text-left font-mono text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-[#E5E7EB] bg-[#F9FAFB] text-[#6B7280] uppercase text-[11px]">
+                <th className="p-3 font-semibold">Retailer</th>
+                <th className="p-3 font-semibold">Stock</th>
+                <th className="p-3 font-semibold">Fulfillment</th>
+                <th className="p-3 font-semibold">Cost / 100g Prot</th>
+                <th className="p-3 font-semibold text-right">Price</th>
+                <th className="p-3 font-semibold text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E5E7EB]">
+              {sortedOffers.map((offer) => {
+                const isBest = offer.price === lowestAsk && offer.inStock;
+                return (
+                  <tr key={offer.id} className={`hover:bg-[#F9FAFB] ${!offer.inStock ? "opacity-50" : ""}`}>
+                    <td className="p-3">
+                      <div className="font-bold text-[#111827]">{offer.retailer}</div>
+                      <div className="text-[10px] text-[#9CA3AF]">{offer.verifiedAt}</div>
+                    </td>
+                    <td className="p-3">
+                      {offer.inStock ? (
+                        <span className="text-emerald-700 font-bold">AVAILABLE</span>
+                      ) : (
+                        <span className="text-[#9CA3AF]">OUT OF STOCK</span>
+                      )}
+                    </td>
+                    <td className="p-3 text-[#4B5563]">{offer.shipping}</td>
+                    <td className="p-3 font-bold text-[#111827]">${calcEfficiency(offer.price)}</td>
+                    <td className="p-3 text-right">
+                      <div className="text-sm font-bold text-[#111827]">${offer.price.toFixed(2)}</div>
+                      {isBest && <div className="text-[10px] font-bold text-emerald-600">BEST ASK</div>}
+                    </td>
+                    <td className="p-3 text-right">
+                      <a
+                        href={offer.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`inline-block px-3 py-1.5 font-bold uppercase text-[11px] ${
+                          offer.inStock ? "bg-[#111827] text-white hover:bg-black" : "bg-[#E5E7EB] text-[#9CA3AF] pointer-events-none"
+                        }`}
+                      >
+                        Buy →
+                      </a>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+```
+
+"""
+
+with open("PROTEIN_AGGREGATOR_PRD.md", "w") as f:
+f.write(doc_content)
+print("File written: PROTEIN_AGGREGATOR_PRD.md")
+
+```
+
+```text?code_stdout&code_event_index=1
+File written: PROTEIN_AGGREGATOR_PRD.md
+
+
+```
+
+Your Markdown PRD document file is ready:
+
+
+Below is the complete text in document format ready to copy and paste directly into your AI coding assistant (Cursor, Claude, Copilot, ChatGPT, etc.):
+
+```markdown
+# PRODUCT REQUIREMENTS DOCUMENT (PRD)
+
+**Document Reference:** PRD-AGG-PROT-001  
+**Project Name:** PureSpec (Protein Aggregator & Real-Time Deal Terminal)  
+**Target Agent Role:** Senior Full-Stack Engineer & High-Density UI/UX Designer  
+**Status:** Approved for Implementation  
+
+---
+
+## 1. System Objective & Core Vision
+
+Build a high-density, real-time commodity and retail price aggregator for sports nutrition (specifically whey isolate, whey concentrate, casein, and plant proteins). 
+
+The platform must operate similarly to Sneakopedia, PCPartPicker, or a financial market terminal: instead of functioning as an e-commerce storefront or consumer review blog, it operates as a multi-merchant intelligence matrix mapping SKUs across granular variant attributes (flavor, weight, formulation) and tracking the lowest real-time market ask, unit efficiency (cost per gram of pure protein), and historical retailer stock.
+
+---
+
+## 2. Hard Anti-Patterns ("WHAT SPECIFICALLY NOT TO DO")
+
+*To prevent typical AI generation defaults, the agent must strictly avoid the following patterns:*
+
+
+```
+
+[BANNED PATTERNS: UI/UX & STYLING]
+❌ NO Glassmorphism or backdrop-blur tricks (e.g., bg-white/10 backdrop-blur-md).
+❌ NO Floating bubble/card grids with exaggerated rounded corners (rounded-2xl, rounded-3xl).
+❌ NO Purple-to-blue / neon-pink / rainbow gradient buttons or background blurs.
+❌ NO Oversized decorative hero illustrations, stock 3D renders, or generic marketing fluff.
+❌ NO Low-contrast light grey text on white backgrounds (#9CA3AF on white for body text).
+❌ NO Monotonous star ratings (5 yellow stars), testimonial carousels, or fake urgency countdowns.
+❌ NO Mobile-first jumbo paddings (py-24, p-12) that push actionable data below the fold.
+
+[BANNED PATTERNS: ARCHITECTURE & LOGIC]
+❌ NO Flat product listings: Do not lump different flavors and sizes into a single flat price. (Prices must be mapped to distinct flavor + weight variants).
+❌ NO Missing unit economics: Never display price alone without calculating cost-per-gram of pure protein.
+❌ NO Dead affiliate buttons: Actions must reflect live inventory status (disabled/dimmed when Out of Stock).
+
+```
+
+---
+
+## 3. Mandatory Engineering & Design Directives ("WHAT TO DO & HOW")
+
+### 3.1 Design System & Aesthetic Foundation
+1. **Structural Grid & Border Layout:**
+   - Use strict 1px solid borders (`#E5E7EB` in light mode, `#262626` in dark mode).
+   - Use sharp micro-radii (0px / square or max 2px `rounded-sm`).
+   - Use high-contrast, clean neutral palettes: pure off-white background (`#F8F9FA` or `#0A0A0A`), pitch dark text (`#111827` or `#F9FAFB`).
+2. **Typography & Data Alignment:**
+   - Primary sans-serif for titles: System sans / Inter / Geist (`font-sans`).
+   - Monospaced typography for all data fields: `JetBrains Mono`, `Roboto Mono`, or system monospaced (`font-mono`) for SKUs, prices, nutritional specs, timestamps, and stock status.
+3. **Information Density First:**
+   - Display actionable tabular data within the first screen height (above the fold).
+   - Use compact table rows (`py-2.5` to `py-3`) rather than large individual cards.
+   - Variant selector must emulate an interactive stock matrix (e.g., Sneakopedia size grid), displaying flavor, tub weight, serving count, and minimum ask price per variant tile.
+
+---
+
+## 4. Key Functional Modules
+
+### Module 4.1: Variant Matrix & Selector
+- Users must select variants across two axes: **Flavor** and **Container Size / Weight** (e.g., 2 lbs vs 5 lbs).
+- Each selector button must render:
+  - Variant Name (e.g., "Double Rich Chocolate")
+  - Weight & Total Servings (e.g., "2.27 kg • 73 servings")
+  - Lowest In-Stock Price currently available across all indexed stores.
+
+### Module 4.2: Unit Efficiency Engine (Protein Index)
+- Calculate and prominently display the **Cost per 100g of Pure Protein**:
+  $$\text{Efficiency Ratio} = \frac{\text{Retail Price}}{\text{Servings Count} \times \text{Protein Grams per Serving}} \times 100$$
+- This metric normalizes pricing across brands, fillers, and differing container sizes.
+
+### Module 4.3: Real-Time Merchant Feed Table
+- Renders an indexed table of retailers scraping/streaming offers for the selected SKU variant:
+  - **Merchant Name & Verification Timestamp** (e.g., "NutriCart — Indexed 12m ago")
+  - **Live Inventory Status** (`IN STOCK` with green indicator or `OUT OF STOCK`)
+  - **Fulfillment / Shipping terms** (e.g., "Next Day", "Free Over $50")
+  - **Calculated Unit Cost** ($/100g pure protein)
+  - **Base Price & Lowest Price Badge**
+  - **Direct Affiliation / Deep-Link Action Button** (disabled when out of stock)
+
+---
+
+## 5. Reference Technical Architecture & Implementation
+
+### 5.1 Database Schema (Prisma ORM)
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id          String         @id @default(cuid())
+  sku         String         @unique
+  brand       String
+  title       String
+  category    String         // e.g., Whey Isolate, Casein
+  source      String         // e.g., Bovine Milk, Pea/Rice
+  variants    Variant[]
+  createdAt   DateTime       @default(now())
+}
+
+model Variant {
+  id                     String        @id @default(cuid())
+  productId              String
+  product                Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  flavor                 String
+  weightGrams            Float
+  weightLabel            String        // e.g., "2.27 kg (5.0 lbs)"
+  servingsCount          Int
+  proteinGramsPerServing Float
+  offers                 MarketOffer[]
+
+  @@unique([productId, flavor, weightGrams])
+}
+
+model MarketOffer {
+  id          String   @id @default(cuid())
+  variantId   String
+  variant     Variant  @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  retailer    String
+  externalUrl String
+  price       Decimal  @db.Decimal(10, 2)
+  inStock     Boolean  @default(true)
+  shipping    String   // e.g., "Next Day", "$4.99 Standard"
+  lastChecked DateTime @default(now())
+
+  @@index([variantId, price])
+}
+
+```
+
+### 5.2 UI Implementation Component (Next.js / React + Tailwind CSS)
+
+```tsx
+import React, { useState, useMemo } from 'react';
+
+export interface Offer {
+  id: string;
+  retailer: string;
+  price: number;
+  inStock: boolean;
+  shipping: string;
+  verifiedAt: string;
+  url: string;
+}
+
+export interface Variant {
+  id: string;
+  name: string;
+  weight: string;
+  servings: number;
+  proteinPerServing: number;
+  offers: Offer[];
+}
+
+export interface ProductData {
+  sku: string;
+  brand: string;
+  name: string;
+  type: string;
+  source: string;
+  variants: Variant[];
+}
+
+export function ProteinTerminal({ product }: { product: ProductData }) {
+  const [selectedVariantIdx, setSelectedVariantIdx] = useState(0);
+  const [inStockOnly, setInStockOnly] = useState(false);
+  const [sortAsc, setSortAsc] = useState(true);
+
+  const currentVariant = product.variants[selectedVariantIdx];
+
+  const sortedOffers = useMemo(() => {
+    let list = [...currentVariant.offers];
+    if (inStockOnly) list = list.filter((o) => o.inStock);
+    return list.sort((a, b) => (sortAsc ? a.price - b.price : b.price - a.price));
+  }, [currentVariant, inStockOnly, sortAsc]);
+
+  const lowestAsk = useMemo(() => {
+    const stock = currentVariant.offers.filter((o) => o.inStock);
+    return stock.length ? Math.min(...stock.map((o) => o.price)) : null;
+  }, [currentVariant]);
+
+  const calcEfficiency = (price: number) => {
+    const totalPureProtein = currentVariant.servings * currentVariant.proteinPerServing;
+    return totalPureProtein > 0 ? ((price / totalPureProtein) * 100).toFixed(2) : "0.00";
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F8F9FA] text-[#111827] font-sans antialiased">
+      {/* System Status Banner */}
+      <div className="border-b border-[#E5E7EB] bg-white px-6 py-3 flex items-center justify-between text-xs font-mono">
+        <div className="font-bold tracking-tight">INDEX // PROTEIN-FEED-TERMINAL</div>
+        <div className="flex items-center gap-2 text-[#4B5563]">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span>REALTIME FEED: ACTIVE</span>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* Breadcrumb / SKU metadata */}
+        <div className="text-xs font-mono text-[#6B7280] mb-2 uppercase">
+          {product.brand} &gt; {product.sku} &gt; {product.type}
+        </div>
+
+        {/* Header and Quick Stats */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end pb-6 border-b border-[#E5E7EB] gap-4">
+          <div>
+            <h1 className="text-2xl font-black uppercase tracking-tight text-[#111827]">{product.name}</h1>
+            <p className="text-xs font-mono text-[#6B7280] mt-1">Source formulation: {product.source}</p>
+          </div>
+          <div className="bg-white border border-[#E5E7EB] p-3 min-w-[240px]">
+            <div className="text-[10px] font-mono text-[#6B7280] uppercase tracking-wider">Lowest Active Ask</div>
+            <div className="text-2xl font-mono font-bold tracking-tight text-[#111827]">
+              {lowestAsk ? `$${lowestAsk.toFixed(2)}` : "OUT OF STOCK"}
+            </div>
+            {lowestAsk && (
+              <div className="text-[10px] font-mono text-emerald-700 font-semibold">
+                ${calcEfficiency(lowestAsk)} / 100g Pure Protein
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Variant Matrix */}
+        <div className="my-6">
+          <div className="text-xs font-mono font-bold uppercase text-[#374151] mb-2">Variant / Flavor Matrix</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {product.variants.map((v, i) => {
+              const active = selectedVariantIdx === i;
+              const minPrice = Math.min(...v.offers.map((o) => o.price));
+              return (
+                <button
+                  key={v.id}
+                  onClick={() => setSelectedVariantIdx(i)}
+                  className={`text-left p-3 border transition-none font-mono text-xs ${
+                    active ? "bg-[#111827] text-white border-[#111827]" : "bg-white border-[#E5E7EB] text-[#111827] hover:border-[#9CA3AF]"
+                  }`}
+                >
+                  <div className="flex justify-between font-bold">
+                    <span>{v.name}</span>
+                    <span>${minPrice.toFixed(2)}</span>
+                  </div>
+                  <div className={`text-[11px] mt-1 ${active ? "text-gray-300" : "text-[#6B7280]"}`}>
+                    {v.weight} • {v.servings} Servings ({v.proteinPerServing}g/srv)
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Aggregated Listings Table */}
+        <div className="bg-white border border-[#E5E7EB]">
+          <div className="p-3 border-b border-[#E5E7EB] flex justify-between items-center bg-[#FAFAFA] font-mono text-xs">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={inStockOnly}
+                onChange={(e) => setInStockOnly(e.target.checked)}
+                className="rounded-none border-[#D1D5DB]"
+              />
+              Filter In-Stock Only
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="text-[#6B7280]">Sort:</span>
+              <button
+                onClick={() => setSortAsc(!sortAsc)}
+                className="border border-[#D1D5DB] px-2 py-0.5 bg-white font-mono hover:border-[#111827]"
+              >
+                Price: {sortAsc ? "Low → High" : "High → Low"}
+              </button>
+            </div>
+          </div>
+
+          <table className="w-full text-left font-mono text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-[#E5E7EB] bg-[#F9FAFB] text-[#6B7280] uppercase text-[11px]">
+                <th className="p-3 font-semibold">Retailer</th>
+                <th className="p-3 font-semibold">Stock</th>
+                <th className="p-3 font-semibold">Fulfillment</th>
+                <th className="p-3 font-semibold">Cost / 100g Prot</th>
+                <th className="p-3 font-semibold text-right">Price</th>
+                <th className="p-3 font-semibold text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E5E7EB]">
+              {sortedOffers.map((offer) => {
+                const isBest = offer.price === lowestAsk && offer.inStock;
+                return (
+                  <tr key={offer.id} className={`hover:bg-[#F9FAFB] ${!offer.inStock ? "opacity-50" : ""}`}>
+                    <td className="p-3">
+                      <div className="font-bold text-[#111827]">{offer.retailer}</div>
+                      <div className="text-[10px] text-[#9CA3AF]">{offer.verifiedAt}</div>
+                    </td>
+                    <td className="p-3">
+                      {offer.inStock ? (
+                        <span className="text-emerald-700 font-bold">AVAILABLE</span>
+                      ) : (
+                        <span className="text-[#9CA3AF]">OUT OF STOCK</span>
+                      )}
+                    </td>
+                    <td className="p-3 text-[#4B5563]">{offer.shipping}</td>
+                    <td className="p-3 font-bold text-[#111827]">${calcEfficiency(offer.price)}</td>
+                    <td className="p-3 text-right">
+                      <div className="text-sm font-bold text-[#111827]">${offer.price.toFixed(2)}</div>
+                      {isBest && <div className="text-[10px] font-bold text-emerald-600">BEST ASK</div>}
+                    </td>
+                    <td className="p-3 text-right">
+                      <a
+                        href={offer.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`inline-block px-3 py-1.5 font-bold uppercase text-[11px] ${
+                          offer.inStock ? "bg-[#111827] text-white hover:bg-black" : "bg-[#E5E7EB] text-[#9CA3AF] pointer-events-none"
+                        }`}
+                      >
+                        Buy →
+                      </a>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+```
+
+```
+
+```
+Here is the formal PRD specification for the new Consumer Protection & Market Intelligence layer. It is formatted to perfectly match the existing `SPEC-PROTEINDEX-V2-AUTONOMOUS` document.
+
+You can append this directly as **Section 9** into your `proteindex-master-prd.md` file in the Antigravity workspace.
+
+---
+
+## 9. CONSUMER PROTECTION & MARKET INTELLIGENCE LAYER
+
+**Objective:** Evolve the platform from a price aggregator into a defensive intelligence terminal. The system MUST algorithmically detect formulation deception, bot manipulation, counterfeit risks, and extreme pricing arbitrage to protect consumer health and budgets.
+
+### 9.1 Proprietary Blend Exposer (Fairy-Dusting Detection)
+
+* **File Path:** `src/analytics/ingredient_auditor.py`
+* **Execution Paradigm:** NLP-based sequence evaluation governed by FSSAI descending-weight mandates.
+* **Algorithmic Procedure:**
+1. Ingest comma-separated raw ingredient string from OCR or scraped HTML payload.
+2. Normalize string (lowercase, strip brackets).
+3. Map array indices of predefined `FILLERS` (maltodextrin, taurine) and premium `ACTIVES` (citrulline, whey isolate).
+4. **Evaluation Rule:** If `Index(FILLER) < Index(ACTIVE)`, flag `is_fairy_dusted = True`.
+5. Compute `trust_score` deduction ($-$15 points per unique violation).
+
+
+* **Agent Directive:** Bind output to `products.trust_score` and expose violation strings in the Next.js Due Diligence modal.
+
+### 9.2 Near-Expiry Clearance Arbitrage
+
+* **File Path:** `src/analytics/expiry_arbitrage.py`
+* **Execution Paradigm:** Temporal consumption forecasting vs. expiration delta.
+* **Algorithmic Procedure:**
+1. Parse `expiry_date` from e-pharmacy DOM (e.g., Tata 1mg, Apollo).
+2. Calculate `months_to_expiry` relative to current system time.
+3. Calculate `months_to_finish` = `(total_servings / user_scoops_per_day) / 30`.
+4. **Evaluation Rule:** Define `is_safe_for_consumption` ONLY IF `months_to_expiry > (months_to_finish + 1.0)` (enforcing a strict 1-month safety buffer).
+5. Define `is_clearance` IF discount > 25% AND `months_to_expiry` $\le$ 5.
+
+
+* **Agent Directive:** Build a dedicated `/clearance` API route and Next.js frontend feed that surfaces ONLY items passing the `is_safe_for_consumption` check.
+
+### 9.3 Review Authenticity Engine (Bot-Filtering)
+
+* **File Path:** `src/vision/review_authenticity.py`
+* **Execution Paradigm:** Lexical Jaccard Similarity and Temporal Clustering.
+* **Algorithmic Procedure:**
+1. Siphon the most recent 100 5-star reviews for a given SKU.
+2. **Cluster Audit:** Traverse sorted timestamps. If $\ge$ 5 reviews occur within a $\le$ 24-hour delta window, increment `temporal_cluster_flags`.
+3. **Lexical Audit:** Execute pairwise Jaccard similarity comparison across all 5-star texts. If overlap > 0.65 (65% identical words), increment `copy_paste_flags`.
+4. **Penalty Formula:** `Authenticity Score = 100 - (clusters * 10) - (copy_pastes * 5)`.
+
+
+* **Agent Directive:** Render the `Authenticity Score` as a progress bar component on the UI. If score < 60, aggressively overlay a `High Bot Risk` warning.
+
+### 9.4 Marketplace Seller Trust Matrix
+
+* **File Path:** `src/pipeline/seller_matrix.py`
+* **Database Requirement:** Query against `seller_trust_registry` whitelist table.
+* **Algorithmic Procedure:**
+1. Scrape `sold_by` DOM node from third-party marketplaces (Amazon, Flipkart).
+2. Normalize seller string and cross-reference against static `AUTHORIZED_DISTRIBUTORS` array (e.g., Cocoblu, SuperComNet) OR verify direct brand storefront naming.
+3. **Evaluation Rule:** If match fails, mutate `price_listings.is_authorized_seller` to `False`.
+
+
+* **Agent Directive:** UI MUST visually segregate unauthorized sellers. If an unauthorized seller holds the lowest price, the frontend MUST NOT use it for the primary "Lowest Price" badge; it must default to the lowest *authorized* price.
+
+### 9.5 Independent Lab Scorecard (NABL Integration)
+
+* **File Path:** `src/compliance/lab_auditor.py`
+* **Database Requirement:** Query against `independent_lab_tests` table.
+* **Algorithmic Procedure:**
+1. Calculate Protein Variance: `((lab_yield - label_yield) / label_yield) * 100`.
+2. Check against FSSAI maximum thresholds: Lead (Pb) $\le$ 2.5 mg/kg, Arsenic (As) $\le$ 1.1 mg/kg.
+3. **Evaluation Rule:** `passed_audit = True` IF variance $\ge -5.0\%$ AND heavy metals $\le$ thresholds.
+
+
+* **Agent Directive:** Display a prominent `🛡️ 3rd-Party Lab Verified` Gold Shield in the UI for passing products, and a hyperlink to the raw PDF `report_url`.
+
+### 9.6 Glitch Price Webhook Engine (Extreme Arbitrage)
+
+* **File Path:** `src/notifications/webhook_engine.py`
+* **Integration:** Discord / Telegram Webhook API.
+* **Algorithmic Procedure:**
+1. On every price insertion, query PostgreSQL for the 90-day moving average of `current_price_inr` for that specific `variant_id`.
+2. Calculate discount delta from the moving average.
+3. **Evaluation Rule:** If delta > 30% AND `is_authorized_seller == True`, generate a Markdown-formatted alert payload.
+4. Dispatch POST request to Webhook endpoint containing product name, flash price, normal price, and outbound affiliate URL.
+
+
+* **Agent Directive:** Execute webhook asynchronously to prevent blocking the main ingestion pipeline thread.
+
+---
+
+### Updated Execution Handshake for Agent
+
+* **Phase 6 (New):** Deploy `Seller Trust Matrix` and `Review Authenticity Engine`. These must run concurrently with the Scraper Ingestion Phase (Phase 2).
+* **Phase 7 (New):** Deploy `Glitch Price Webhook`. Bind to Supabase database triggers or Edge Functions that listen for `INSERT` events on the `price_listings` table.

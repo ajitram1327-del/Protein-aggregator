@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+:root {
+  --background: #F8F8F8;
+  --foreground: #575757;
+  
+  --accent-orange: #FB991C;
+  --image-bg: #F6DAB0;
+  --btn-blue-bg: #EFF6FF;
+  --btn-blue-text: #1C7690;
+  
+  --text-heading: #022539;
+  --text-muted: #C9C9C9;
+  --border-muted: #E2E2E2;
+  
+  --card-bg: #FFFFFF;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Inter, system-ui, sans-serif;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 20s linear infinite;
+}
