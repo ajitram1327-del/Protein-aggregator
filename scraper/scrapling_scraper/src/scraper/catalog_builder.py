@@ -12,7 +12,36 @@ from rapidfuzz import process, fuzz
 load_dotenv(dotenv_path="../.env")
 
 supabase = create_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY"))
-kimi_client = AsyncOpenAI(api_key=os.environ.get("MOONSHOT_API_KEY"), base_url="https://api.moonshot.cn/v1")
+
+from google import genai
+from google.genai import types
+
+gemini_native_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+
+# API Rotation Setup
+providers = [
+    {
+        "name": "HF_Hermes",
+        "client": AsyncOpenAI(api_key=os.environ.get("HF_API_KEY"), base_url="https://api-inference.huggingface.co/v1/"),
+        "model": "NousResearch/Hermes-3-Llama-3.1-8B"
+    },
+    {
+        "name": "HF_Qwen",
+        "client": AsyncOpenAI(api_key=os.environ.get("HF_API_KEY"), base_url="https://api-inference.huggingface.co/v1/"),
+        "model": "Qwen/Qwen2.5-72B-Instruct"
+    },
+    {
+        "name": "HF_Llama",
+        "client": AsyncOpenAI(api_key=os.environ.get("HF_API_KEY"), base_url="https://api-inference.huggingface.co/v1/"),
+        "model": "meta-llama/Meta-Llama-3.1-8B-Instruct"
+    },
+    {
+        "name": "Gemini",
+        "client": gemini_native_client,
+        "model": "gemini-3.8-flash"
+    }
+]
+current_provider_idx = 0
 
 # --- SETUP DICTIONARIES & PARSERS ---
 brand_processor = KeywordProcessor(case_sensitive=False)
@@ -79,37 +108,9 @@ Separate the flavor and weight from the clean_name. Do not merge Isolate and Con
 Input:
 """
 
-async def resolve_llm_batch(batch_records):
-    print(f"  [LLM] Firing Kimi for a batch of {len(batch_records)} items...")
-    input_data = [{"id": r[0], "raw": r[1]} for r in batch_records]
-    try:
-        response = await kimi_client.chat.completions.create(
-            model="moonshot-v1-8k",
-            messages=[
-                {"role": "system", "content": PROMPT},
-                {"role": "user", "content": json.dumps(input_data)}
-            ],
-            response_format={"type": "json_object"},
-            temperature=0.1
-        )
-        content = response.choices[0].message.content
-        # Kimi might return {"results": [...]} or just [...] depending on formatting, let's aggressively parse array
-        import re
-        match = re.search(r'\[.*\]', content, re.DOTALL)
-        if match:
-            return json.loads(match.group(0))
-        # fallback if it's an object containing an array
-        parsed = json.loads(content)
-        for val in parsed.values():
-            if isinstance(val, list): return val
-        return []
-    except Exception as e:
-        print(f"  [!] LLM Batch Failed: {e}")
-        return []
-
 async def process_queue():
     print("Fetching unmatched raw products (Sorted by Title)...")
-    res = supabase.table("unmatched_products").select("*").order("scraped_title").limit(500).execute()
+    res = supabase.table("unmatched_products").select("*").order("scraped_title").limit(1000).execute()
     
     if not res.data:
         print("No unmatched products left!")
@@ -117,34 +118,33 @@ async def process_queue():
         
     print(f"Found {len(res.data)} raw listings in this batch.")
     
-    # We will build a list of processed results
-    processed_items = [] # list of dicts: id, raw_row, clean_name, brand, flavor, weight_g, category
-    unresolved_buffer = []
+    processed_items = [] 
+    unresolved_count = 0
     
-    TITLE_CACHE = {} # in-memory cache for this run
+    TITLE_CACHE = {} 
     
     for row in res.data:
         row_id = row["id"]
         dirty_title = row.get("scraped_title", "")
         scraped_brand = row.get("scraped_brand", "")
         
-        # 1. Deterministic Extraction
-        brand, flavor, weight_g = extract_local(dirty_title)
+        # 1. Deterministic Extraction (Flashtext)
+        brand_match, flavor, weight_g = extract_local(dirty_title)
+        brand = brand_match if brand_match else scraped_brand
         
         if brand and weight_g is not None:
-            # We have enough to assume a clean name (Brand + regex stripped)
-            # Just use the dirty title minus the weight/flavor as base name
-            # Or default to scraped_brand if brand is none
-            clean_name = brand if brand else scraped_brand
+            clean_name = brand
             processed_items.append({
                 "id": row_id, "row": row, "clean_name": clean_name, "brand": brand, 
                 "flavor": flavor, "weight_g": weight_g, "category": "protein"
             })
+            # Add to cache to help future fuzzy matches
+            TITLE_CACHE[dirty_title] = {"clean_name": clean_name, "flavor": flavor, "weight_g": weight_g, "category": "protein"}
             continue
             
-        # 2. Fuzzy Cache
+        # 2. Fuzzy Cache (RapidFuzz)
         if TITLE_CACHE:
-            match = process.extractOne(dirty_title, TITLE_CACHE.keys(), scorer=fuzz.ratio, score_cutoff=95)
+            match = process.extractOne(dirty_title, TITLE_CACHE.keys(), scorer=fuzz.ratio, score_cutoff=90)
             if match:
                 cached = TITLE_CACHE[match[0]]
                 processed_items.append({
@@ -154,43 +154,15 @@ async def process_queue():
                 })
                 continue
                 
-        # 3. Queue for LLM Batch
-        unresolved_buffer.append((row_id, dirty_title, row, scraped_brand))
+        # 3. No Match -> Skip
+        unresolved_count += 1
         
-        if len(unresolved_buffer) >= 20: # batch size
-            results = await resolve_llm_batch([(u[0], u[1]) for u in unresolved_buffer])
-            for res_obj in results:
-                # Find matching row in unresolved_buffer
-                match_u = next((u for u in unresolved_buffer if u[0] == res_obj.get("id")), None)
-                if match_u:
-                    processed_items.append({
-                        "id": match_u[0], "row": match_u[2], 
-                        "clean_name": res_obj.get("clean_name", match_u[1][:30]),
-                        "brand": match_u[3],
-                        "flavor": res_obj.get("flavor", ""),
-                        "weight_g": res_obj.get("weight_g", 0) or 0,
-                        "category": res_obj.get("category", "other")
-                    })
-                    # Update cache
-                    TITLE_CACHE[match_u[1]] = res_obj
-            unresolved_buffer.clear()
-            
-    # Flush remaining
-    if unresolved_buffer:
-        results = await resolve_llm_batch([(u[0], u[1]) for u in unresolved_buffer])
-        for res_obj in results:
-            match_u = next((u for u in unresolved_buffer if u[0] == res_obj.get("id")), None)
-            if match_u:
-                processed_items.append({
-                    "id": match_u[0], "row": match_u[2], 
-                    "clean_name": res_obj.get("clean_name", match_u[1][:30]),
-                    "brand": match_u[3],
-                    "flavor": res_obj.get("flavor", ""),
-                    "weight_g": res_obj.get("weight_g", 0) or 0,
-                    "category": res_obj.get("category", "other")
-                })
-                TITLE_CACHE[match_u[1]] = res_obj
-        unresolved_buffer.clear()
+    print(f"  -> Deterministically resolved: {len(processed_items)}")
+    print(f"  -> Skipped (requires AI): {unresolved_count}")
+
+    if not processed_items:
+        print("No items could be resolved without an LLM in this batch. Engine halted.")
+        return False
 
     # --- SUPABASE INSERTS ---
     for item in processed_items:
