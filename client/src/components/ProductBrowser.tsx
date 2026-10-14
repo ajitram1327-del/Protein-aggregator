@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo } from 'react';
 import { ShoppingCart } from 'lucide-react';
@@ -141,6 +141,13 @@ export function ProductBrowser({ initialProducts }: { initialProducts: GroupedPr
             <span className="text-[var(--accent-green)]">PROTE</span>INDEX
           </div>
           <div className="flex items-center gap-4">
+            <a
+              href="/scraper"
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 transition-all flex items-center gap-1.5"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Scraper Engine
+            </a>
           </div>
         </div>
       </nav>

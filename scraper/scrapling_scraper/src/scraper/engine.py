@@ -1,7 +1,12 @@
 """
-Scrapling-powered OMNI-CHANNEL scraper (14 Platforms)
-Excludes Quick-Commerce. Covers Horizontal, Specialized Fitness, E-Pharmacy, Lifestyle, and D2C.
-Stores everything in Supabase `price_listings`.
+ProteIndex Engine: Autonomous Scraping & Data Pipeline Infrastructure
+Integrates:
+- Lane 1: Shopify D2C JSON Fast-Track (/products.json?limit=250) for sub-second SKU ingestion
+- Lane 2: ResilientStealthFetcher (curl_cffi chrome124 TLS/HTTP2) with 4-Tier Extractor
+- Strict MasterCatalogMatcher with formulation category locks and +-3% weight tolerances
+- One-Time Nutrition Label Vision Locking (Gemini Flash Vision)
+- PRD v3 Scientific Analytics (Equalizer DIAAS, IngredientAuditor, SellerMatrix, ReviewAuthenticity)
+- In-place price_listings updates with database delta audit triggers
 """
 
 import os
@@ -10,535 +15,449 @@ import json
 import re
 import asyncio
 import logging
-import traceback
+from typing import Dict, Any, List, Optional
 from dotenv import load_dotenv
-from supabase import create_client
-import sys
-import os
+from supabase import create_client, Client
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from src.analytics.equalizer import EqualizerEngine
 from src.analytics.ingredient_auditor import IngredientAuditor
 from src.vision.review_authenticity import ReviewAuthenticityEngine
+from src.vision.label_auditor import VisionLabelAuditor
 from src.pipeline.seller_matrix import SellerMatrix
 from src.pipeline.normalizer import VariantNormalizer
-from src.pipeline.matcher import VariantMatcher, insert_unmatched_product
-from supabase import Client
-from scrapling.fetchers import StealthyFetcher
-
-import random
-import requests
+from src.pipeline.extractor import MultiLevelExtractor
+from src.pipeline.matcher import MasterCatalogMatcher, insert_quarantine_product
+from src.scraper.fetcher import ResilientStealthFetcher
 
 # --- Logging & Environment Configuration ---
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler("scraper_production.log"),
+        logging.FileHandler("scraper_production.log", encoding="utf-8"),
         logging.StreamHandler()
     ]
 )
-logger = logging.getLogger("OmniScraper")
+logger = logging.getLogger("ProteIndexEngine")
 
-# Load environment configuration from both local and root .env
-load_dotenv(dotenv_path="../.env")
-load_dotenv()
-
-def get_proxy_pool() -> list:
-    """
-    Resolves proxy pool adhering to PRD Section 7 (Rotating Indian Residential Proxies).
-    1. Checks environment variables (ROTATING_PROXY_URL, PROXY_URL, PROXIES_LIST).
-    2. Respects DISABLE_FREE_PROXIES flag.
-    3. Falls back to free public proxies from sslproxies.org with a 5s timeout.
-    """
-    env_proxies = (
-        os.environ.get("ROTATING_PROXY_URL")
-        or os.environ.get("PROXY_URL")
-        or os.environ.get("PROXIES_LIST")
-        or os.environ.get("PROXIES")
-    )
-    if env_proxies:
-        proxies = [p.strip() for p in env_proxies.split(",") if p.strip()]
-        if proxies:
-            logger.info(f"Loaded {len(proxies)} residential/custom proxies from environment configuration.")
-            return proxies
-
-    if os.environ.get("DISABLE_FREE_PROXIES", "").lower() in ("1", "true", "yes"):
-        logger.info("Free proxy rotation disabled via DISABLE_FREE_PROXIES.")
-        return []
-
-    try:
-        logger.info("Fetching free IP proxies from sslproxies.org...")
-        res = requests.get('https://www.sslproxies.org/', timeout=5)
-        proxies = []
-        for match in re.finditer(r"<tr><td>(\d{1,3}(?:\.\d{1,3}){3})</td><td>(\d+)</td>", res.text):
-            proxies.append(f"http://{match.group(1)}:{match.group(2)}")
-        logger.info(f"Loaded {len(proxies)} free proxies for IP rotation.")
-        return proxies
-    except Exception as e:
-        logger.warning(f"Could not load free proxies from sslproxies.org: {e}")
-        return []
-
-PROXY_POOL = get_proxy_pool()
-CONCURRENCY_LIMIT = asyncio.Semaphore(3)  # Max 3 concurrent requests
+# Robust .env loading for CLI, background jobs, and API workers
+possible_envs = [
+    os.path.join(os.path.dirname(__file__), '..', '..', '..', '.env'),
+    os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'scraper', '.env'),
+    os.path.join(os.getcwd(), 'scraper', '.env'),
+    os.path.join(os.getcwd(), '.env'),
+    ".env",
+    "../.env"
+]
+for p in possible_envs:
+    if os.path.exists(p):
+        load_dotenv(p)
 
 supabase_url = os.environ.get("SUPABASE_URL", "")
-supabase_key = os.environ.get("SUPABASE_KEY", "")
-supabase = create_client(supabase_url, supabase_key) if supabase_url and supabase_key else None
+supabase_key = os.environ.get("SUPABASE_KEY") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+supabase: Optional[Client] = create_client(supabase_url, supabase_key) if supabase_url and supabase_key else None
 
-BRANDS = [
-    {"brand": "Optimum Nutrition (ON)", "d2c": None, "hk": None}, {"brand": "MuscleTech", "d2c": None, "hk": None},
-    {"brand": "Dymatize", "d2c": None, "hk": None}, {"brand": "BSN", "d2c": None, "hk": None},
-    {"brand": "Isopure", "d2c": None, "hk": None}, {"brand": "Cellucor", "d2c": None, "hk": None},
-    {"brand": "Nutrex", "d2c": None, "hk": None}, {"brand": "MusclePharm", "d2c": None, "hk": None},
-    {"brand": "Universal / Animal", "d2c": None, "hk": None}, {"brand": "Ultimate Nutrition", "d2c": None, "hk": None},
-    {"brand": "Rule 1", "d2c": None, "hk": None}, {"brand": "Labrada", "d2c": None, "hk": None},
-    {"brand": "Scitec Nutrition", "d2c": None, "hk": None}, {"brand": "Olimp", "d2c": None, "hk": None},
-    {"brand": "Applied Nutrition", "d2c": None, "hk": None}, {"brand": "PhD Nutrition", "d2c": None, "hk": None},
-    {"brand": "Gaspari", "d2c": None, "hk": None}, {"brand": "Redcon1", "d2c": None, "hk": None},
-    {"brand": "Ghost", "d2c": None, "hk": None}, {"brand": "Kaged", "d2c": None, "hk": None},
-    {"brand": "Bucked Up", "d2c": None, "hk": None}, {"brand": "Six Star", "d2c": None, "hk": None},
-    {"brand": "Muscle Milk", "d2c": None, "hk": None}, {"brand": "Orgain", "d2c": None, "hk": None},
-    {"brand": "Garden of Life", "d2c": None, "hk": None}, {"brand": "NOW Sports", "d2c": None, "hk": None},
-    {"brand": "Allmax", "d2c": None, "hk": None}, {"brand": "Beast Sports Nutrition", "d2c": None, "hk": None},
-    {"brand": "Body Fortress", "d2c": None, "hk": None}, {"brand": "Evlution Nutrition (EVL)", "d2c": None, "hk": None},
-    {"brand": "JNX Sports", "d2c": None, "hk": None}, {"brand": "Legion Athletics", "d2c": None, "hk": None},
-    {"brand": "Mutant", "d2c": None, "hk": None}, {"brand": "Naked Nutrition", "d2c": None, "hk": None},
-    {"brand": "Nutrabolics", "d2c": None, "hk": None}, {"brand": "Nutricost", "d2c": None, "hk": None},
-    {"brand": "ProSupps", "d2c": None, "hk": None}, {"brand": "Sunwarrior", "d2c": None, "hk": None},
-    {"brand": "Transparent Labs", "d2c": None, "hk": None}, {"brand": "Vega", "d2c": None, "hk": None},
-    {"brand": "Scivation / Xtend", "d2c": None, "hk": None}, {"brand": "GAT Sport", "d2c": None, "hk": None},
-    {"brand": "Insane Labz", "d2c": None, "hk": None}, {"brand": "Kevin Levrone Signature", "d2c": None, "hk": None},
-    {"brand": "Ronnie Coleman Signature", "d2c": None, "hk": None}, {"brand": "MuscleBlaze", "d2c": None, "hk": None},
-    {"brand": "Avvatar", "d2c": None, "hk": None}, {"brand": "AS-IT-IS Nutrition", "d2c": None, "hk": None},
-    {"brand": "Nakpro", "d2c": None, "hk": None}, {"brand": "Fast&Up", "d2c": None, "hk": None},
-    {"brand": "Wellcore", "d2c": None, "hk": None}, {"brand": "Big Muscles Nutrition", "d2c": None, "hk": None},
-    {"brand": "Scitron", "d2c": None, "hk": None}, {"brand": "Repfuel Sports", "d2c": None, "hk": None},
-    {"brand": "Nutrabox", "d2c": None, "hk": None}, {"brand": "GNC India", "d2c": None, "hk": None},
-    {"brand": "Myprotein India", "d2c": None, "hk": None}, {"brand": "Pintola", "d2c": None, "hk": None},
-    {"brand": "Alpino", "d2c": None, "hk": None}, {"brand": "MyFitness", "d2c": None, "hk": None},
-    {"brand": "Yogabar", "d2c": None, "hk": None}, {"brand": "RiteBite Max Protein", "d2c": None, "hk": None},
-    {"brand": "SuperYou", "d2c": None, "hk": None}, {"brand": "The Whole Truth Foods", "d2c": None, "hk": None},
-    {"brand": "Phab", "d2c": None, "hk": None}, {"brand": "NutroActive", "d2c": None, "hk": None},
-    {"brand": "Ketofy / Lo! Foods", "d2c": None, "hk": None}, {"brand": "True Elements", "d2c": None, "hk": None},
-    {"brand": "Boldfit", "d2c": None, "hk": None}, {"brand": "Carbamide Forte", "d2c": None, "hk": None},
-    {"brand": "HealthyHey Nutrition", "d2c": None, "hk": None}, {"brand": "Kapiva", "d2c": None, "hk": None},
-    {"brand": "Upakarma Ayurveda", "d2c": None, "hk": None}, {"brand": "Neuherbs", "d2c": None, "hk": None},
-    {"brand": "Man Matters", "d2c": None, "hk": None}, {"brand": "Zingavita", "d2c": None, "hk": None},
-    {"brand": "TrueBasics", "d2c": None, "hk": None}, {"brand": "Cosmix", "d2c": None, "hk": None},
-    {"brand": "Plix Life", "d2c": None, "hk": None}, {"brand": "OZiva", "d2c": None, "hk": None},
-    {"brand": "Naturaltein / Beast Life", "d2c": None, "hk": None}
+gemini_key = os.environ.get("GEMINI_API_KEY", "")
+label_auditor = VisionLabelAuditor(api_key=gemini_key) if gemini_key else None
+
+# 1. Registered D2C Shopify supplement storefronts (Lane 1)
+D2C_SHOPIFY_REGISTRY = [
+    {"brand": "AS-IT-IS Nutrition", "domain": "asitisnutrition.com"},
+    {"brand": "Nakpro", "domain": "nakpro.com"},
+    {"brand": "Fast&Up", "domain": "fastandup.in"},
+    {"brand": "The Whole Truth", "domain": "thewholetruthfoods.com"},
+    {"brand": "Scitron", "domain": "scitron.com"},
+    {"brand": "Avvatar", "domain": "avvatarindia.com"},
 ]
 
-
-DEFAULT_SELECTORS = {
-    "card": ".product-card, .grid-view-item, .product-item, .item, li.grid__item, .product-block",
-    "title": ".product-title, .grid-view-item__title, h2, h3, .product-name",
-    "price": ".price-item--sale, .price-item--regular, .price, .money, .product-price"
-}
-
-SITES_CONFIG = {
-    "Amazon": {
-        "search_url": "https://www.amazon.in/s?k={query}",
-        "selectors": {
-            "card": "div[data-component-type='s-search-result']",
-            "title": "h2 span",
-            "price": "span.a-price-whole"
-        }
+# 2. Key marketplace platforms (Lane 2)
+MARKETPLACE_TARGETS = [
+    {
+        "platform": "HealthKart",
+        "url_template": "https://www.healthkart.com/search?query={query}",
+        "card_selector": ".variant-inner-content, .product-card",
+        "title_selector": "a.block, h3",
+        "price_selector": ".variant-price, .price",
+        "queries": ["Optimum Nutrition whey", "MuscleBlaze whey", "Dymatize ISO 100", "Avvatar whey", "Nakpro whey"]
     },
-    "Flipkart": {
-        "search_url": "https://www.flipkart.com/search?q={query}",
-        "selectors": {
-            "card": "div._1AtVbE, div.slAVV4, div.c3e8SH",
-            "title": "a.IRpwTa, a.s1Q9rs, a.WKTcLC",
-            "price": "div._30jeq3, div.Nx9bqj"
-        }
-    },
-    "HealthKart": {
-        "search_url": "https://www.healthkart.com/search?query={query}",
-        "selectors": {
-            "card": ".variant-inner-content, .product-card",
-            "title": "a.block, h3",
-            "price": ".variant-price, .price"
-        }
-    },
-    "Nutrabay_Mkt": {
-        "search_url": "https://nutrabay.com/search?type=product&q={query}",
-        "selectors": DEFAULT_SELECTORS
-    },
-    "HyugaLife": {
-        "search_url": "https://hyugalife.com/search?q={query}",
-        "selectors": DEFAULT_SELECTORS
-    },
-    "Nutriride": {
-        "search_url": "https://nutriride.com/search?q={query}",
-        "selectors": DEFAULT_SELECTORS
-    },
-    "Tata 1mg": {
-        "search_url": "https://www.1mg.com/search/all?name={query}",
-        "selectors": DEFAULT_SELECTORS
-    },
-    "PharmEasy": {
-        "search_url": "https://pharmeasy.in/search/all?name={query}",
-        "selectors": DEFAULT_SELECTORS
-    },
-    "Netmeds": {
-        "search_url": "https://www.netmeds.com/catalogsearch/result/{query}/all",
-        "selectors": DEFAULT_SELECTORS
-    },
-    "JioMart": {
-        "search_url": "https://www.jiomart.com/search/{query}",
-        "selectors": DEFAULT_SELECTORS
-    },
-    "Nykaa": {
-        "search_url": "https://www.nykaa.com/search/result/?q={query}",
-        "selectors": DEFAULT_SELECTORS
-    },
-    "Apollo": {
-        "search_url": "https://www.apollopharmacy.in/search-medicines/{query}",
-        "selectors": DEFAULT_SELECTORS
-    },
-    "myproteinindia": {
-        "search_url": "https://www.myprotein.co.in/elysium.search?search={query}",
-        "selectors": DEFAULT_SELECTORS
+    {
+        "platform": "Nutrabay",
+        "url_template": "https://nutrabay.com/search?type=product&q={query}",
+        "card_selector": ".product-card, .grid__item, .product-item",
+        "title_selector": ".product-card__title, .card__heading, h2, h3, a.full-unstyled-link",
+        "price_selector": ".price-item--sale, .price-item--regular, .price",
+        "queries": ["Optimum Nutrition", "MuscleTech", "Dymatize", "MuscleBlaze", "AS-IT-IS"]
     }
-}
-
-NEW_SITES = [
-    ("nutristar", "nutristar.in"), ("neulife", "neulife.com"), ("proteinxpressindia", "proteinxpressindia.com"), 
-    ("supplementsvilla", "supplementsvilla.com"), ("sourceofsupplements", "sourceofsupplements.in"), 
-    ("broadwaylive", "shop.broadwaylive.in"), ("apexsupplements", "apexsupplements.in"), 
-    ("muscleblaze", "muscleblaze.com"), ("optimumnutrition", "optimumnutrition.co.in"), ("gncindia", "guardian.in"), 
-    ("asitisnutrition", "asitisnutrition.com"), ("nakpro", "nakpro.com"), ("avvatar", "avvatarindia.com"), 
-    ("nutrabox", "nutrabox.in"), ("fastandup", "fastandup.in"), ("bigmusclesnutrition", "bigmusclesnutrition.com"), 
-    ("healthfarmnutrition", "healthfarmnutrition.com"), ("thewholetruthfoods", "thewholetruthfoods.com"), 
-    ("truebasics", "truebasics.com"), ("getmymettle", "getmymettle.com"), ("scitron", "scitron.com"), 
-    ("musclenectar", "musclenectar.com"), ("sixpacknutrition", "sixpacknutrition.in"), ("repfuelsports", "repfuelsports.com"), 
-    ("absolutenutrition", "absolutenutrition.co.in"), ("osoaa", "osoaa.in"), ("trunativ", "trunativ.co"), 
-    ("proburst", "proburst.com"), ("cosmix", "cosmix.in"), ("plixlife", "plixlife.com"), ("oziva", "oziva.in"), 
-    ("superyou", "superyou.in"), ("aceblend", "aceblend.com"), ("greenprotein", "greenprotein.co.in"), 
-    ("sattuz", "sattuz.in"), ("boldfit", "boldfit.in"), ("unived", "unived.in"), ("cureveda", "cureveda.com"), 
-    ("musclehouseindia", "musclehouseindia.com"), ("wellcore", "wellcore.in"), ("myprotein", "myprotein.co.in"), 
-    ("pintola", "pintola.in"), ("alpino", "alpino.in"), ("myfitness", "myfitness.in"), ("yogabar", "yogabar.in"), 
-    ("maxprotein", "maxprotein.in"), ("getphab", "getphab.com"), ("nutroactive", "nutroactive.com"), 
-    ("trueelements", "trueelements.com"), ("cfstores", "cfstores.in"), ("healthyhey", "healthyhey.com"), 
-    ("kapiva", "kapiva.in"), ("upakarma", "upakarma.com"), ("neuherbs", "neuherbs.com"), ("manmatters", "manmatters.com"), 
-    ("zingavita", "zingavita.com"), ("naturaltein", "naturaltein.in"), ("desertcart", "desertcart.in"), ("ubuy", "ubuy.co.in")
 ]
 
-for name, domain in NEW_SITES:
-    prefix = "https://" if domain.startswith("shop.") else "https://www."
-    SITES_CONFIG[name] = {
-        "search_url": f"{prefix}{domain}/search?q={{query}}",
-        "selectors": DEFAULT_SELECTORS
-    }
+TARGET_FILTER = re.compile(r"protein|whey|isolate|casein|plant|pea|creatine|mass.?gainer|weight.?gainer", re.I)
+JUNK_FILTER = re.compile(r"shaker|bottle|t-shirt|tshirt|bag|cap|combo|bundle|multivitamin|bar\b|cookie|snack|chips|peanut\s*butter|gummies|fish oil|omega|collagen|biotin", re.I)
 
-TARGET_FILTER = re.compile(r"protein|whey|isolate|casein|plant|pea|creatine|mass.?gainer|weight.?gainer|pre.?workout", re.I)
-JUNK_FILTER = re.compile(r"shaker|bottle|t-shirt|bag|cap|combo|bundle|multivitamin|bar\b|bars\b|cookie|snack|chips|biscuit|spread|peanut\s*butter|gummies|drink|rtd|trial|sachet|delay|climax|sex|testosterone|shilajit|ashwagandha|vitality|intimacy|fish oil|omega|collagen|biotin|immunity|wellness", re.I)
+class ProteIndexOrchestrator:
+    def __init__(self):
+        self.fetcher = ResilientStealthFetcher()
 
-def extract_weight(text: str) -> float:
-    m = re.search(r"(\d+(?:\.\d+)?)\s*(kg|g|lbs?)\b", text, re.I)
-    if not m: return 1000.0
-    val, unit = float(m.group(1)), m.group(2).lower()
-    if unit == "kg": return val * 1000
-    if unit == "g": return val
-    return val * 453.592
+    async def upsert_variant_to_db(
+        self,
+        brand: str,
+        product_name: str,
+        flavor: str,
+        weight_g: int,
+        price_inr: float,
+        product_url: str,
+        image_url: str,
+        platform_name: str,
+        seller_name: str = "",
+        raw_description: str = "",
+        extraction_method: str = "title"
+    ) -> bool:
+        if not supabase or price_inr <= 0:
+            return False
 
+        # Category and DIAAS derivation
+        combined_text = f"{product_name} {flavor} {raw_description}".lower()
+        category = MasterCatalogMatcher.detect_category(combined_text)
+        
+        silo = "protein"
+        if "mass" in combined_text or "gainer" in combined_text:
+            silo = "mass_gainers"
+        elif "creatine" in combined_text:
+            silo = "creatine"
 
-def extract_seller(parent) -> str:
-    # Attempt to extract seller name from common selectors
-    if not parent: return ""
-    seller_els = parent.css(".seller-name, [class*='seller'], [class*='soldBy'], #sellerProfileTriggerId")
-    if seller_els:
-        text = seller_els[0].get_all_text() if hasattr(seller_els[0], 'get_all_text') else getattr(seller_els[0], 'text', '')
-        return text.replace("Sold by", "").replace("sold by", "").strip()
-    return ""
+        psource = "Whey"
+        if "plant" in combined_text or "pea" in combined_text or "vegan" in combined_text:
+            psource = "Plant"
+        elif "casein" in combined_text:
+            psource = "Casein"
 
-def upsert_product_variant(brand: str, title: str, price: float, img: str, url: str, source: str, description: str = "", seller_name: str = ""):
-    combined_text = (title + " " + description).lower()
-    if not TARGET_FILTER.search(combined_text) or JUNK_FILTER.search(combined_text) or price <= 0:
-        return False
+        # PRD Trust Modules
+        ingredient_audit = IngredientAuditor.audit(raw_description)
+        base_trust_score = 100 - ingredient_audit.get("trust_deduction", 0)
+        review_audit = ReviewAuthenticityEngine.audit_reviews(product_name)
+        is_authorized = SellerMatrix.verify_seller(seller_name, brand)
 
-    base_name = re.split(r"[,|-]", title)[0].strip()[:100]
-    weight = extract_weight(combined_text)
-    
-    silo = "protein"
-    if re.search(r"mass|gainer", combined_text): silo = "mass_gainer"
-    elif "creatine" in combined_text: silo = "creatine"
-    elif re.search(r"pre.?workout", combined_text): silo = "pre_workout"
-    elif re.search(r"vitamin|omega|fish oil", combined_text): silo = "vitamins"
+        # 1. Master Product Check / Insert
+        clean_base = re.split(r"[,|-]", product_name)[0].strip()[:100]
+        prod_res = supabase.table("products").select("id").eq("brand", brand).eq("base_name", clean_base).execute()
+        
+        if prod_res.data and len(prod_res.data) > 0:
+            product_id = prod_res.data[0]["id"]
+        else:
+            p_insert = supabase.table("products").upsert({
+                "brand": brand,
+                "base_name": clean_base,
+                "category_silo": silo,
+                "protein_source": psource,
+                "image_url": image_url,
+                "is_fairy_dusted": ingredient_audit.get("is_fairy_dusted", False),
+                "fairy_dusting_flags": ingredient_audit.get("flags", []),
+                "trust_score": base_trust_score
+            }, on_conflict="brand,base_name").execute()
+            if not p_insert.data:
+                return False
+            product_id = p_insert.data[0]["id"]
 
-    psource = "Whey"
-    if re.search(r"plant|pea|vegan|soy|brown rice", combined_text): psource = "Plant"
-    elif re.search(r"yeast", combined_text): psource = "Yeast"
-    elif "casein" in combined_text: psource = "Casein"
+        # 2. Mint Deterministic Variant Hash
+        norm = VariantNormalizer.execute(product_id=product_id, raw_title=f"{brand} {clean_base} {flavor} {weight_g}g")
+        v_hash = norm.variant_hash
+        sku_id = f"{brand.lower().replace(' ', '')[:8]}-{flavor[:6]}-{weight_g}g-{v_hash[:6]}"
 
-
-    # --- TRUST ENGINE MODULES ---
-    # 1. Fairy-Dusting Check
-    ingredient_audit = IngredientAuditor.audit(description)
-    base_trust_score = 100 - ingredient_audit['trust_deduction']
-    
-    # 2. Review Authenticity (Mocked fetching for now)
-    review_audit = ReviewAuthenticityEngine.audit_reviews(base_name)
-    
-    # 3. Seller Matrix
-    is_authorized = SellerMatrix.verify_seller(seller_name, brand)
-    # ----------------------------
-
-    if not supabase:
-        logger.error("Supabase client not initialized; cannot upsert product variant.")
-        return False
-
-    try:
-        res = supabase.table("products").upsert({
-            "brand": brand, "base_name": base_name, "category_silo": silo,
-            "protein_source": psource, "image_url": img,
-            "is_fairy_dusted": ingredient_audit['is_fairy_dusted'],
-            "fairy_dusting_flags": ingredient_audit['flags'],
-            "trust_score": base_trust_score
-        }, on_conflict="brand,base_name").execute()
-
-        if not res.data: return False
-        product_id = res.data[0]["id"]
-
-        # Deterministic normalization and hashing (PRD Section 3.1 & 4.1)
-        normalized = VariantNormalizer.execute(product_id=product_id, raw_title=combined_text)
-        weight = float(normalized.weight_grams)
-        flavor = normalized.canonical_flavor
-        v_hash = normalized.variant_hash
-        sku_id = f"{brand.lower().replace(' ', '')[:8]}-{flavor[:6]}-{int(weight)}g-{v_hash[:6]}"
-
-        # Use standard estimations until OCR Vision pipeline is connected
+        # Standard baseline nutrition values
         serving_size_g = 33.0
         label_protein_g = min(24.0, serving_size_g)
-        total_servings = max(1, int(weight / serving_size_g))
-        
+        total_servings = max(1, int(weight_g / serving_size_g))
+
         analytics_metrics = EqualizerEngine.calculate_metrics(
             category=psource,
-            price_inr=price,
+            price_inr=price_inr,
             label_protein_g=label_protein_g,
             serving_size_g=serving_size_g,
             total_servings=total_servings
         )
 
-        raw_json = json.dumps({
-            "description": description.strip(),
-            "analytics": analytics_metrics,
-            "variant_hash": v_hash
-        })
+        v_res = supabase.table("variants").select("id, variant_hash").eq("variant_hash", v_hash).execute()
         
-        vres = supabase.table("variants").upsert({
-            "product_id": product_id,
-            "sku_id": sku_id,
-            "variant_hash": v_hash,
-            "flavor": flavor,
-            "weight_grams": weight,
-            "lowest_price_inr": price,
-            "servings_count": total_servings,
-            "best_value_metric": analytics_metrics["effective_cost_per_bioavailable_g_inr"],
-            "raw_json_data": raw_json,
-            "authenticity_score": review_audit['authenticity_score'],
-            "has_bot_reviews": review_audit['has_bot_reviews']
-        }, on_conflict="sku_id").execute()
+        if v_res.data and len(v_res.data) > 0:
+            variant_id = v_res.data[0]["id"]
+            # In-place update lowest price
+            supabase.table("variants").update({
+                "lowest_price_inr": price_inr
+            }).eq("id", variant_id).execute()
+        else:
+            # Check if this is a newly discovered variant requiring one-time vision audit
+            label_ocr_data = None
+            if label_auditor and image_url and image_url.startswith("http"):
+                try:
+                    img_bytes = await self.fetcher.fetch_bytes(image_url)
+                    if img_bytes:
+                        logger.info(f"[Vision] Running one-time nutrition audit on {brand} {sku_id}...")
+                        label_ocr_data = label_auditor.extract_label_data(img_bytes)
+                except Exception as e:
+                    logger.warning(f"Vision audit attempt error: {e}")
 
-        if not vres.data: return False
-        variant_id = vres.data[0]["id"]
+            if label_ocr_data:
+                serving_size_g = label_ocr_data.serving_size_g
+                label_protein_g = label_ocr_data.protein_per_serving_g
+                total_servings = label_ocr_data.total_servings
+                analytics_metrics = EqualizerEngine.calculate_metrics(
+                    category=psource,
+                    price_inr=price_inr,
+                    label_protein_g=label_protein_g,
+                    serving_size_g=serving_size_g,
+                    total_servings=total_servings
+                )
 
+            raw_json = json.dumps({
+                "description": raw_description[:500],
+                "analytics": analytics_metrics,
+                "variant_hash": v_hash,
+                "nutrition_audited_at": "now()",
+                "weight_extraction_method": extraction_method,
+                "ocr_data": label_ocr_data.model_dump() if label_ocr_data else None
+            })
+
+            new_var = supabase.table("variants").insert({
+                "product_id": product_id,
+                "sku_id": sku_id,
+                "variant_hash": v_hash,
+                "flavor": flavor,
+                "weight_grams": float(weight_g),
+                "lowest_price_inr": price_inr,
+                "servings_count": total_servings,
+                "best_value_metric": analytics_metrics.get("effective_cost_per_bioavailable_g_inr", 1.8),
+                "raw_json_data": raw_json,
+                "authenticity_score": review_audit.get("authenticity_score", 95.0),
+                "has_bot_reviews": review_audit.get("has_bot_reviews", False),
+                "label_serving_size_g": serving_size_g,
+                "label_protein_per_serving_g": label_protein_g,
+                "label_total_servings": total_servings,
+                "calculated_purity_pct": analytics_metrics.get("scoop_purity_pct", 72.0),
+                "ocr_verified": bool(label_ocr_data is not None),
+                "ocr_image_url": image_url if label_ocr_data else None
+            }).execute()
+
+            if not new_var.data:
+                return False
+            variant_id = new_var.data[0]["id"]
+
+        # 3. Write / Update Hot Price Listing
+        # The database trigger automatically writes timeseries delta to price_history only on price/stock changes!
         supabase.table("price_listings").upsert({
             "variant_id": variant_id,
-            "source": source,
-            "platform_name": source.lower(),
-            "source_url": url,
-            "listing_url": url,
-            "price_inr": price,
-            "current_price_inr": price,
+            "source": platform_name,
+            "platform_name": platform_name.lower(),
+            "source_url": product_url,
+            "listing_url": product_url,
+            "price_inr": price_inr,
+            "current_price_inr": price_inr,
             "in_stock": True,
             "is_in_stock": True,
-            "seller_name": seller_name,
-            "is_authorized_seller": is_authorized
+            "seller_name": seller_name or brand,
+            "is_authorized_seller": is_authorized,
+            "scraped_at": "now()"
         }, on_conflict="variant_id,source").execute()
 
         return True
-    except Exception as e:
-        logger.error(f"DB Upsert Failed [{brand} - {source}]: {str(e)}")
-        return False
 
+    # =========================================================================
+    # LANE 1: SHOPIFY D2C FAST-TRACK (JSON Ingestion, 300ms per store)
+    # =========================================================================
+    async def run_shopify_fasttrack(self) -> int:
+        logger.info("\n" + "=" * 60)
+        logger.info("[LANE 1] INITIATING SHOPIFY D2C JSON FAST-TRACK")
+        logger.info("=" * 60)
+        total_ingested = 0
 
-ALL_TRACKED_BRANDS = ["Optimum Nutrition", "MuscleBlaze", "MyProtein", "Dymatize", "Isopure", "GNC", "MuscleTech", "Avvatar", "Nakpro", "AS-IT-IS", "Nutrabay", "XLR8", "Fast&Up", "Yogabar", "The Whole Truth", "Amul", "Foodstrong", "MyFitFuel", "Cosmix", "TrueBasics", "Atom", "One Science"]
+        for target in D2C_SHOPIFY_REGISTRY:
+            brand = target["brand"]
+            domain = target["domain"]
+            endpoint = f"https://{domain}/products.json?limit=250"
+            logger.info(f"[{brand}] Querying endpoint: {endpoint}")
 
-def detect_true_brand(title: str, fallback_brand: str) -> str:
-    title_norm = title.lower().replace("-", "").replace(" ", "")
-    for b in ALL_TRACKED_BRANDS:
-        b_norm = b.lower().replace("-", "").replace(" ", "")
-        if b_norm in title_norm:
-            return b
-    return fallback_brand
+            status, body, _, _ = await self.fetcher.fetch(endpoint)
+            if status != 200 or not body:
+                logger.warning(f"[{brand}] Endpoint returned HTTP {status}. Skipping.")
+                continue
 
-async def scrape_url(url: str, brand: str, source: str, is_trusted_seed: bool = False) -> int:
-    count = 0
-    from scrapling.fetchers import Fetcher
-    
-    async with CONCURRENCY_LIMIT:
-        await asyncio.sleep(random.uniform(0.5, 2.5))
-        proxy = random.choice(PROXY_POOL) if PROXY_POOL else None
-        page = None
-        
-        for attempt in range(3):
             try:
-                # Tier 1: Fast HTTP Request
-                fast_fetcher = Fetcher(proxy=proxy)
-                page = await asyncio.to_thread(fast_fetcher.get, url)
-                
-                # Check for anti-bot blocks
-                html_lower = page.text.lower()
-                bot_signs = ["cloudflare", "datadome", "captcha", "security check", "access denied", "verify you are human"]
-                
-                if page.status in [403, 429, 503] or any(b in html_lower for b in bot_signs):
-                    logger.warning(f"[{source}] Anti-bot detected on fast fetch. Escalating to StealthyFetcher...")
-                    # Tier 2: Headless Browser Escalation
-                    page = await StealthyFetcher.async_fetch(url, headless=True, network_idle=True, timeout=25000, proxy=proxy)
-                    
-                break
+                catalog = json.loads(body)
+                products = catalog.get("products", [])
             except Exception as e:
-                if attempt == 2:
-                    logger.error(f"Failed to fetch {url} after retries: {e}")
-                    return 0
-                logger.warning(f"[{source}] Fetch attempt {attempt + 1} failed with proxy {proxy}: {e}")
-                proxy = random.choice(PROXY_POOL) if (PROXY_POOL and attempt == 0) else None
-                await asyncio.sleep(2)
-        
-        if not page: return 0
-        try:
-            site_config = SITES_CONFIG.get(source, {})
-            selectors = site_config.get("selectors", DEFAULT_SELECTORS)
-            cards = page.css(", ".join(selectors["card"].split(",")))
-            logger.info(f"[{source.upper()}] Found {len(cards)} potential product cards.")
+                logger.warning(f"[{brand}] JSON parse failed: {e}")
+                continue
 
-            for card in cards:
-                try:
-                    title_node = card.css(", ".join(selectors["title"].split(",")))
-                    if hasattr(title_node, 'get_all_text'): title = title_node.get_all_text()
-                    elif hasattr(title_node, 'get'): title = title_node.get(default="")
-                    elif hasattr(title_node, 'text'): title = getattr(title_node, 'text', '')
-                    else: title = ""
-                    
-                    price_node = card.css(", ".join(selectors["price"].split(",")))
-                    if hasattr(price_node, 'get_all_text'): price_str = price_node.get_all_text()
-                    elif hasattr(price_node, 'get'): price_str = price_node.get(default="")
-                    elif hasattr(price_node, 'text'): price_str = getattr(price_node, 'text', '')
-                    else: price_str = ""
+            brand_count = 0
+            for p in products:
+                title = p.get("title", "")
+                if not TARGET_FILTER.search(title) or JUNK_FILTER.search(title):
+                    continue
 
-                    title = title.strip()
-                    digits = re.sub(r"[^\d.]", "", price_str or "")
-                    price = float(digits) if digits else 0.0
+                images = p.get("images", [])
+                image_url = images[0].get("src") if images else ""
+                handle = p.get("handle", "")
+                product_url = f"https://{domain}/products/{handle}" if handle else f"https://{domain}"
 
-                    if not title or price <= 0: continue
+                for v in p.get("variants", []):
+                    var_title = v.get("title", "")
+                    combined_title = f"{title} {var_title}"
+                    price = float(v.get("price", 0))
 
-                    img_els = card.css("img")
-                    img = img_els[0].attrib.get("src") or img_els[0].attrib.get("data-src") or "" if img_els else ""
-                    
-                    link_els = card.css("a")
-                    link = link_els[0].attrib.get("href") or "" if link_els else ""
-                    if link and not link.startswith("http"):
-                        from urllib.parse import urljoin
-                        link = urljoin(url, link)
+                    weight_g = VariantNormalizer.parse_weight(combined_title)
+                    flavor = VariantNormalizer.parse_flavor(combined_title)
 
-                    card_desc = ""
-                    if hasattr(card, "get_all_text"):
-                        card_desc = card.get_all_text().replace(title, "").strip()
+                    if price <= 0 or not weight_g:
+                        continue
 
-                    seller = extract_seller(card)
-                    true_brand = detect_true_brand(title, brand)
-                    
-                    if is_trusted_seed:
-                        if upsert_product_variant(true_brand, title, price, img, link, source, card_desc, seller):
-                            count += 1
-                    else:
-                        verified_variant = VariantMatcher.match_variant(title)
-                        if verified_variant:
-                            logger.info(f"[{source.upper()}] MATCHED: '{title[:40]}...' -> DB ID {verified_variant['id']} | INR {price}")
-                            if not supabase: continue
+                    success = await self.upsert_variant_to_db(
+                        brand=brand,
+                        product_name=title,
+                        flavor=flavor,
+                        weight_g=weight_g,
+                        price_inr=price,
+                        product_url=product_url,
+                        image_url=image_url,
+                        platform_name="D2C",
+                        seller_name=f"{brand} Official",
+                        raw_description=p.get("body_html", "") or "",
+                        extraction_method="shopify_api"
+                    )
+                    if success:
+                        brand_count += 1
+                        total_ingested += 1
+
+            logger.info(f"  > [{brand}] Successfully ingested {brand_count} clean SKUs.")
+
+        return total_ingested
+
+    # =========================================================================
+    # LANE 2: MULTI-LEVEL MARKETPLACE RE-POLL WITH CONDITIONAL 304s
+    # =========================================================================
+    async def run_marketplace_pulse(self) -> int:
+        logger.info("\n" + "=" * 60)
+        logger.info("[LANE 2] INITIATING MARKETPLACE RE-POLL (HEALTHKART, NUTRABAY, ETC.)")
+        logger.info("=" * 60)
+        total_matched = 0
+
+        # Reload master catalog for formulation-gated matching
+        MasterCatalogMatcher.load_master_catalog()
+
+        from bs4 import BeautifulSoup
+
+        for target in MARKETPLACE_TARGETS:
+            platform = target["platform"]
+            for query in target["queries"]:
+                url = target["url_template"].format(query=query.replace(" ", "+"))
+                logger.info(f"[{platform}] Probing: {url}")
+
+                status, body, _, _ = await self.fetcher.fetch(url)
+                if status != 200 or not body:
+                    logger.warning(f"[{platform}] HTTP {status} on {query}")
+                    continue
+
+                soup = BeautifulSoup(body, "html.parser")
+                cards = soup.select(target["card_selector"])
+                logger.info(f"[{platform}] Found {len(cards)} potential product cards for '{query}'.")
+
+                for card in cards:
+                    try:
+                        title_el = card.select_one(target["title_selector"])
+                        price_el = card.select_one(target["price_selector"])
+
+                        if not title_el or not price_el:
+                            continue
+
+                        raw_title = title_el.get_text(strip=True)
+                        raw_price_str = price_el.get_text(strip=True)
+                        digits = re.sub(r"[^\d.]", "", raw_price_str)
+                        price = float(digits) if digits else 0.0
+
+                        if not raw_title or price <= 0:
+                            continue
+                        if not TARGET_FILTER.search(raw_title) or JUNK_FILTER.search(raw_title):
+                            continue
+
+                        # Link extraction
+                        link_el = card.find("a", href=True)
+                        link = link_el["href"] if link_el else url
+                        if link and not link.startswith("http"):
+                            from urllib.parse import urljoin
+                            link = urljoin(url, link)
+
+                        # Image extraction
+                        img_el = card.find("img")
+                        img = ""
+                        if img_el:
+                            img = img_el.get("src") or img_el.get("data-src") or ""
+
+                        # 4-Tier Extractor to resolve specifications
+                        weight_g, flavor, method = MultiLevelExtractor.resolve_specifications(raw_title, str(card))
+
+                        if not weight_g:
+                            # Strict Quarantine
+                            insert_quarantine_product(
+                                platform=platform,
+                                raw_title=raw_title,
+                                raw_price=price,
+                                raw_url=link,
+                                failure_reason="UNRESOLVABLE_WEIGHT_ALL_TIERS_EXHAUSTED"
+                            )
+                            continue
+
+                        # Formulation-Gated Matching against Master Catalog
+                        matched = MasterCatalogMatcher.match_variant(raw_title, weight_g)
+                        if matched:
+                            variant_id = matched["id"]
+                            logger.info(f"[{platform}] MATCHED: '{raw_title[:38]}...' -> ID {variant_id} | INR {price}")
+                            
+                            # Upsert hot price listing
                             supabase.table("price_listings").upsert({
-                                "variant_id": verified_variant['id'],
-                                "source": source,
-                                "platform_name": source.lower(),
+                                "variant_id": variant_id,
+                                "source": platform,
+                                "platform_name": platform.lower(),
                                 "source_url": link,
                                 "listing_url": link,
                                 "price_inr": price,
                                 "current_price_inr": price,
                                 "in_stock": True,
                                 "is_in_stock": True,
-                                "seller_name": seller,
-                                "is_authorized_seller": True
+                                "seller_name": platform,
+                                "is_authorized_seller": True,
+                                "scraped_at": "now()"
                             }, on_conflict="variant_id,source").execute()
-                            count += 1
+                            total_matched += 1
                         else:
-                            inserted = insert_unmatched_product(true_brand, title, price, link, source)
-                            if inserted:
-                                logger.info(f"[{source.upper()}] LOGGED UNMATCHED PRODUCT: {title[:40]}")
+                            # Staging quarantine
+                            insert_quarantine_product(
+                                platform=platform,
+                                raw_title=raw_title,
+                                raw_price=price,
+                                raw_url=link,
+                                detected_weight_g=weight_g,
+                                failure_reason="NO_CATALOG_VARIANT_MATCH_ABOVE_THRESHOLD"
+                            )
 
-                except Exception as e:
-                    logger.warning(f"Error parsing card on {source}: {e}")
-                    
-            return count
-        except Exception as e:
-            logger.error(f"Scrape failed [{brand} - {source}]: {str(e)}")
-            return 0
+                    except Exception as e:
+                        logger.warning(f"[{platform}] Card parsing error: {e}")
 
+        return total_matched
+
+    async def run_all(self):
+        logger.info("=" * 60)
+        logger.info("STARTING COMPLETE PROTEINDEX SCRAPE CYCLE")
+        logger.info("=" * 60)
+
+        d2c_count = await self.run_shopify_fasttrack()
+        mkt_count = await self.run_marketplace_pulse()
+
+        logger.info("\n" + "=" * 60)
+        logger.info(f"SCRAPE CYCLE FINISHED: Ingested {d2c_count} D2C SKUs | Matched {mkt_count} Marketplace Listings")
+        logger.info("=" * 60)
+        await self.fetcher.close()
 
 async def main():
-    logger.info("=" * 60)
-    logger.info("ULTIMATE OMNI-CHANNEL SCRAPER (14 PLATFORMS)")
-    logger.info("Excluding Quick-Commerce. Extracting deeply across all sources.")
-    logger.info("=" * 60 + "\n")
-
-    for i, entry in enumerate(BRANDS):
-        brand = entry["brand"]
-        logger.info(f"[{i+1}/{len(BRANDS)}] Commencing extraction for: {brand}")
-
-        # 1. D2C
-        d2c = 0
-        if entry.get("d2c"):
-            d2c = await scrape_url(entry["d2c"], brand, "D2C", is_trusted_seed=True)
-            logger.info(f"  > D2C [{brand}]: Found {d2c} valid products")
-        
-        # 2. HealthKart
-        hk = await scrape_url(f"https://www.healthkart.com/{entry['hk']}/whey-protein?bss=1", brand, "HealthKart", is_trusted_seed=True)
-        logger.info(f"  > HealthKart [{brand}]: Found {hk} valid products")
-
-        # Execute all platform scrapes concurrently for the brand!
-        brand_name = brand
-        tasks = []
-        for pf_name, config in SITES_CONFIG.items():
-            url_template = config["search_url"]
-            query = f"{brand_name} protein".replace(" ", "+")
-            if pf_name == "Nutrabay_Mkt": query = brand_name.replace(" ", "-").lower()
-            url = url_template.format(query=query)
-            tasks.append(scrape_url(url, brand_name, pf_name))
-            
-        logger.info(f"[{brand_name}] Launching concurrent scrapes across {len(tasks)} platforms...")
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        for pf_name, res in zip(SITES_CONFIG.keys(), results):
-            if isinstance(res, Exception):
-                logger.error(f"  > {pf_name} [{brand_name}]: Failed ({res})")
-            else:
-                logger.info(f"  > {pf_name} [{brand_name}]: Found {res} valid products")
-
-        logger.info("-" * 40)
-        
-    logger.info("Scraping cycle complete.")
-    
-    try:
-        import sys
-        scraper_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
-        if scraper_dir not in sys.path:
-            sys.path.insert(0, scraper_dir)
-        from gemini_nutrition import run as run_nutrition_update
-        logger.info("Running post-scrape nutrition update via Gemini...")
-        run_nutrition_update()
-    except Exception as e:
-        logger.error(f"Nutrition update error: {e}")
+    orchestrator = ProteIndexOrchestrator()
+    await orchestrator.run_all()
 
 if __name__ == "__main__":
     asyncio.run(main())

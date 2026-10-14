@@ -105,4 +105,7 @@ export interface ProductListingView {
   authenticityScore?: number;
   labVerified?: boolean;
   affiliateUrl?: string;
+  costPer100gProtein?: number;
+  fairyDusted?: boolean;
+  isGlitchPrice?: boolean;
 }
