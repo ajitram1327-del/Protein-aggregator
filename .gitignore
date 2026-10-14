@@ -20,3 +20,4 @@ Thumbs.db
 *.zip
 .vercel
 .env*
+*.log

@@ -73,6 +73,32 @@ class MasterCatalogMatcher:
         return cls._master_catalog
 
     @classmethod
+    def add_runtime_variant(
+        cls,
+        variant_id: str,
+        brand: str,
+        base_name: str,
+        flavor: str,
+        weight_g: int,
+        category: str = ""
+    ):
+        """Registers a newly cataloged variant in memory so subsequent channel scrapers can match it immediately."""
+        if cls._master_catalog is None:
+            cls.load_master_catalog()
+        cat = category or cls.detect_category(base_name)
+        search_string = f"{brand} {base_name} {flavor} {weight_g}g"
+        cls._master_catalog.append({
+            "id": variant_id,
+            "product_id": None,
+            "brand": brand,
+            "product_name": base_name,
+            "category": cat,
+            "flavor": flavor,
+            "weight_grams": weight_g,
+            "search_string": search_string
+        })
+
+    @classmethod
     def match_variant(
         cls, 
         scraped_title: str, 

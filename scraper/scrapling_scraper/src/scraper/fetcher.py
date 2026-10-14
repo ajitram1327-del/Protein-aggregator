@@ -56,7 +56,8 @@ class ResilientStealthFetcher:
         self, 
         url: str, 
         etag: Optional[str] = None, 
-        last_modified: Optional[str] = None
+        last_modified: Optional[str] = None,
+        timeout: int = 15
     ) -> Tuple[int, str, Optional[str], Optional[str]]:
         """
         Executes a conditional HTTP request with random human jitter.
@@ -77,7 +78,7 @@ class ResilientStealthFetcher:
 
             try:
                 assert self.session is not None
-                res = await self.session.get(url, headers=headers)
+                res = await self.session.get(url, headers=headers, timeout=timeout)
                 
                 # 304 Not Modified -> Price & Stock are unchanged, 0 body transfer
                 if res.status_code == 304:

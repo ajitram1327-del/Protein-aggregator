@@ -1,0 +1,1484 @@
+{
+  "brands": [
+    {
+      "brand": "Optimum Nutrition (ON)",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Gold Standard Whey",
+        "Serious Mass",
+        "Micronized Creatine",
+        "Gold Standard Pre-Workout",
+        "Amino Energy (BCAA)"
+      ],
+      "channels": [
+        "optimumnutrition.co.in",
+        "Amazon.in",
+        "HealthKart",
+        "Tata 1mg",
+        "Nutrabay"
+      ],
+      "d2c_domain": "optimumnutrition.co.in"
+    },
+    {
+      "brand": "MuscleTech",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Nitro-Tech",
+        "Mass-Tech Extreme 2000",
+        "Cell-Tech Creatine",
+        "VaporX5 Pre-Workout",
+        "Platinum L-Carnitine"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart",
+        "Tata 1mg",
+        "Nutrabay"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Dymatize",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "ISO100 Hydrolyzed",
+        "Elite Whey",
+        "Super Mass Gainer",
+        "All9 Amino (BCAA)",
+        "Creatine Monohydrate"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart",
+        "Nutrabay",
+        "Neulife"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "BSN",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Syntha-6",
+        "True-Mass Gainer",
+        "N.O.-XPLODE Pre-Workout",
+        "Amino X (Effervescent BCAA)"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart",
+        "Nutrabay"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Isopure",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Zero Carb Whey Isolate",
+        "Low Carb Protein"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart",
+        "Nutrabay",
+        "Neulife"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Cellucor",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "C4 Original Pre-Workout",
+        "C4 Ripped",
+        "Cor-Performance Creatine",
+        "Alpha Amino (BCAA)"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart",
+        "Neulife",
+        "Nutrabay"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Nutrex",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Lipo-6 Black",
+        "Outlift Pre-Workout",
+        "Creatine Drive"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart",
+        "Supplements Villa"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "MusclePharm",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Combat 100% Whey",
+        "Assault Pre-Workout",
+        "BCAA 3:1:2"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart",
+        "Nutrabay"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Universal / Animal",
+      "tier": "Global / Import",
+      "categories": "Performance & Micronutrients",
+      "flagship_products": [
+        "Animal Pak (Multivitamins)",
+        "Animal Fury Pre-Workout",
+        "Animal Creatine Chews",
+        "Animal Mass"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart",
+        "Neulife"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Ultimate Nutrition",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Prostar 100% Whey",
+        "Iso Sensation 93",
+        "Muscle Juice Gainer"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart",
+        "Nutrabay"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Rule 1",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "R1 Protein",
+        "R1 LBS Mass Gainer",
+        "R1 Pre-Train",
+        "R1 Creatine",
+        "R1 BCAA"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart",
+        "Neulife"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Labrada",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Muscle Mass Gainer",
+        "100% Premium Whey",
+        "Creapure Creatine",
+        "BCAA Power",
+        "Liquid L-Carnitine"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart",
+        "Nutrabay"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Scitec Nutrition",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "100% Whey Protein Professional",
+        "Jumbo Mass Gainer",
+        "BCAA Xpress"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Olimp",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Whey Protein Complex 100%",
+        "BCAA Xplode",
+        "Creatine 1250 Mega Caps"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart",
+        "Nutrabay"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Applied Nutrition",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "ABE (All Black Everything) Pre-Workout",
+        "Critical Mass",
+        "Critical Whey",
+        "Creatine Monohydrate",
+        "BCAA Amino-Hydrate"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart",
+        "Nutrabay"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "PhD Nutrition",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Diet Whey",
+        "Synergy ISO-7",
+        "Diet Plant Protein"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Gaspari",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "MyoFusion Advanced Protein",
+        "SuperPump Max Pre-Workout",
+        "SizeOn"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Redcon1",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Total War Pre-Workout",
+        "Big Noise Pump",
+        "MRE Lite",
+        "Tango Creatine"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Ghost",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Ghost Legend Pre-Workout",
+        "Ghost Size (Creatine/Betaine)",
+        "Ghost Whey",
+        "Ghost BCAA"
+      ],
+      "channels": [
+        "Amazon.in",
+        "Neulife"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Kaged",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Pre-Kaged Elite",
+        "Kaged Creatine HCl",
+        "Hydra-Charge",
+        "Fermented BCAA"
+      ],
+      "channels": [
+        "Amazon.in",
+        "Nutrabay"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Bucked Up",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Bucked Up Pre-Workout",
+        "Woke AF",
+        "Deer Antler Spray"
+      ],
+      "channels": [
+        "Amazon.in",
+        "Ubuy"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Six Star",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "100% Whey Protein Plus",
+        "Pre-Workout Explosion",
+        "Creatine X3"
+      ],
+      "channels": [
+        "Amazon.in",
+        "Desertcart"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Muscle Milk",
+      "tier": "Global / Import",
+      "categories": "Performance & Health Food",
+      "flagship_products": [
+        "Genuine Protein Powder",
+        "Pro Series Protein"
+      ],
+      "channels": [
+        "Amazon.in"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Orgain",
+      "tier": "Global / Import",
+      "categories": "Health Foods & Plant Protein",
+      "flagship_products": [
+        "Organic Plant Based Protein Powder",
+        "Organic Nutrition Shakes"
+      ],
+      "channels": [
+        "Amazon.in"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Garden of Life",
+      "tier": "Global / Import",
+      "categories": "Health Foods & Plant Protein",
+      "flagship_products": [
+        "Raw Organic Protein",
+        "Sport Certified Grass Fed Whey"
+      ],
+      "channels": [
+        "Amazon.in"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "NOW Sports",
+      "tier": "Global / Import",
+      "categories": "Micronutrients & Performance",
+      "flagship_products": [
+        "Pea Protein",
+        "Whey Protein Isolate",
+        "ZMA",
+        "L-Carnitine"
+      ],
+      "channels": [
+        "Amazon.in",
+        "1mg"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Allmax",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Isoflex",
+        "Aminocore BCAA",
+        "Creatine Monohydrate"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Beast Sports Nutrition",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Beast Creature Creatine",
+        "Beast Mode Pre-Workout"
+      ],
+      "channels": [
+        "Amazon.in"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Body Fortress",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Super Advanced Whey Protein",
+        "Super Advanced Creatine"
+      ],
+      "channels": [
+        "Amazon.in"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Evlution Nutrition (EVL)",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "ENGN Pre-Workout",
+        "BCAA Energy",
+        "LeanMode",
+        "100% Whey"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "JNX Sports",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "The Curse Pre-Workout",
+        "The Ripper"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Legion Athletics",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Whey+ Isolate",
+        "Pulse Pre-Workout",
+        "Recharge Post-Workout"
+      ],
+      "channels": [
+        "Amazon.in",
+        "Ubuy"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Mutant",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Mutant Mass",
+        "Mutant Madness Pre-Workout",
+        "Mutant Creakong",
+        "Mutant BCAA"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart",
+        "Supplements Villa"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Naked Nutrition",
+      "tier": "Global / Import",
+      "categories": "Clean Performance Nutrition",
+      "flagship_products": [
+        "Naked Whey",
+        "Naked Pea",
+        "Naked Mass"
+      ],
+      "channels": [
+        "Amazon.in",
+        "Ubuy"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Nutrabolics",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Supernova",
+        "Mass Fusion",
+        "Anabolic State BCAA"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Nutricost",
+      "tier": "Global / Import",
+      "categories": "Micronutrients & Performance",
+      "flagship_products": [
+        "Creatine Monohydrate",
+        "Whey Protein Concentrate",
+        "L-Glutamine"
+      ],
+      "channels": [
+        "Amazon.in",
+        "Desertcart"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "ProSupps",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Mr. Hyde Pre-Workout",
+        "Dr. Jekyll",
+        "PS Whey"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Sunwarrior",
+      "tier": "Global / Import",
+      "categories": "Health Foods & Plant Protein",
+      "flagship_products": [
+        "Warrior Blend",
+        "Classic Plus Organic Vegan Protein"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Transparent Labs",
+      "tier": "Global / Import",
+      "categories": "Clean Performance Nutrition",
+      "flagship_products": [
+        "100% Grass-Fed Whey Isolate",
+        "Bulk Pre-Workout"
+      ],
+      "channels": [
+        "Ubuy",
+        "Desertcart"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Vega",
+      "tier": "Global / Import",
+      "categories": "Health Foods & Plant Protein",
+      "flagship_products": [
+        "Vega Sport Premium Protein",
+        "Vega One Organic"
+      ],
+      "channels": [
+        "Amazon.in",
+        "Desertcart"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Scivation / Xtend",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Xtend Original BCAA",
+        "Xtend Ripped (BCAA + L-Carnitine)",
+        "Xtend Elite Pre-Workout"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart",
+        "Nutrabay",
+        "Supplements Villa"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "GAT Sport",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Nitraflex Pre-Workout",
+        "Liquid L-Carnitine 1500/3000",
+        "Creatine Monohydrate",
+        "Flextreme BCAA"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart",
+        "Nutrabay"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Insane Labz",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Psychotic Pre-Workout",
+        "Psychotic Gold",
+        "Insane Cutz",
+        "Micronized Creatine"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart",
+        "Supplements Villa"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Kevin Levrone Signature",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Shaaboom Pump Pre-Workout",
+        "Anabolic Mass Gainer",
+        "LevroMono Creatine",
+        "Gold BCAA"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart",
+        "Neulife",
+        "Protein Xpress"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "Ronnie Coleman Signature",
+      "tier": "Global / Import",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Yeah Buddy Pre-Workout",
+        "King Mass XL",
+        "Creatine XS",
+        "Amino-Tone (BCAA)"
+      ],
+      "channels": [
+        "Amazon.in",
+        "HealthKart",
+        "Supplements Villa"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "MuscleBlaze",
+      "tier": "Domestic / D2C",
+      "categories": "Performance & Health Food",
+      "flagship_products": [
+        "Biozyme Whey",
+        "Super Gainer XXL",
+        "CreAMP / Monohydrate Creatine",
+        "WrathX Pre-Workout",
+        "BCAA Pro",
+        "L-Carnitine",
+        "High Protein Peanut Butter",
+        "High Protein Oats"
+      ],
+      "channels": [
+        "muscleblaze.com",
+        "HealthKart",
+        "Amazon.in",
+        "Flipkart",
+        "Tata 1mg"
+      ],
+      "d2c_domain": "muscleblaze.com"
+    },
+    {
+      "brand": "Avvatar",
+      "tier": "Domestic / D2C",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Whey Protein",
+        "Absolute Isolate",
+        "Muscle Gainer",
+        "Micronized Creatine Monohydrate"
+      ],
+      "channels": [
+        "avvatarindia.com",
+        "Amazon.in",
+        "HealthKart",
+        "Nutrabay"
+      ],
+      "d2c_domain": "avvatarindia.com"
+    },
+    {
+      "brand": "AS-IT-IS Nutrition",
+      "tier": "Domestic / D2C",
+      "categories": "Performance & Health Food",
+      "flagship_products": [
+        "Pure Whey",
+        "ATOM Mass Gainer",
+        "Pure Creatine Monohydrate",
+        "ATOM Pre-Workout",
+        "ATOM BCAA",
+        "L-Carnitine",
+        "Natural Peanut Butter"
+      ],
+      "channels": [
+        "asitisnutrition.com",
+        "Amazon.in",
+        "Flipkart",
+        "Tata 1mg"
+      ],
+      "d2c_domain": "asitisnutrition.com"
+    },
+    {
+      "brand": "Nakpro",
+      "tier": "Domestic / D2C",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Platinum Whey",
+        "Gold Whey",
+        "Mass Gainer",
+        "Micronized Creatine",
+        "Fermented BCAA"
+      ],
+      "channels": [
+        "nakpro.com",
+        "Amazon.in",
+        "Flipkart"
+      ],
+      "d2c_domain": "nakpro.com"
+    },
+    {
+      "brand": "Fast&Up",
+      "tier": "Domestic / D2C",
+      "categories": "Performance & Micronutrients",
+      "flagship_products": [
+        "Plant Protein",
+        "Whey Essentials",
+        "Creatine Monohydrate",
+        "BCAA 2:1:1",
+        "L-Carnitine Carnipure",
+        "Pre-Workout",
+        "Daily Multivitamins"
+      ],
+      "channels": [
+        "fastandup.in",
+        "Amazon.in",
+        "Tata 1mg",
+        "Apollo Pharmacy"
+      ],
+      "d2c_domain": "fastandup.in"
+    },
+    {
+      "brand": "Wellcore",
+      "tier": "Domestic / D2C",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Micronized Creatine Monohydrate",
+        "Pure Creatine Creapure",
+        "Electrolytes"
+      ],
+      "channels": [
+        "wellcore.in",
+        "Amazon.in",
+        "HealthKart"
+      ],
+      "d2c_domain": "wellcore.in"
+    },
+    {
+      "brand": "Big Muscles Nutrition",
+      "tier": "Domestic / D2C",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Freak Pre-Workout",
+        "Real Mass Gainer",
+        "Creatine Monohydrate",
+        "Quick BCAA",
+        "Carni-Engine (L-Carnitine)"
+      ],
+      "channels": [
+        "bigmusclesnutrition.com",
+        "Amazon.in",
+        "Flipkart"
+      ],
+      "d2c_domain": "bigmusclesnutrition.com"
+    },
+    {
+      "brand": "Scitron",
+      "tier": "Domestic / D2C",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Advance Whey",
+        "Volcano Pre-Workout",
+        "Mega Mass Gainer",
+        "Creatine Monohydrate",
+        "Essential BCAA"
+      ],
+      "channels": [
+        "scitron.com",
+        "Amazon.in",
+        "HealthKart"
+      ],
+      "d2c_domain": "scitron.com"
+    },
+    {
+      "brand": "Repfuel Sports",
+      "tier": "Domestic / D2C",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Firebreather Pre-Workout",
+        "Whey In",
+        "Alpha Creatine",
+        "BCAA 6000"
+      ],
+      "channels": [
+        "repfuelsports.com",
+        "Amazon.in"
+      ],
+      "d2c_domain": "repfuelsports.com"
+    },
+    {
+      "brand": "Nutrabox",
+      "tier": "Domestic / D2C",
+      "categories": "Performance Nutrition",
+      "flagship_products": [
+        "Ripped BCAA",
+        "Brawn Mass Gainer",
+        "Micronized Creatine",
+        "Pre-Workout Target"
+      ],
+      "channels": [
+        "nutrabox.in",
+        "Amazon.in"
+      ],
+      "d2c_domain": "nutrabox.in"
+    },
+    {
+      "brand": "GNC India",
+      "tier": "Licensed / D2C",
+      "categories": "Performance & Micronutrients",
+      "flagship_products": [
+        "Pro Performance Whey",
+        "AMP Pure Isolate",
+        "Creatine Monohydrate",
+        "Pro Performance BCAA",
+        "Mega Men Multivitamins"
+      ],
+      "channels": [
+        "guardian.in",
+        "Amazon.in",
+        "HealthKart"
+      ],
+      "d2c_domain": "guardian.in"
+    },
+    {
+      "brand": "Myprotein India",
+      "tier": "Global / D2C",
+      "categories": "Performance & Health Food",
+      "flagship_products": [
+        "Impact Whey",
+        "The Pre-Workout",
+        "Creatine Monohydrate",
+        "Essential BCAA",
+        "Protein Flapjacks & Brownies",
+        "High Protein Peanut Butter"
+      ],
+      "channels": [
+        "myprotein.co.in"
+      ],
+      "d2c_domain": "myprotein.co.in"
+    },
+    {
+      "brand": "Pintola",
+      "tier": "Domestic / D2C",
+      "categories": "Health Foods & Pantry",
+      "flagship_products": [
+        "High Protein Peanut Butter (Dark Chocolate / Classic / Whey-infused)",
+        "Organic Peanut Butter",
+        "Protein Muesli"
+      ],
+      "channels": [
+        "pintola.in",
+        "Amazon.in",
+        "Flipkart",
+        "Zepto",
+        "Blinkit"
+      ],
+      "d2c_domain": "pintola.in"
+    },
+    {
+      "brand": "Alpino",
+      "tier": "Domestic / D2C",
+      "categories": "Health Foods & Pantry",
+      "flagship_products": [
+        "Super High Protein Peanut Butter",
+        "High Protein Super Oats (Chocolate & Plain)"
+      ],
+      "channels": [
+        "alpino.in",
+        "Amazon.in",
+        "Flipkart"
+      ],
+      "d2c_domain": "alpino.in"
+    },
+    {
+      "brand": "MyFitness",
+      "tier": "Domestic / D2C",
+      "categories": "Health Foods & Pantry",
+      "flagship_products": [
+        "Original Chocolate High Protein Peanut Butter",
+        "Crispy Peanut Butter",
+        "High Protein Rolled Oats"
+      ],
+      "channels": [
+        "myfitness.in",
+        "Amazon.in",
+        "HealthKart",
+        "Flipkart"
+      ],
+      "d2c_domain": "myfitness.in"
+    },
+    {
+      "brand": "Yogabar",
+      "tier": "Domestic / D2C",
+      "categories": "Health Foods & Pantry",
+      "flagship_products": [
+        "20g High Protein Oats (Chocolate / Golden Crunch)",
+        "20g Protein Bars",
+        "High Protein Peanut Butter"
+      ],
+      "channels": [
+        "yogabar.in",
+        "Amazon.in",
+        "BigBasket",
+        "Zepto"
+      ],
+      "d2c_domain": "yogabar.in"
+    },
+    {
+      "brand": "RiteBite Max Protein",
+      "tier": "Domestic / D2C",
+      "categories": "Health Foods & Pantry",
+      "flagship_products": [
+        "Max Protein Bars (10g",
+        "20g",
+        "30g Daily/Ultimate)",
+        "High Protein Cookies",
+        "Max Protein Chips"
+      ],
+      "channels": [
+        "maxprotein.in",
+        "Amazon.in",
+        "Flipkart",
+        "Tata 1mg"
+      ],
+      "d2c_domain": "maxprotein.in"
+    },
+    {
+      "brand": "SuperYou",
+      "tier": "Domestic / D2C",
+      "categories": "Health Foods & Pantry",
+      "flagship_products": [
+        "High Protein Wafer Bars",
+        "Protein Bars"
+      ],
+      "channels": [
+        "superyou.in",
+        "Amazon.in"
+      ],
+      "d2c_domain": "superyou.in"
+    },
+    {
+      "brand": "The Whole Truth Foods",
+      "tier": "Domestic / D2C",
+      "categories": "Health Foods & Pantry",
+      "flagship_products": [
+        "Whey Isolate",
+        "High Protein Bars",
+        "Dark Chocolate Peanut Butter",
+        "High Protein Muesli"
+      ],
+      "channels": [
+        "thewholetruthfoods.com",
+        "Amazon.in",
+        "Swiggy Instamart"
+      ],
+      "d2c_domain": "thewholetruthfoods.com"
+    },
+    {
+      "brand": "Phab",
+      "tier": "Domestic / D2C",
+      "categories": "Health Foods & Pantry",
+      "flagship_products": [
+        "High Protein Milkshakes",
+        "20g Protein Bars",
+        "Protein Bombs"
+      ],
+      "channels": [
+        "getphab.com",
+        "Amazon.in"
+      ],
+      "d2c_domain": "getphab.com"
+    },
+    {
+      "brand": "NutroActive",
+      "tier": "Domestic / D2C",
+      "categories": "Functional Flours (Atta)",
+      "flagship_products": [
+        "Brown Xtra High Protein Atta (50g+ Protein/100g)",
+        "Keto Ultra Low-Carb Flour",
+        "Protein Pasta"
+      ],
+      "channels": [
+        "nutroactive.com",
+        "Amazon.in",
+        "Tata 1mg"
+      ],
+      "d2c_domain": "nutroactive.com"
+    },
+    {
+      "brand": "Ketofy / Lo! Foods",
+      "tier": "Domestic / D2C",
+      "categories": "Functional Flours (Atta)",
+      "flagship_products": [
+        "Ultra Low Carb High Protein Atta",
+        "Low Carb Protein Cookies",
+        "Protein Roti Mix"
+      ],
+      "channels": [
+        "Amazon.in",
+        "Flipkart",
+        "brand stores"
+      ],
+      "d2c_domain": null
+    },
+    {
+      "brand": "True Elements",
+      "tier": "Domestic / D2C",
+      "categories": "Health Foods & Grains",
+      "flagship_products": [
+        "20g High Protein Rolled Oats (Dark Chocolate / Seeds)",
+        "High Protein Muesli",
+        "Raw Pumpkin & Chia Seeds"
+      ],
+      "channels": [
+        "trueelements.com",
+        "Amazon.in",
+        "Flipkart"
+      ],
+      "d2c_domain": "trueelements.com"
+    },
+    {
+      "brand": "Boldfit",
+      "tier": "Domestic / D2C",
+      "categories": "Multi-Category / Daily Wellness",
+      "flagship_products": [
+        "Micronized Creatine Monohydrate",
+        "BCAA",
+        "L-Carnitine",
+        "High Protein Peanut Butter",
+        "Multivitamins",
+        "Probiotics",
+        "Magnesium Glycinate"
+      ],
+      "channels": [
+        "boldfit.in",
+        "Amazon.in",
+        "Flipkart"
+      ],
+      "d2c_domain": "boldfit.in"
+    },
+    {
+      "brand": "Carbamide Forte",
+      "tier": "Domestic / D2C",
+      "categories": "Micronutrients & Minerals",
+      "flagship_products": [
+        "Magnesium Glycinate Chelate",
+        "50 Billion Probiotics",
+        "Triple Strength Fish Oil",
+        "Multivitamins",
+        "Pure L-Carnitine"
+      ],
+      "channels": [
+        "cfstores.in",
+        "Amazon.in",
+        "Tata 1mg",
+        "Flipkart"
+      ],
+      "d2c_domain": "cfstores.in"
+    },
+    {
+      "brand": "HealthyHey Nutrition",
+      "tier": "Domestic / D2C",
+      "categories": "Micronutrients & Minerals",
+      "flagship_products": [
+        "Pure Magnesium Glycinate",
+        "Chelated Zinc",
+        "Vitamin K2+D3",
+        "Vitamin B12",
+        "Potassium Citrate"
+      ],
+      "channels": [
+        "healthyhey.com",
+        "Amazon.in",
+        "Tata 1mg"
+      ],
+      "d2c_domain": "healthyhey.com"
+    },
+    {
+      "brand": "Kapiva",
+      "tier": "Domestic / D2C",
+      "categories": "Ayurvedic Performance",
+      "flagship_products": [
+        "Pure Himalayan Shilajit Resin",
+        "Shilajit Gold",
+        "KSM-66 Ashwagandha Capsules",
+        "Biotin Gummies"
+      ],
+      "channels": [
+        "kapiva.in",
+        "Amazon.in",
+        "Tata 1mg",
+        "Netmeds"
+      ],
+      "d2c_domain": "kapiva.in"
+    },
+    {
+      "brand": "Upakarma Ayurveda",
+      "tier": "Domestic / D2C",
+      "categories": "Ayurvedic Performance",
+      "flagship_products": [
+        "Pure Shilajit Resin (Gold / Silver Foil)",
+        "Organic Ashwagandha Root",
+        "Pure Shilajit Liquid Drops"
+      ],
+      "channels": [
+        "upakarma.com",
+        "Amazon.in",
+        "Tata 1mg"
+      ],
+      "d2c_domain": "upakarma.com"
+    },
+    {
+      "brand": "Neuherbs",
+      "tier": "Domestic / D2C",
+      "categories": "Micronutrients & Herbals",
+      "flagship_products": [
+        "Deep Sea Omega-3 Fish Oil",
+        "Pure Himalayan Shilajit Resin",
+        "Plant-Based Collagen Booster",
+        "Organic Seeds"
+      ],
+      "channels": [
+        "neuherbs.com",
+        "Amazon.in",
+        "Tata 1mg"
+      ],
+      "d2c_domain": "neuherbs.com"
+    },
+    {
+      "brand": "Man Matters",
+      "tier": "Domestic / D2C",
+      "categories": "Performance & Men's Health",
+      "flagship_products": [
+        "Micronized Creatine Monohydrate",
+        "Shilajit Resin with 24K Gold",
+        "Ashwagandha Tablets"
+      ],
+      "channels": [
+        "manmatters.com",
+        "Amazon.in",
+        "Flipkart"
+      ],
+      "d2c_domain": "manmatters.com"
+    },
+    {
+      "brand": "Zingavita",
+      "tier": "Domestic / D2C",
+      "categories": "Micronutrients & Omega",
+      "flagship_products": [
+        "Triple Strength Omega-3 Fish Oil",
+        "Daily Multivitamin for Men/Women",
+        "Pre & Probiotics",
+        "Magnesium"
+      ],
+      "channels": [
+        "zingavita.com",
+        "Amazon.in",
+        "Tata 1mg"
+      ],
+      "d2c_domain": "zingavita.com"
+    },
+    {
+      "brand": "TrueBasics",
+      "tier": "Domestic / D2C",
+      "categories": "Micronutrients & Omega",
+      "flagship_products": [
+        "Ultra Omega-3 Fish Oil",
+        "Multivit Men/Women",
+        "Joint Support (Curcumin & Glucosamine)"
+      ],
+      "channels": [
+        "truebasics.com",
+        "HealthKart",
+        "Amazon.in"
+      ],
+      "d2c_domain": "truebasics.com"
+    },
+    {
+      "brand": "Cosmix",
+      "tier": "Domestic / D2C",
+      "categories": "Functional Botanicals & Protein",
+      "flagship_products": [
+        "No-Nonsense Plant Protein",
+        "Healthy Hair Superfoods",
+        "What Women Want (Hormonal Balance)",
+        "Gut Health Cleanse"
+      ],
+      "channels": [
+        "cosmix.in"
+      ],
+      "d2c_domain": "cosmix.in"
+    },
+    {
+      "brand": "Plix Life",
+      "tier": "Domestic / D2C",
+      "categories": "Functional Health & Wellness",
+      "flagship_products": [
+        "Strength Plant Protein (Pea/Brown Rice)",
+        "Supergreens Effervescent",
+        "Marine Collagen",
+        "Glutathione Effervescent"
+      ],
+      "channels": [
+        "plixlife.com",
+        "Amazon.in",
+        "Tata 1mg"
+      ],
+      "d2c_domain": "plixlife.com"
+    },
+    {
+      "brand": "OZiva",
+      "tier": "Domestic / D2C",
+      "categories": "Plant Protein & Herbals",
+      "flagship_products": [
+        "Organic Plant Protein",
+        "Superfood Greens & Herbs",
+        "Protein & Herbs for Men/Women",
+        "Bioactive Collagen"
+      ],
+      "channels": [
+        "oziva.in",
+        "Amazon.in",
+        "Tata 1mg"
+      ],
+      "d2c_domain": "oziva.in"
+    },
+    {
+      "brand": "Naturaltein / Beast Life",
+      "tier": "Domestic / Certified",
+      "categories": "Clean Performance Nutrition",
+      "flagship_products": [
+        "Creapure Micronized Creatine",
+        "Whey Protein Isolate (Cologne List Certified)",
+        "Organic Vegan Protein"
+      ],
+      "channels": [
+        "naturaltein.in",
+        "Amazon.in"
+      ],
+      "d2c_domain": "naturaltein.in"
+    }
+  ],
+  "d2c_registry": [
+    {
+      "brand": "Optimum Nutrition (ON)",
+      "domain": "optimumnutrition.co.in"
+    },
+    {
+      "brand": "MuscleBlaze",
+      "domain": "muscleblaze.com"
+    },
+    {
+      "brand": "Avvatar",
+      "domain": "avvatarindia.com"
+    },
+    {
+      "brand": "AS-IT-IS Nutrition",
+      "domain": "asitisnutrition.com"
+    },
+    {
+      "brand": "Nakpro",
+      "domain": "nakpro.com"
+    },
+    {
+      "brand": "Fast&Up",
+      "domain": "fastandup.in"
+    },
+    {
+      "brand": "Wellcore",
+      "domain": "wellcore.in"
+    },
+    {
+      "brand": "Big Muscles Nutrition",
+      "domain": "bigmusclesnutrition.com"
+    },
+    {
+      "brand": "Scitron",
+      "domain": "scitron.com"
+    },
+    {
+      "brand": "Repfuel Sports",
+      "domain": "repfuelsports.com"
+    },
+    {
+      "brand": "Nutrabox",
+      "domain": "nutrabox.in"
+    },
+    {
+      "brand": "GNC India",
+      "domain": "guardian.in"
+    },
+    {
+      "brand": "Myprotein India",
+      "domain": "myprotein.co.in"
+    },
+    {
+      "brand": "Pintola",
+      "domain": "pintola.in"
+    },
+    {
+      "brand": "Alpino",
+      "domain": "alpino.in"
+    },
+    {
+      "brand": "MyFitness",
+      "domain": "myfitness.in"
+    },
+    {
+      "brand": "Yogabar",
+      "domain": "yogabar.in"
+    },
+    {
+      "brand": "RiteBite Max Protein",
+      "domain": "maxprotein.in"
+    },
+    {
+      "brand": "SuperYou",
+      "domain": "superyou.in"
+    },
+    {
+      "brand": "The Whole Truth Foods",
+      "domain": "thewholetruthfoods.com"
+    },
+    {
+      "brand": "Phab",
+      "domain": "getphab.com"
+    },
+    {
+      "brand": "NutroActive",
+      "domain": "nutroactive.com"
+    },
+    {
+      "brand": "True Elements",
+      "domain": "trueelements.com"
+    },
+    {
+      "brand": "Boldfit",
+      "domain": "boldfit.in"
+    },
+    {
+      "brand": "Carbamide Forte",
+      "domain": "cfstores.in"
+    },
+    {
+      "brand": "HealthyHey Nutrition",
+      "domain": "healthyhey.com"
+    },
+    {
+      "brand": "Kapiva",
+      "domain": "kapiva.in"
+    },
+    {
+      "brand": "Upakarma Ayurveda",
+      "domain": "upakarma.com"
+    },
+    {
+      "brand": "Neuherbs",
+      "domain": "neuherbs.com"
+    },
+    {
+      "brand": "Man Matters",
+      "domain": "manmatters.com"
+    },
+    {
+      "brand": "Zingavita",
+      "domain": "zingavita.com"
+    },
+    {
+      "brand": "TrueBasics",
+      "domain": "truebasics.com"
+    },
+    {
+      "brand": "Cosmix",
+      "domain": "cosmix.in"
+    },
+    {
+      "brand": "Plix Life",
+      "domain": "plixlife.com"
+    },
+    {
+      "brand": "OZiva",
+      "domain": "oziva.in"
+    },
+    {
+      "brand": "Naturaltein / Beast Life",
+      "domain": "naturaltein.in"
+    }
+  ]
+}

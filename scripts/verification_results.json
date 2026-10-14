@@ -10,12 +10,12 @@
     {
       "status": "PASS",
       "test": "Migration 0001 exists",
-      "detail": "C:\\Users\\ajith\\.gemini\\antigravity\\worktrees\\Protein aggregator\\add_pdf_reader_skill\\supabase\\migrations\\0001_initial_proteindx_schema.sql"
+      "detail": "E:\\Desktop\\Protein aggregator\\supabase\\migrations\\0001_initial_proteindx_schema.sql"
     },
     {
       "status": "PASS",
       "test": "Migration 0002 exists",
-      "detail": "C:\\Users\\ajith\\.gemini\\antigravity\\worktrees\\Protein aggregator\\add_pdf_reader_skill\\supabase\\migrations\\0002_proteindex_v3_schema_alignment.sql"
+      "detail": "E:\\Desktop\\Protein aggregator\\supabase\\migrations\\0002_proteindex_v3_schema_alignment.sql"
     },
     {
       "status": "PASS",
@@ -325,27 +325,27 @@
     {
       "status": "PASS",
       "test": "API Route: /api/products implemented",
-      "detail": "C:\\Users\\ajith\\.gemini\\antigravity\\worktrees\\Protein aggregator\\add_pdf_reader_skill\\client\\src\\app\\api\\products\\route.ts"
+      "detail": "E:\\Desktop\\Protein aggregator\\client\\src\\app\\api\\products\\route.ts"
     },
     {
       "status": "PASS",
       "test": "API Route: /api/compare implemented",
-      "detail": "C:\\Users\\ajith\\.gemini\\antigravity\\worktrees\\Protein aggregator\\add_pdf_reader_skill\\client\\src\\app\\api\\compare\\route.ts"
+      "detail": "E:\\Desktop\\Protein aggregator\\client\\src\\app\\api\\compare\\route.ts"
     },
     {
       "status": "PASS",
       "test": "Frontend: /compare page implemented",
-      "detail": "C:\\Users\\ajith\\.gemini\\antigravity\\worktrees\\Protein aggregator\\add_pdf_reader_skill\\client\\src\\app\\compare\\page.tsx"
+      "detail": "E:\\Desktop\\Protein aggregator\\client\\src\\app\\compare\\page.tsx"
     },
     {
       "status": "PASS",
       "test": "Frontend: CompareTray component implemented",
-      "detail": "C:\\Users\\ajith\\.gemini\\antigravity\\worktrees\\Protein aggregator\\add_pdf_reader_skill\\client\\src\\components\\CompareTray.tsx"
+      "detail": "E:\\Desktop\\Protein aggregator\\client\\src\\components\\CompareTray.tsx"
     },
     {
       "status": "PASS",
       "test": "Monetization: Outbound affiliate sanitizer implemented",
-      "detail": "C:\\Users\\ajith\\.gemini\\antigravity\\worktrees\\Protein aggregator\\add_pdf_reader_skill\\client\\src\\utils\\affiliate.ts"
+      "detail": "E:\\Desktop\\Protein aggregator\\client\\src\\utils\\affiliate.ts"
     },
     {
       "status": "PASS",
