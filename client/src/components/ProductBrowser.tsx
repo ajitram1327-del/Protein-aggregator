@@ -181,15 +181,17 @@ export function ProductBrowser({ initialProducts }: { initialProducts: GroupedPr
           if (!matchesAnyFormulation) return false;
         }
 
-        // Gate 2: True Value Filter (₹ / 100g Pure Protein)
-        const bestVariant = g.variants[0];
-        const servingSize = Math.max(10, bestVariant?.label_serving_size_g || 33);
-        const proteinG = Math.max(5, bestVariant?.label_protein_per_serving_g || 24);
-        const totalServings = Math.max(1, Math.round((bestVariant?.weight_grams || 1000) / servingSize));
-        const cost100g = costPer100gProtein(g.lowestPrice, totalServings, proteinG);
+        // Gate 2: True Value Filter (₹ / 100g Pure Protein - applies to protein powders)
+        if (g.categorySilo === "protein" || !g.categorySilo) {
+          const bestVariant = g.variants[0];
+          const servingSize = Math.max(10, bestVariant?.label_serving_size_g || 33);
+          const proteinG = Math.max(5, bestVariant?.label_protein_per_serving_g || 24);
+          const totalServings = Math.max(1, Math.round((bestVariant?.weight_grams || 1000) / servingSize));
+          const cost100g = costPer100gProtein(g.lowestPrice, totalServings, proteinG);
 
-        if (filters.maxCostPer100gProtein < 600 && isFinite(cost100g)) {
-          if (cost100g > filters.maxCostPer100gProtein) return false;
+          if (filters.maxCostPer100gProtein < 600 && isFinite(cost100g)) {
+            if (cost100g > filters.maxCostPer100gProtein) return false;
+          }
         }
 
         // Gate 3: Purity & Trust Thresholds
@@ -255,20 +257,23 @@ export function ProductBrowser({ initialProducts }: { initialProducts: GroupedPr
         return true;
       })
       .sort((a, b) => {
-        const costA =
-          costPer100gProtein(
-            a.lowestPrice,
-            Math.max(1, Math.round((a.variants[0]?.weight_grams || 1000) / (a.variants[0]?.label_serving_size_g || 33))),
-            a.variants[0]?.label_protein_per_serving_g || 24
-          ) || Infinity;
-        const costB =
-          costPer100gProtein(
-            b.lowestPrice,
-            Math.max(1, Math.round((b.variants[0]?.weight_grams || 1000) / (b.variants[0]?.label_serving_size_g || 33))),
-            b.variants[0]?.label_protein_per_serving_g || 24
-          ) || Infinity;
+        // Silo-aware Equalizer metric resolver (preserves PRD metric per silo)
+        const getEffectiveMetric = (item: GroupedProduct) => {
+          if (item.bestValueMetric && item.bestValueMetric > 0 && isFinite(item.bestValueMetric)) {
+            return item.bestValueMetric;
+          }
+          const v0 = item.variants[0];
+          const weight = v0?.weight_grams || 1000;
+          const sSize = v0?.label_serving_size_g || 33;
+          const prot = v0?.label_protein_per_serving_g || 24;
+          const servings = Math.max(1, Math.round(weight / sSize));
+          return costPer100gProtein(item.lowestPrice, servings, prot) || Infinity;
+        };
 
-        if (filters.sort === "value-asc") return costA - costB;
+        const metricA = getEffectiveMetric(a);
+        const metricB = getEffectiveMetric(b);
+
+        if (filters.sort === "value-asc") return metricA - metricB;
         if (filters.sort === "price-asc") return a.lowestPrice - b.lowestPrice;
         if (filters.sort === "price-desc") return b.lowestPrice - a.lowestPrice;
         if (filters.sort === "purity-desc") {
@@ -277,11 +282,11 @@ export function ProductBrowser({ initialProducts }: { initialProducts: GroupedPr
           return purityB - purityA;
         }
 
-        // Featured: Verified first, then best value
+        // Featured: Verified first, then best value metric
         if (a.labVerified !== b.labVerified) {
           return a.labVerified ? -1 : 1;
         }
-        return costA - costB;
+        return metricA - metricB;
       });
   }, [initialProducts, filters]);
 

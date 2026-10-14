@@ -119,6 +119,12 @@ def init_sqlite_silo_tables():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_creatine_cost ON creatine_catalog(cost_per_g_creatine_inr ASC);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_creatine_brand ON creatine_catalog(brand);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_mass_gainer_cost ON mass_gainer_catalog(cost_per_1000_kcal_inr ASC);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_mass_gainer_brand ON mass_gainer_catalog(brand);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_pre_workout_cost ON pre_workout_catalog(cost_per_scoop_inr ASC);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_pre_workout_brand ON pre_workout_catalog(brand);")
     conn.commit()
     conn.close()
 

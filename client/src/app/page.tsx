@@ -89,6 +89,16 @@ export default async function Home() {
     }
   })
 
+  // Ensure each group's variants are sorted with the lowest priced/best value variant first
+  Object.values(grouped).forEach((group) => {
+    group.variants.sort((v1, v2) => {
+      const p1 = v1.lowest_price_inr || Infinity;
+      const p2 = v2.lowest_price_inr || Infinity;
+      if (p1 !== p2) return p1 - p2;
+      return (v1.best_value_metric || Infinity) - (v2.best_value_metric || Infinity);
+    });
+  });
+
   const formatted = Object.values(grouped)
 
   return <ProductBrowser initialProducts={formatted} />

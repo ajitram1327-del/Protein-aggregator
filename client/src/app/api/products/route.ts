@@ -69,6 +69,8 @@ export async function GET(request: NextRequest) {
           )
         )
       `)
+      .order('trust_score', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(limit);
 
     if (silo) {
@@ -91,7 +93,14 @@ export async function GET(request: NextRequest) {
     const universalSKUs: MasterUniversalSKU[] = [];
 
     (data || []).forEach((product: any) => {
-      (product.variants || []).forEach((v: any) => {
+      // Sort child variants by lowest price ascending so variants[0] is the primary/cheapest variant
+      const sortedVariants = (product.variants || []).slice().sort((v1: any, v2: any) => {
+        const p1 = Number(v1.lowest_price_inr) || Infinity;
+        const p2 = Number(v2.lowest_price_inr) || Infinity;
+        return p1 - p2;
+      });
+
+      sortedVariants.forEach((v: any) => {
         let rawAnalytics: any = {};
         try {
           if (typeof v.raw_json_data === 'string') {
