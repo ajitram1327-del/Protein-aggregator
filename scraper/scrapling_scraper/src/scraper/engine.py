@@ -241,22 +241,29 @@ class ProteIndexOrchestrator:
                 return False
             variant_id = new_var.data[0]["id"]
 
-        # 3. Write / Update Hot Price Listing
-        # The database trigger automatically writes timeseries delta to price_history only on price/stock changes!
-        supabase.table("price_listings").upsert({
-            "variant_id": variant_id,
-            "source": platform_name,
-            "platform_name": platform_name.lower(),
-            "source_url": product_url,
-            "listing_url": product_url,
-            "price_inr": price_inr,
-            "current_price_inr": price_inr,
-            "in_stock": True,
-            "is_in_stock": True,
-            "seller_name": seller_name or brand,
-            "is_authorized_seller": is_authorized,
-            "scraped_at": "now()"
-        }, on_conflict="variant_id,source").execute()
+        # 3. Write / Update Hot Price Listing with connection retry resilience
+        for attempt in range(3):
+            try:
+                supabase.table("price_listings").upsert({
+                    "variant_id": variant_id,
+                    "source": platform_name,
+                    "platform_name": platform_name.lower(),
+                    "source_url": product_url,
+                    "listing_url": product_url,
+                    "price_inr": price_inr,
+                    "current_price_inr": price_inr,
+                    "in_stock": True,
+                    "is_in_stock": True,
+                    "seller_name": seller_name or brand,
+                    "is_authorized_seller": is_authorized,
+                    "scraped_at": "now()"
+                }, on_conflict="variant_id,source").execute()
+                return True
+            except Exception as e:
+                if attempt == 2:
+                    logger.warning(f"Failed to upsert price listing after 3 attempts: {e}")
+                    return False
+                await asyncio.sleep(1)
 
         return True
 
@@ -309,22 +316,26 @@ class ProteIndexOrchestrator:
                     if price <= 0 or not weight_g:
                         continue
 
-                    success = await self.upsert_variant_to_db(
-                        brand=brand,
-                        product_name=title,
-                        flavor=flavor,
-                        weight_g=weight_g,
-                        price_inr=price,
-                        product_url=product_url,
-                        image_url=image_url,
-                        platform_name="D2C",
-                        seller_name=f"{brand} Official",
-                        raw_description=p.get("body_html", "") or "",
-                        extraction_method="shopify_api"
-                    )
-                    if success:
-                        brand_count += 1
-                        total_ingested += 1
+                    try:
+                        success = await self.upsert_variant_to_db(
+                            brand=brand,
+                            product_name=title,
+                            flavor=flavor,
+                            weight_g=weight_g,
+                            price_inr=price,
+                            product_url=product_url,
+                            image_url=image_url,
+                            platform_name="D2C",
+                            seller_name=f"{brand} Official",
+                            raw_description=p.get("body_html", "") or "",
+                            extraction_method="shopify_api"
+                        )
+                        if success:
+                            brand_count += 1
+                            total_ingested += 1
+                    except Exception as item_err:
+                        logger.warning(f"Error processing SKU '{combined_title}': {item_err}")
+                        await asyncio.sleep(0.5)
 
             logger.info(f"  > [{brand}] Successfully ingested {brand_count} clean SKUs.")
 
