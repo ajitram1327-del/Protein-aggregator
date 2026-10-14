@@ -64,15 +64,30 @@ class VariantNormalizer:
         cleaned = re.sub(r"[\u00a0\u200b\u200e\u200f\t\n\r]+", " ", str(raw_title))
         return re.sub(r"\s+", " ", cleaned).strip()
 
+    NUTRIENT_CLAIM_PATTERNS = [
+        r"\b\d+(?:\.\d+)?\s*(?:g|gm|grams?)\s*(?:of\s*)?(?:protein|protien|bcaa|eaa|glutamine|creatine|carbs?|carbohydrates?|fat|sugar|fiber|fibre)(?:\s*(?:per|\/)\s*(?:serving|scoop))?\b",
+        r"\b(?:protein|protien|bcaa|eaa|glutamine|creatine|carbs?|carbohydrates?|fat|sugar)\s*[:\-]?\s*\d+(?:\.\d+)?\s*(?:g|gm|grams?)\b",
+        r"\b\d+(?:\.\d+)?\s*(?:g|gm|grams?)\s*(?:per|\/)\s*(?:serving|scoop)\b",
+        r"\b(?:per|\/)\s*(?:serving|scoop)\s*[:\-]?\s*\d+(?:\.\d+)?\s*(?:g|gm|grams?)\b",
+    ]
+
     @classmethod
-    def parse_weight(cls, raw_title: Optional[str]) -> int:
+    def parse_weight(cls, raw_title: Optional[str], default: Optional[int] = 1000) -> Optional[int]:
         """
         Extracts total weight from title and standardizes to integer grams.
         Handles kg, g, gm, lbs, lb, oz, fl oz, ml, and multipacks (e.g. '2 x 1kg', 'Pack of 2 (1kg each)').
+        Strips marketing nutrient claims (e.g. '65g Protein', '24g Protein per serving') before matching.
         """
         text = cls._clean_title(raw_title)
         if not text:
-            return 1000
+            return default
+
+        # Strip marketing nutrient claims so '65g Protein' is not misidentified as tub weight
+        for pat in cls.NUTRIENT_CLAIM_PATTERNS:
+            text = re.sub(pat, " ", text, flags=re.IGNORECASE)
+        text = re.sub(r"\s+", " ", text).strip()
+        if not text:
+            return default
 
         multiplier = 1
         single_val = 0.0
@@ -130,7 +145,7 @@ class VariantNormalizer:
                             single_val = float(fallback_kg.group(1))
                             unit = "kg"
                         else:
-                            return 1000
+                            return default
 
         # Unit conversions to integer grams
         if unit in ("kg", "kilo"):
@@ -159,7 +174,9 @@ class VariantNormalizer:
         total_grams = int(round(multiplier * single_grams))
         # Plausibility sanity bounds (10g to 50kg)
         if total_grams <= 0 or total_grams > 50000:
-            return 1000
+            return default
+
+        return total_grams
 
         return total_grams
 

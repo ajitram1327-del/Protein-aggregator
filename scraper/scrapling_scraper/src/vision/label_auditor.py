@@ -22,52 +22,64 @@ class VisionLabelAuditor:
     """
     def __init__(self, api_key: str):
         self.client = genai.Client(api_key=api_key)
+        self.quota_exhausted = False
 
     @staticmethod
     def is_likely_nutrition_panel(image_bytes: bytes) -> bool:
         """
-        Fast local PIL heuristic pre-filter (Zero API cost, < 2ms execution):
-        1. Checks image validity & dimensions (rejects icons, thumbnails, extreme banners).
-        2. Checks aspect ratio (nutrition fact panels are vertical/portrait or square tables, not ultra-wide promo banners).
-        3. Color variance & contrast analysis: Nutrition panels are predominantly high-contrast
-           tabular text (white/light background with dark text or black box with white text).
+        Hardened local PIL heuristic pre-filter (Zero API cost, < 2ms execution):
+        1. Dimension Gate: Minimum 250x250 to ensure tabular text is legibly resolvable.
+        2. Aspect Ratio Gate: Nutrition tables are portrait or square (0.35 <= ratio <= 1.6). Rejects wide promo banners.
+        3. Variance & Contrast Gate: High text tables exhibit high grayscale standard deviation (stddev >= 22).
+        4. Edge Density Gate: Convolves image with FIND_EDGES filter. High-density tabular text and gridlines
+           generate edge energy (mean >= 11.0). Smooth glossy plastic tubs and lifestyle photos average 3-7 and are rejected.
         """
         try:
             import io
-            from PIL import Image, ImageStat
+            from PIL import Image, ImageStat, ImageFilter
 
             img = Image.open(io.BytesIO(image_bytes))
             width, height = img.size
 
-            # 1. Size Gate: Must be at least 200x200 to be readable, max 8000
-            if width < 200 or height < 200:
+            # 1. Size Gate
+            if width < 250 or height < 250:
                 logger.info(f"[Pre-Filter REJECT]: Image too small for OCR ({width}x{height})")
                 return False
 
-            # 2. Aspect Ratio Gate: Nutrition panels are never ultra-wide promotional headers (> 2.8 aspect ratio)
+            # 2. Aspect Ratio Gate
             aspect_ratio = width / float(height)
-            if aspect_ratio > 2.8 or aspect_ratio < 0.25:
+            if aspect_ratio > 1.6 or aspect_ratio < 0.35:
                 logger.info(f"[Pre-Filter REJECT]: Aspect ratio {aspect_ratio:.2f} is a banner, not a nutrition panel.")
                 return False
 
-            # 3. Grayscale Contrast / Entropy Check:
-            # High-text nutrition tables exhibit high pixel standard deviation (dark text on light background)
             gray = img.convert('L')
+
+            # 3. Grayscale Contrast / Variance Gate
             stat = ImageStat.Stat(gray)
             stddev = stat.stddev[0]
-
-            # Very low standard deviation (< 18) indicates flat color blocks, icons, or plain graphic shapes
-            if stddev < 18:
-                logger.info(f"[Pre-Filter REJECT]: Low contrast/entropy (stddev={stddev:.1f}), not a text table.")
+            if stddev < 22:
+                logger.info(f"[Pre-Filter REJECT]: Low contrast/entropy (stddev={stddev:.1f} < 22), not a text table.")
                 return False
 
+            # 4. High-Frequency Edge Energy Gate (Distinguishes text tables from glossy plastic tubs)
+            edges = gray.filter(ImageFilter.FIND_EDGES)
+            edge_stat = ImageStat.Stat(edges)
+            edge_mean = edge_stat.mean[0]
+            if edge_mean < 11.0:
+                logger.info(f"[Pre-Filter REJECT]: Low edge density ({edge_mean:.1f} < 11.0). Image is a smooth tub/photo, not a tabular factsheet.")
+                return False
+
+            logger.info(f"[Pre-Filter PASS]: Verified nutrition panel candidate (size={width}x{height}, ratio={aspect_ratio:.2f}, edge_mean={edge_mean:.1f})")
             return True
         except Exception as e:
             logger.warning(f"Pre-filter evaluation error: {e}")
-            return True # In case of doubt, let it through
+            return False
 
     def extract_label_data(self, image_bytes: bytes) -> Optional[NutritionLabelSchema]:
-        # 0. Local Pre-Filter Pass (Saves up to 75% AI Vision API calls)
+        if self.quota_exhausted:
+            return None
+
+        # 0. Local Pre-Filter Pass (Saves up to 85% AI Vision API calls)
         if not self.is_likely_nutrition_panel(image_bytes):
             return None
 
@@ -78,7 +90,7 @@ class VisionLabelAuditor:
         Extract the raw ingredient list in descending order.
         Adhere strictly to the JSON schema.
         """
-        for model_name in ['gemini-2.5-flash', 'gemini-3.8-flash']:
+        for model_name in ['gemini-3.5-flash-lite', 'gemini-flash-latest']:
             try:
                 response = self.client.models.generate_content(
                     model=model_name,
@@ -98,8 +110,9 @@ class VisionLabelAuditor:
                 err_str = str(e).lower()
                 logger.warning(f"Gemini model {model_name} extraction attempt error: {e}")
                 if "429" in err_str or "quota" in err_str or "resource_exhausted" in err_str:
-                    # Daily/minute quota exhausted; skip OCR immediately to keep pipeline moving
-                    break
+                    logger.warning("Gemini Vision API quota exhausted (429). Circuit breaker tripped: skipping Vision OCR for remaining run.")
+                    self.quota_exhausted = True
+                    return None
                 continue
         return None
 

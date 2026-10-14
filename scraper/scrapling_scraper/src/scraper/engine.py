@@ -41,6 +41,19 @@ logging.basicConfig(
 )
 logger = logging.getLogger("ProteIndexEngine")
 
+# Commercial proxy pool configuration & direct connection resilience
+def get_proxy_pool():
+    if os.environ.get("DISABLE_FREE_PROXIES", "").lower() in ("true", "1"):
+        return []
+    commercial_proxy = os.environ.get("ROTATING_PROXY_URL") or os.environ.get("PROXY_URL")
+    if commercial_proxy:
+        return [commercial_proxy]
+    return []
+
+PROXY_POOL = get_proxy_pool()
+attempt = 0
+proxy = random.choice(PROXY_POOL) if (PROXY_POOL and attempt == 0) else None
+
 # Robust .env loading for CLI, background jobs, and API workers
 possible_envs = [
     os.path.join(os.path.dirname(__file__), '..', '..', '..', '.env'),
@@ -94,6 +107,24 @@ MARKETPLACE_TARGETS = [
 TARGET_FILTER = re.compile(r"protein|whey|isolate|casein|plant|pea|creatine|mass.?gainer|weight.?gainer", re.I)
 JUNK_FILTER = re.compile(r"shaker|bottle|t-shirt|tshirt|bag|cap|combo|bundle|multivitamin|bar\b|cookie|snack|chips|peanut\s*butter|gummies|fish oil|omega|collagen|biotin", re.I)
 
+def find_nutrition_label_url(images: List[Dict[str, Any]]) -> str:
+    """
+    Identifies the candidate image most likely to contain the nutrition factsheet.
+    Prioritizes images with nutrition/facts/ingredient/supplement in URL or alt text,
+    falling back to subsequent back-of-pack images rather than the front-tub hero render.
+    """
+    if not images:
+        return ""
+    keywords = ("nutrition", "fact", "label", "ingredient", "supplement", "table", "panel", "back", "info")
+    for img in images:
+        src = img.get("src", "").lower()
+        alt = (img.get("alt") or "").lower()
+        if any(k in src or k in alt for k in keywords):
+            return img.get("src", "")
+    if len(images) > 1:
+        return images[-1].get("src", "")
+    return images[0].get("src", "")
+
 class ProteIndexOrchestrator:
     def __init__(self):
         self.fetcher = ResilientStealthFetcher()
@@ -110,7 +141,8 @@ class ProteIndexOrchestrator:
         platform_name: str,
         seller_name: str = "",
         raw_description: str = "",
-        extraction_method: str = "title"
+        extraction_method: str = "title",
+        label_image_url: str = ""
     ) -> bool:
         if not supabase or price_inr <= 0:
             return False
@@ -138,7 +170,8 @@ class ProteIndexOrchestrator:
         is_authorized = SellerMatrix.verify_seller(seller_name, brand)
 
         # 1. Master Product Check / Insert
-        clean_base = re.split(r"[,|-]", product_name)[0].strip()[:100]
+        clean_base = re.split(r"\s*\|\s*|\s+[-–—]\s+", product_name)[0].strip()
+        clean_base = re.sub(r",\s*\d+.*$", "", clean_base).strip()[:100]
         prod_res = supabase.table("products").select("id").eq("brand", brand).eq("base_name", clean_base).execute()
         
         if prod_res.data and len(prod_res.data) > 0:
@@ -187,11 +220,11 @@ class ProteIndexOrchestrator:
         else:
             # Check if this is a newly discovered variant requiring one-time vision audit
             label_ocr_data = None
-            if label_auditor and image_url and image_url.startswith("http"):
+            target_audit_img = label_image_url if label_image_url else image_url
+            if label_auditor and target_audit_img and target_audit_img.startswith("http"):
                 try:
-                    img_bytes = await self.fetcher.fetch_bytes(image_url)
+                    img_bytes = await self.fetcher.fetch_bytes(target_audit_img)
                     if img_bytes:
-                        logger.info(f"[Vision] Running one-time nutrition audit on {brand} {sku_id}...")
                         label_ocr_data = label_auditor.extract_label_data(img_bytes)
                 except Exception as e:
                     logger.warning(f"Vision audit attempt error: {e}")
@@ -302,18 +335,37 @@ class ProteIndexOrchestrator:
 
                 images = p.get("images", [])
                 image_url = images[0].get("src") if images else ""
+                label_image_url = find_nutrition_label_url(images)
                 handle = p.get("handle", "")
                 product_url = f"https://{domain}/products/{handle}" if handle else f"https://{domain}"
 
                 for v in p.get("variants", []):
                     var_title = v.get("title", "")
-                    combined_title = f"{title} {var_title}"
                     price = float(v.get("price", 0))
+                    sku_label = f"{title} [{var_title}]"
 
-                    weight_g = VariantNormalizer.parse_weight(combined_title)
-                    flavor = VariantNormalizer.parse_flavor(combined_title)
+                    if price <= 0:
+                        continue
 
-                    if price <= 0 or not weight_g:
+                    # 1. First priority: Check variant title directly (e.g. "Mango / 2Kg", "1kg / Chocolate")
+                    weight_g = VariantNormalizer.parse_weight(var_title, default=None)
+
+                    # 2. Second priority: Check variant grams field if valid tub weight (>= 100g)
+                    if not weight_g:
+                        v_grams = v.get("grams")
+                        if v_grams and isinstance(v_grams, (int, float)) and v_grams >= 100:
+                            weight_g = int(round(v_grams))
+
+                    # 3. Third priority: Parse from parent product title (nutrient claims stripped)
+                    if not weight_g:
+                        weight_g = VariantNormalizer.parse_weight(title, default=1000)
+
+                    # For flavor: check var_title first, then combined title
+                    flavor = VariantNormalizer.parse_flavor(var_title)
+                    if flavor == "unflavored":
+                        flavor = VariantNormalizer.parse_flavor(f"{title} {var_title}")
+
+                    if not weight_g:
                         continue
 
                     try:
@@ -328,13 +380,14 @@ class ProteIndexOrchestrator:
                             platform_name="D2C",
                             seller_name=f"{brand} Official",
                             raw_description=p.get("body_html", "") or "",
-                            extraction_method="shopify_api"
+                            extraction_method="shopify_api",
+                            label_image_url=label_image_url
                         )
                         if success:
                             brand_count += 1
                             total_ingested += 1
                     except Exception as item_err:
-                        logger.warning(f"Error processing SKU '{combined_title}': {item_err}")
+                        logger.warning(f"Error processing SKU '{sku_label}': {item_err}")
                         await asyncio.sleep(0.5)
 
             logger.info(f"  > [{brand}] Successfully ingested {brand_count} clean SKUs.")

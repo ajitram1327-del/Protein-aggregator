@@ -65,6 +65,9 @@ export default async function Home() {
       lowest_price_inr: sku.pricing.lowestPriceInr,
       best_value_metric: sku.equalizerMetrics.primaryMetricValue,
       raw_json_data: null,
+      label_serving_size_g: sku.packaging.servingSizeGrams || 33,
+      label_protein_per_serving_g: sku.nutritionalProfile.activeIngredientPerServingGrams || 24,
+      calculated_purity_pct: sku.nutritionalProfile.proteinPurityPct || 75,
       price_listings: sku.pricing.vendorOffers.map((o) => ({
         source: o.platform,
         price_inr: o.priceInr,
