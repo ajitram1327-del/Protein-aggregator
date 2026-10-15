@@ -21,3 +21,4 @@ Nutrition (serving_size_g, protein_per_serving_g, ingredients) lives on the prod
 7. Do not log or store personal data. Analytics events must be anonymous (random session id, no name, email, IP or fingerprint).
 8. Keep functions small and typed. Add or update a test for every parser and matcher you touch.
 9. When finished with a task, summarise what changed, what was tested, and what still needs a human decision.
+10. Follow the Anti-AI-Slop field guide (`.agents/rules/anti-ai-slop.md`) for all UI and frontend work — no AI visual tells, template layouts, generic buzzwords, or unconsidered styling.

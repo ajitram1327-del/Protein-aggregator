@@ -1,105 +1,38 @@
-import { ProductBrowser, GroupedProduct, DbVariant } from '@/components/ProductBrowser'
-import { MasterUniversalSKU } from '@/types/masterSchema'
-import { GET } from '@/app/api/products/route'
-import { NextRequest } from 'next/server'
+import { getGroupedProducts } from "@/lib/products";
+import { LandingHero } from "@/components/home/LandingHero";
+import Link from "next/link";
 
-export const revalidate = 60 // Revalidate cache every 60 seconds
+export const revalidate = 60; // Revalidate cache every 60 seconds
 
 export default async function Home() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
-  let data: MasterUniversalSKU[] = []
-  let errorMsg = ''
-
-  try {
-    const req = new NextRequest(new URL(`${baseUrl}/api/products`))
-    const res = await GET(req)
-    if (!res.ok) {
-      errorMsg = `HTTP error! status: ${res.status}`
-    } else {
-      const json = await res.json()
-      data = json.data || []
-    }
-  } catch (err: any) {
-    errorMsg = err.message || 'Failed to fetch data'
-  }
+  const { products, errorMsg } = await getGroupedProducts();
 
   if (errorMsg) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
-        <h1 className="text-2xl font-bold text-slate-800 mb-4">Oops! Something went wrong.</h1>
-        <p className="text-slate-600">We couldn&apos;t load the products. Please try again later.</p>
-        <p className="text-sm text-red-500 mt-4">{errorMsg}</p>
-      </div>
-    )
+      <main id="main-content" className="flex flex-col items-center justify-center min-h-screen bg-slate-50 px-4 font-mono">
+        <div className="max-w-lg w-full bg-white border border-slate-300 p-6 shadow-xs rounded-sm">
+          <div className="text-xs font-bold uppercase tracking-wider text-red-700 mb-2 flex items-center gap-1.5">
+            <span>[DIAGNOSTIC]</span> Product Repository Query Error
+          </div>
+          <p className="text-xs text-slate-700 leading-relaxed">
+            The terminal was unable to query product records from the database.
+          </p>
+          <div className="mt-3 p-3 bg-slate-100 border border-slate-200 text-[11px] text-slate-800 break-all font-mono">
+            {errorMsg}
+          </div>
+          <div className="mt-4 pt-3 border-t border-slate-200 flex items-center justify-between">
+            <span className="text-[10px] text-slate-500">Check NEXT_PUBLIC_SUPABASE_URL configuration</span>
+            <a
+              href="/"
+              className="px-3 py-1.5 bg-slate-900 text-white text-xs font-bold uppercase hover:bg-slate-800 rounded-sm"
+            >
+              Retry Connection
+            </a>
+          </div>
+        </div>
+      </main>
+    );
   }
 
-  // Group by Product
-  const grouped: Record<string, GroupedProduct> = {}
-  data.forEach((sku) => {
-    const key = `${sku.brand}-${sku.productName}`
-    if (!grouped[key]) {
-      grouped[key] = {
-        id: sku.skuId, // fallback since API doesn't expose product id
-        brand: sku.brand,
-        baseProductName: sku.productName,
-        categorySilo: sku.categorySilo,
-        proteinSource: sku.subCategory,
-        imageUrl: sku.imageUrl || '',
-        variants: [],
-        lowestPrice: Infinity,
-        bestValueMetric: Infinity,
-        isFairyDusted: sku.usefulDoseAnalysis.fillersDetected.length > 0,
-        labVerified: sku.verification.tier === 'gold',
-        trustScore: 100, // API doesn't expose it, fallback
-        labReportUrl: sku.verification.records[0]?.proofUrl || '',
-      }
-    }
-
-    const group = grouped[key]
-
-    const variant: DbVariant = {
-      id: sku.skuId,
-      sku_id: sku.skuId,
-      flavor: sku.flavor,
-      weight_grams: sku.packaging.weightGrams,
-      lowest_price_inr: sku.pricing.lowestPriceInr,
-      best_value_metric: sku.equalizerMetrics.primaryMetricValue,
-      raw_json_data: null,
-      label_serving_size_g: sku.packaging.servingSizeGrams || 33,
-      label_protein_per_serving_g: sku.nutritionalProfile.activeIngredientPerServingGrams || 24,
-      calculated_purity_pct: sku.nutritionalProfile.proteinPurityPct || 75,
-      price_listings: sku.pricing.vendorOffers.map((o) => ({
-        source: o.platform,
-        price_inr: o.priceInr,
-        source_url: o.url,
-        seller_name: o.sellerName,
-        is_authorized_seller: o.isAuthorizedSeller,
-      })),
-      authenticity_score: undefined,
-      has_bot_reviews: undefined,
-    }
-
-    group.variants.push(variant)
-
-    if (variant.lowest_price_inr < group.lowestPrice) {
-      group.lowestPrice = variant.lowest_price_inr
-    }
-    if (variant.best_value_metric > 0 && variant.best_value_metric < group.bestValueMetric) {
-      group.bestValueMetric = variant.best_value_metric
-    }
-  })
-
-  // Ensure each group's variants are sorted with the lowest priced/best value variant first
-  Object.values(grouped).forEach((group) => {
-    group.variants.sort((v1, v2) => {
-      const p1 = v1.lowest_price_inr || Infinity;
-      const p2 = v2.lowest_price_inr || Infinity;
-      if (p1 !== p2) return p1 - p2;
-      return (v1.best_value_metric || Infinity) - (v2.best_value_metric || Infinity);
-    });
-  });
-
-  const formatted = Object.values(grouped)
-
-  return <ProductBrowser initialProducts={formatted} />
+  return <LandingHero initialProducts={products} />;
 }

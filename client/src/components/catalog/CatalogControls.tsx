@@ -60,7 +60,8 @@ export const CatalogControls: React.FC<CatalogControlsProps> = ({
             value={filters.query}
             onChange={(e) => onFilterChange({ query: e.target.value })}
             placeholder="Search whey, isolate, brand, or flavor..."
-            className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm font-medium outline-none transition focus:border-slate-900 focus:ring-1 focus:ring-slate-900 shadow-sm"
+            aria-label="Search supplements"
+            className="h-10 w-full rounded-sm border border-slate-300 bg-white pl-10 pr-4 text-xs font-mono font-medium outline-none transition-colors focus:border-slate-900 focus:ring-1 focus:ring-slate-900 shadow-xs"
           />
         </div>
 
@@ -68,7 +69,7 @@ export const CatalogControls: React.FC<CatalogControlsProps> = ({
           <button
             type="button"
             onClick={() => setIsMobileFilterOpen(true)}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-slate-700 shadow-sm lg:hidden hover:bg-slate-50"
+            className="flex items-center gap-1.5 rounded-sm border border-slate-300 bg-white px-3.5 py-2 text-xs font-mono font-bold uppercase tracking-wider text-slate-700 shadow-xs lg:hidden hover:bg-slate-50"
           >
             <SlidersHorizontal className="size-4" />
             <span>Filters ({totalMatches})</span>
@@ -81,7 +82,7 @@ export const CatalogControls: React.FC<CatalogControlsProps> = ({
               onChange={(e) =>
                 onFilterChange({ sort: e.target.value as SortOption })
               }
-              className="h-11 appearance-none rounded-xl border border-slate-200 bg-white pl-3.5 pr-9 text-xs font-mono font-bold uppercase tracking-wider text-slate-800 outline-none shadow-sm focus:border-slate-900 cursor-pointer"
+              className="h-10 appearance-none rounded-sm border border-slate-300 bg-white pl-3 pr-8 text-xs font-mono font-bold uppercase tracking-wider text-slate-800 outline-none shadow-xs focus:border-slate-900 cursor-pointer"
             >
               <option value="featured">Featured (Verified First)</option>
               <option value="value-asc">Best Value (₹/100g Prot)</option>
@@ -89,7 +90,7 @@ export const CatalogControls: React.FC<CatalogControlsProps> = ({
               <option value="price-desc">Price: High to Low</option>
               <option value="purity-desc">Highest Purity %</option>
             </select>
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
           </div>
         </div>
       </div>
@@ -100,7 +101,7 @@ export const CatalogControls: React.FC<CatalogControlsProps> = ({
           isMobileFilterOpen
             ? "fixed inset-0 z-50 overflow-y-auto bg-white p-6"
             : "hidden"
-        } lg:static lg:z-auto lg:block lg:w-72 shrink-0 bg-white rounded-2xl border border-slate-200 p-5 self-start shadow-sm space-y-6`}
+        } lg:static lg:z-auto lg:block lg:w-72 shrink-0 bg-white rounded-md border border-slate-200 p-5 self-start shadow-xs space-y-5`}
       >
         <div className="flex items-center justify-between pb-4 border-b border-slate-100">
           <div className="flex items-center gap-2">
@@ -140,9 +141,9 @@ export const CatalogControls: React.FC<CatalogControlsProps> = ({
                   key={form.id}
                   type="button"
                   onClick={() => toggleFormulation(form.id)}
-                  className={`flex items-start justify-between text-left p-2.5 rounded-xl border text-xs transition-all ${
+                  className={`flex items-start justify-between text-left p-2.5 rounded-sm border text-xs transition-colors ${
                     isChecked
-                      ? "border-emerald-600 bg-emerald-50/70 text-emerald-950 font-bold shadow-sm"
+                      ? "border-emerald-600 bg-emerald-50/70 text-emerald-950 font-bold shadow-xs"
                       : "border-slate-200 hover:border-slate-300 bg-slate-50/50 text-slate-700"
                   }`}
                 >
@@ -151,7 +152,7 @@ export const CatalogControls: React.FC<CatalogControlsProps> = ({
                     <div className="text-[10px] text-slate-500 font-normal mt-0.5">{form.desc}</div>
                   </div>
                   <div
-                    className={`size-4 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-all ${
+                    className={`size-4 rounded-xs border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
                       isChecked
                         ? "border-emerald-600 bg-emerald-600 text-white"
                         : "border-slate-300 bg-white"
@@ -184,6 +185,7 @@ export const CatalogControls: React.FC<CatalogControlsProps> = ({
             step="25"
             value={filters.maxCostPer100gProtein}
             onChange={(e) => onFilterChange({ maxCostPer100gProtein: Number(e.target.value) })}
+            aria-label="Maximum cost per 100 grams of pure protein"
             className="w-full accent-emerald-600 cursor-pointer"
           />
 
@@ -196,7 +198,7 @@ export const CatalogControls: React.FC<CatalogControlsProps> = ({
                   key={preset.label}
                   type="button"
                   onClick={() => onFilterChange({ maxCostPer100gProtein: preset.max })}
-                  className={`text-[10px] font-mono px-2 py-1 rounded-lg border transition-all ${
+                  className={`text-[10px] font-mono px-2 py-1 rounded-sm border transition-colors ${
                     active
                       ? "border-emerald-600 bg-emerald-600 text-white font-bold"
                       : "border-slate-200 text-slate-600 hover:border-slate-300 bg-white"
@@ -327,7 +329,7 @@ export const CatalogControls: React.FC<CatalogControlsProps> = ({
         <button
           type="button"
           onClick={() => setIsMobileFilterOpen(false)}
-          className="mt-4 w-full rounded-xl bg-slate-900 py-3 text-xs font-mono font-bold uppercase tracking-wider text-white lg:hidden transition-colors hover:bg-slate-800"
+          className="mt-4 w-full rounded-sm bg-slate-900 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-white lg:hidden transition-colors hover:bg-slate-800"
         >
           View {totalMatches} Matches
         </button>

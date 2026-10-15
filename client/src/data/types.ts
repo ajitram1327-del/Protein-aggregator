@@ -1,3 +1,5 @@
+export type SupplementCategory = 'protein' | 'creatine' | 'pre_workout' | 'mass_gainer';
+
 export type ProteinCategory =
   | "whey_concentrate"
   | "whey_isolate"
@@ -16,11 +18,59 @@ export type PlatformName =
   | "instamart"
   | "d2c";
 
+// 1. Polymorphic Category Nutrition Models
+export interface BaseNutritionProfile {
+  servingSizeGrams: number;
+  servingsPerContainer: number;
+}
+
+export interface ProteinNutritionProfile extends BaseNutritionProfile {
+  category: 'protein';
+  proteinPerServingGrams: number;
+  totalProteinPerTubGrams: number;
+  diaasScore?: number;
+  proteinSource: 'whey_isolate' | 'whey_concentrate' | 'whey_blend' | 'plant' | 'casein';
+  flavorType?: 'unflavored' | 'flavored';
+}
+
+export interface CreatineNutritionProfile extends BaseNutritionProfile {
+  category: 'creatine';
+  creatineForm: 'monohydrate_creapure' | 'monohydrate_micronized' | 'hcl';
+  meshSize?: number;
+  creatinePerServingGrams: number;
+  totalCreatineGrams: number;
+}
+
+export interface PreWorkoutNutritionProfile extends BaseNutritionProfile {
+  category: 'pre_workout';
+  caffeinePerServingMg: number;
+  lCitrullinePerServingMg: number;
+  betaAlaninePerServingMg: number;
+  isStimFree: boolean;
+  activeDosageQualityScore?: number;
+}
+
+export interface MassGainerNutritionProfile extends BaseNutritionProfile {
+  category: 'mass_gainer';
+  caloriesPerServing: number;
+  proteinPerServingGrams: number;
+  carbsPerServingGrams: number;
+  carbSource: 'maltodextrin' | 'complex_oats_barley' | 'blended';
+  carbToProteinRatio: number;
+}
+
+export type CategoryNutritionProfile =
+  | ProteinNutritionProfile
+  | CreatineNutritionProfile
+  | PreWorkoutNutritionProfile
+  | MassGainerNutritionProfile;
+
 export interface Product {
   id: string;
   brand_name: string;
   product_name: string;
   category: ProteinCategory;
+  silo?: SupplementCategory;
   baseline_diaas_score: number;
   ingredients: string[];
   fssai_license_number: string;
@@ -39,6 +89,7 @@ export interface ProductVariant {
   label_serving_size_g: number;
   label_total_servings: number;
   detected_enzymes: string[];
+  nutrition?: CategoryNutritionProfile;
   is_active: boolean;
 }
 

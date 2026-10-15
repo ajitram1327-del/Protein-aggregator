@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { X, Share2, ExternalLink, ShieldCheck, AlertTriangle, Zap, Check, ArrowRight, Truck } from "lucide-react";
+import { X, Share2, ExternalLink, ShieldCheck, AlertTriangle, Zap, Check, ArrowRight, Truck, Sparkles } from "lucide-react";
 import { GroupedProduct, DbVariant } from "../ProductBrowser";
 import { StoreOffer } from "./types";
 import { formatInr, costPer100gProtein } from "@/lib/analytics";
+import { cleanFlavorName, formatWeightDisplay } from "@/lib/parentChildMatrix";
 
 interface StoreComparisonDrawerProps {
   isOpen: boolean;
@@ -22,6 +23,57 @@ export const StoreComparisonDrawer: React.FC<StoreComparisonDrawerProps> = ({
   onSelectVariant,
 }) => {
   const [copied, setCopied] = useState(false);
+
+  // Available weights in this product
+  const availableWeights = useMemo(() => {
+    if (!product) return [];
+    const set = new Set<number>();
+    product.variants.forEach((v) => {
+      if (v.weight_grams > 0) set.add(v.weight_grams);
+    });
+    return Array.from(set).sort((a, b) => a - b);
+  }, [product]);
+
+  // Available flavors in this product
+  const availableFlavors = useMemo(() => {
+    if (!product) return [];
+    const map = new Map<string, string>();
+    product.variants.forEach((v) => {
+      const clean = cleanFlavorName(v.flavor);
+      if (!map.has(clean.toLowerCase())) {
+        map.set(clean.toLowerCase(), clean);
+      }
+    });
+    return Array.from(map.values());
+  }, [product]);
+
+  const handleSwitchWeight = (w: number) => {
+    if (!product || !selectedVariant || !onSelectVariant) return;
+    const cleanCur = cleanFlavorName(selectedVariant.flavor).toLowerCase();
+    const matchSameFlavor = product.variants.find(
+      (v) => v.weight_grams === w && cleanFlavorName(v.flavor).toLowerCase() === cleanCur
+    );
+    if (matchSameFlavor) {
+      onSelectVariant(matchSameFlavor);
+      return;
+    }
+    const anyInWeight = product.variants.find((v) => v.weight_grams === w);
+    if (anyInWeight) {
+      onSelectVariant(anyInWeight);
+    }
+  };
+
+  const handleSwitchFlavor = (flv: string) => {
+    if (!product || !selectedVariant || !onSelectVariant) return;
+    const match = product.variants.find(
+      (v) =>
+        v.weight_grams === selectedVariant.weight_grams &&
+        cleanFlavorName(v.flavor).toLowerCase() === flv.toLowerCase()
+    );
+    if (match) {
+      onSelectVariant(match);
+    }
+  };
 
   // Derive 30-day price range (simulated baseline using historical scrapings or variance)
   const currentPrice = selectedVariant?.lowest_price_inr || 2499;
@@ -249,14 +301,84 @@ export const StoreComparisonDrawer: React.FC<StoreComparisonDrawerProps> = ({
               <h2 className="text-base sm:text-lg font-bold text-slate-900 leading-snug mt-0.5">
                 {product.baseProductName}
               </h2>
-              <div className="flex items-center gap-2 mt-1.5 text-xs text-slate-600 font-mono">
-                <span className="bg-slate-200/80 px-2 py-0.5 rounded font-bold text-slate-800">
-                  {selectedVariant.weight_grams >= 1000
-                    ? `${selectedVariant.weight_grams / 1000} kg`
-                    : `${selectedVariant.weight_grams} g`}
-                </span>
-                <span>•</span>
-                <span className="font-semibold text-slate-700">{selectedVariant.flavor}</span>
+              {/* Interactive Parent-Child Flavor & Weight Matrix */}
+              <div className="mt-3 space-y-2">
+                {/* Weight Pills */}
+                {availableWeights.length > 0 && (
+                  <div>
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-semibold mb-1">
+                      Select Weight
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {availableWeights.map((w) => {
+                        const isSelected = selectedVariant.weight_grams === w;
+                        return (
+                          <button
+                            key={w}
+                            type="button"
+                            onClick={() => handleSwitchWeight(w)}
+                            className={`px-2.5 py-1 text-xs font-mono rounded-lg transition-all border ${
+                              isSelected
+                                ? "bg-slate-900 border-slate-900 text-white font-bold shadow-xs"
+                                : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100"
+                            }`}
+                          >
+                            {formatWeightDisplay(w)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Flavor Pills */}
+                {availableFlavors.length > 1 && (
+                  <div>
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-semibold mb-1">
+                      Select Flavor
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {availableFlavors.map((flv) => {
+                        const cleanCur = cleanFlavorName(selectedVariant.flavor).toLowerCase();
+                        const isSelected = cleanCur === flv.toLowerCase();
+                        const matchInWeight = product.variants.find(
+                          (v) =>
+                            v.weight_grams === selectedVariant.weight_grams &&
+                            cleanFlavorName(v.flavor).toLowerCase() === flv.toLowerCase()
+                        );
+                        const isManufactured = !!matchInWeight;
+
+                        if (!isManufactured) {
+                          return (
+                            <span
+                              key={flv}
+                              title={`Not manufactured in ${formatWeightDisplay(selectedVariant.weight_grams)}`}
+                              className="px-2 py-0.5 text-[11px] rounded border border-dashed border-slate-200 text-slate-400 line-through opacity-50 cursor-not-allowed"
+                            >
+                              {flv}
+                            </span>
+                          );
+                        }
+
+                        return (
+                          <button
+                            key={flv}
+                            type="button"
+                            onClick={() => handleSwitchFlavor(flv)}
+                            className={`px-2.5 py-0.5 text-[11px] rounded-md border transition-all truncate max-w-[140px] ${
+                              isSelected
+                                ? "border-emerald-600 bg-emerald-50 text-emerald-800 font-bold shadow-xs"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                            }`}
+                            title={flv}
+                          >
+                            {flv}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -281,7 +403,7 @@ export const StoreComparisonDrawer: React.FC<StoreComparisonDrawerProps> = ({
           </div>
 
           {/* Offers List */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 bg-slate-50/30">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 bg-slate-50/30">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">
                 Live Retailer Offers ({storeOffers.length} Verified Stores)
@@ -292,12 +414,12 @@ export const StoreComparisonDrawer: React.FC<StoreComparisonDrawerProps> = ({
             {storeOffers.map((offer, idx) => (
               <div
                 key={offer.id}
-                className={`relative rounded-xl border p-4 transition-all bg-white ${
+                className={`relative rounded-sm border p-4 transition-colors bg-white ${
                   offer.isLowestVerified
-                    ? "border-emerald-400 ring-1 ring-emerald-400/40 shadow-sm"
+                    ? "border-emerald-500 ring-1 ring-emerald-500/30 shadow-xs"
                     : offer.isGreyMarket
                     ? "border-amber-300 bg-amber-50/30"
-                    : "border-slate-200 hover:border-slate-300 shadow-sm"
+                    : "border-slate-200 hover:border-slate-300 shadow-xs"
                 }`}
               >
                 {/* Status Badges */}
@@ -311,17 +433,17 @@ export const StoreComparisonDrawer: React.FC<StoreComparisonDrawerProps> = ({
                   </div>
 
                   {offer.isLowestVerified && (
-                    <span className="inline-flex items-center gap-1 rounded bg-emerald-600 px-2 py-0.5 text-[10px] font-mono font-bold uppercase text-white shadow-sm">
+                    <span className="inline-flex items-center gap-1 rounded-sm bg-emerald-700 px-2 py-0.5 text-[10px] font-mono font-bold uppercase text-white shadow-xs">
                       <Zap className="size-3 fill-white" /> Lowest Verified
                     </span>
                   )}
                   {!offer.isLowestVerified && offer.isAuthorized && (
-                    <span className="inline-flex items-center gap-1 rounded bg-sky-50 border border-sky-200 px-2 py-0.5 text-[10px] font-mono font-bold uppercase text-sky-700">
+                    <span className="inline-flex items-center gap-1 rounded-sm bg-sky-50 border border-sky-200 px-2 py-0.5 text-[10px] font-mono font-bold uppercase text-sky-700">
                       <ShieldCheck className="size-3 text-sky-600" /> Authorized
                     </span>
                   )}
                   {offer.isGreyMarket && (
-                    <span className="inline-flex items-center gap-1 rounded bg-amber-100 border border-amber-300 px-2 py-0.5 text-[10px] font-mono font-bold uppercase text-amber-900">
+                    <span className="inline-flex items-center gap-1 rounded-sm bg-amber-100 border border-amber-300 px-2 py-0.5 text-[10px] font-mono font-bold uppercase text-amber-900">
                       <AlertTriangle className="size-3 text-amber-700" /> Grey Market
                     </span>
                   )}
@@ -331,7 +453,7 @@ export const StoreComparisonDrawer: React.FC<StoreComparisonDrawerProps> = ({
                 <div className="grid grid-cols-2 gap-2 text-xs py-2 border-y border-slate-100 font-mono">
                   <div>
                     <span className="text-slate-400 text-[10px] block">TOTAL PRICE</span>
-                    <span className="text-lg font-bold text-slate-900">{formatInr(offer.price)}</span>
+                    <span className="text-lg font-bold text-slate-900 tabular-nums">{formatInr(offer.price)}</span>
                     <span className="text-slate-500 text-[11px] ml-1.5">
                       {offer.shippingPrice === 0 ? "· Free Delivery" : `· +${formatInr(offer.shippingPrice)} Ship`}
                     </span>
@@ -353,7 +475,7 @@ export const StoreComparisonDrawer: React.FC<StoreComparisonDrawerProps> = ({
                   </div>
 
                   {offer.warningNote && (
-                    <div className="flex items-start gap-1.5 text-amber-800 bg-amber-100/70 p-2 rounded text-[11px] border border-amber-200 mt-2">
+                    <div className="flex items-start gap-1.5 text-amber-800 bg-amber-100/70 p-2 rounded-sm text-[11px] border border-amber-200 mt-2">
                       <AlertTriangle className="size-3.5 text-amber-700 shrink-0 mt-0.5" />
                       <span>{offer.warningNote}</span>
                     </div>
@@ -366,11 +488,11 @@ export const StoreComparisonDrawer: React.FC<StoreComparisonDrawerProps> = ({
                     href={offer.buyUrl}
                     target="_blank"
                     rel="noopener sponsored"
-                    className={`flex w-full items-center justify-center gap-2 rounded-lg py-2.5 px-4 text-xs font-bold uppercase tracking-wider transition-all ${
+                    className={`flex w-full items-center justify-center gap-2 rounded-sm py-2.5 px-4 text-xs font-bold uppercase tracking-wider transition-colors ${
                       offer.isGreyMarket
                         ? "bg-amber-600 hover:bg-amber-700 text-white"
                         : offer.isLowestVerified
-                        ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow"
+                        ? "bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs"
                         : "bg-slate-900 hover:bg-slate-800 text-white"
                     }`}
                   >
@@ -390,7 +512,7 @@ export const StoreComparisonDrawer: React.FC<StoreComparisonDrawerProps> = ({
           {flavorArbitrage && (
             <div className="border-t border-slate-200 p-4 bg-emerald-50/80">
               <div className="flex items-start gap-2.5">
-                <span className="text-lg">💡</span>
+                <Sparkles className="size-4 text-emerald-800 shrink-0 mt-0.5" />
                 <div className="flex-1 text-xs">
                   <div className="font-bold text-emerald-900 uppercase font-mono tracking-wider">
                     Flavor Arbitrage Tip
@@ -408,7 +530,7 @@ export const StoreComparisonDrawer: React.FC<StoreComparisonDrawerProps> = ({
                   <button
                     type="button"
                     onClick={() => onSelectVariant(flavorArbitrage.variant)}
-                    className="shrink-0 bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                    className="shrink-0 bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-bold px-3 py-1.5 rounded-sm transition-colors flex items-center gap-1"
                   >
                     <span>Switch</span>
                     <ArrowRight className="size-3" />

@@ -1,4 +1,11 @@
-import type { LabAuditReport, ProductVariant, ReviewAuditSummary, ScrapedListing } from "@/data/types";
+import type {
+  LabAuditReport,
+  ProductVariant,
+  ReviewAuditSummary,
+  ScrapedListing,
+  CategoryNutritionProfile,
+  SupplementCategory,
+} from "@/data/types";
 
 export const INDEX_DATE = new Date("2026-10-09T05:30:00Z");
 
@@ -116,4 +123,94 @@ export function indexedAgo(isoString: string): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
+}
+
+export interface ComputedMetrics {
+  primaryLabel: string;
+  primaryValue: string;
+  numericSortValue: number;
+  secondaryLabel: string;
+  secondaryValue: string;
+  badge: string | null;
+  badgeTone: 'emerald' | 'amber' | 'cyan' | 'violet';
+}
+
+export function computeCategoryMetrics(
+  category: SupplementCategory | string,
+  priceInr: number,
+  nutrition?: Partial<CategoryNutritionProfile> | any,
+  fallbackWeightGrams: number = 1000
+): ComputedMetrics {
+  const normCat = (category || 'protein').toLowerCase().replace('mass_gainers', 'mass_gainer');
+
+  switch (normCat) {
+    case 'creatine': {
+      const c = nutrition || {};
+      const totalGrams = c.totalCreatineGrams || fallbackWeightGrams || 250;
+      const costPer3g = totalGrams > 0 && priceInr > 0 ? (priceInr / totalGrams) * 3 : 0;
+      return {
+        primaryLabel: '₹ / 3g Dose',
+        primaryValue: costPer3g > 0 ? `₹${costPer3g.toFixed(2)}` : '—',
+        numericSortValue: costPer3g,
+        secondaryLabel: 'Cost / 100g',
+        secondaryValue: totalGrams > 0 && priceInr > 0 ? `₹${((priceInr / totalGrams) * 100).toFixed(0)}` : '—',
+        badge: c.creatineForm === 'monohydrate_creapure' ? 'Creapure® Certified' : '200 Mesh Micronized',
+        badgeTone: 'cyan',
+      };
+    }
+
+    case 'pre_workout': {
+      const pw = nutrition || {};
+      const servings = pw.servingsPerContainer || Math.max(1, Math.round(fallbackWeightGrams / 12)) || 30;
+      const costPerServing = servings > 0 && priceInr > 0 ? priceInr / servings : 0;
+      const citrullineMg = pw.lCitrullinePerServingMg || 6000;
+      const caffeineMg = pw.caffeinePerServingMg || 250;
+      const pumpScore = citrullineMg >= 6000 ? 'Clinical Pump (6g+ Citrulline)' : 'Standard Pump';
+      return {
+        primaryLabel: '₹ / Scoop',
+        primaryValue: costPerServing > 0 ? `₹${costPerServing.toFixed(1)}` : '—',
+        numericSortValue: costPerServing,
+        secondaryLabel: 'Caffeine / Citrulline',
+        secondaryValue: `${caffeineMg}mg / ${(citrullineMg / 1000).toFixed(1)}g`,
+        badge: pumpScore,
+        badgeTone: 'amber',
+      };
+    }
+
+    case 'mass_gainer': {
+      const mg = nutrition || {};
+      const calories = mg.caloriesPerServing || 1100;
+      const servings = mg.servingsPerContainer || Math.max(1, Math.round(fallbackWeightGrams / 150)) || 15;
+      const totalCalories = calories * servings;
+      const costPer1000Kcal = totalCalories > 0 && priceInr > 0 ? (priceInr / totalCalories) * 1000 : 0;
+      return {
+        primaryLabel: '₹ / 1,000 kcal',
+        primaryValue: costPer1000Kcal > 0 ? `₹${costPer1000Kcal.toFixed(1)}` : '—',
+        numericSortValue: costPer1000Kcal,
+        secondaryLabel: 'Carb:Protein Ratio',
+        secondaryValue: `${mg.carbToProteinRatio?.toFixed(1) || '4.0'} : 1`,
+        badge: mg.carbSource === 'complex_oats_barley' ? 'Complex Carb Base' : 'Maltodextrin Base',
+        badgeTone: 'violet',
+      };
+    }
+
+    case 'protein':
+    default: {
+      const p = nutrition || {};
+      const servingSize = Math.max(10, p.servingSizeGrams || p.label_serving_size_g || 33);
+      const proteinG = Math.max(5, p.proteinPerServingGrams || p.label_protein_per_serving_g || 24);
+      const servings = p.servingsPerContainer || Math.max(1, Math.round(fallbackWeightGrams / servingSize));
+      const totalProteinG = p.totalProteinPerTubGrams || (proteinG * servings);
+      const costPerGram = totalProteinG > 0 && priceInr > 0 ? priceInr / totalProteinG : 0;
+      return {
+        primaryLabel: '₹ / g Protein',
+        primaryValue: costPerGram > 0 ? `₹${costPerGram.toFixed(2)}` : '—',
+        numericSortValue: costPerGram,
+        secondaryLabel: 'Cost / 24g Scoop',
+        secondaryValue: costPerGram > 0 ? `₹${(costPerGram * 24).toFixed(1)}` : '—',
+        badge: p.diaasScore ? `DIAAS ${Number(p.diaasScore).toFixed(2)}` : (p.proteinSource === 'whey_isolate' ? '100% Isolate' : 'Pure Protein'),
+        badgeTone: 'emerald',
+      };
+    }
+  }
 }
