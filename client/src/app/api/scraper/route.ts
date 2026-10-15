@@ -17,7 +17,32 @@ export async function GET(request: NextRequest) {
       supabase.from('unmatched_products').select('*', { count: 'exact', head: true }),
     ]);
 
-    // 2. Read recent scraper log lines if available
+    const isVercel = process.env.VERCEL === '1';
+
+    if (isVercel) {
+      return NextResponse.json({
+        success: true,
+        status: {
+          isRunning: false,
+          counts: {
+            products: pRes.count ?? 0,
+            variants: vRes.count ?? 0,
+            offers: oRes.count ?? 0,
+            priceListings: plRes.count ?? 0,
+            unmatched: uRes.count ?? 0,
+          },
+          recentLogs: [
+            '[Vercel Serverless Environment]',
+            'Local file system logs and scraper process control are only accessible in local development.',
+            'Production scraping runs via external worker / scheduled automation.',
+          ],
+          logAvailable: false,
+          lastCheckedAt: new Date().toISOString(),
+        },
+      });
+    }
+
+    // 2. Read recent scraper log lines if available (local development only)
     const rootDir = process.cwd();
     const possibleLogPaths = [
       path.join(rootDir, '..', 'scraper', 'scrapling_scraper', 'scraper_production.log'),
@@ -28,9 +53,9 @@ export async function GET(request: NextRequest) {
     let logFound = false;
 
     for (const logPath of possibleLogPaths) {
-      if (fs.existsSync(logPath)) {
+      if (fs.existsSync(/*turbopackIgnore: true*/ logPath)) {
         try {
-          const content = fs.readFileSync(logPath, 'utf-8');
+          const content = fs.readFileSync(/*turbopackIgnore: true*/ logPath, 'utf-8');
           const allLines = content.trim().split(/\r?\n/);
           logLines = allLines.slice(-100); // Last 100 lines
           logFound = true;
@@ -41,10 +66,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 3. Check if scraper process is currently running
+    // 3. Check if scraper process is currently running (local development only)
+    const isWin = process.platform === 'win32';
+    const checkCommand = isWin ? 'tasklist /FI "IMAGENAME eq python.exe"' : 'pgrep -f "python"';
+
     return new Promise<NextResponse>((resolve) => {
-      exec('tasklist /FI "IMAGENAME eq python.exe"', (err, stdout) => {
-        const isRunning = (stdout || '').toLowerCase().includes('python.exe');
+      exec(checkCommand, (err, stdout) => {
+        const isRunning = isWin
+          ? (stdout || '').toLowerCase().includes('python.exe')
+          : !err && (stdout || '').trim().length > 0;
 
         resolve(
           NextResponse.json({
@@ -76,22 +106,34 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    if (process.env.VERCEL === '1') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Background process execution is disabled in the Vercel serverless environment. Run scrapers locally or trigger a worker.',
+        },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json().catch(() => ({}));
     const action = body.action; // 'start_scrape' | 'purge_database' | 'stop_scrape'
 
     const rootDir = process.cwd();
     // Resolve project root (whether cwd is client or root)
-    const projectRoot = fs.existsSync(path.join(rootDir, 'scraper'))
+    const projectRoot = fs.existsSync(/*turbopackIgnore: true*/ path.join(rootDir, 'scraper'))
       ? rootDir
       : path.join(rootDir, '..');
 
+    const isWin = process.platform === 'win32';
+    const pythonExe = isWin ? 'python.exe' : 'python3';
     const venvPython = path.join(
       projectRoot,
       'scraper',
       'scrapling_scraper',
       '.venv',
-      'Scripts',
-      'python.exe'
+      isWin ? 'Scripts' : 'bin',
+      pythonExe
     );
 
     if (action === 'purge_database') {
@@ -145,8 +187,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'stop_scrape') {
+      const killCommand = isWin ? 'taskkill /F /IM python.exe' : 'pkill -f "python"';
       return new Promise<NextResponse>((resolve) => {
-        exec('taskkill /F /IM python.exe', (err, stdout, stderr) => {
+        exec(killCommand, (err, stdout, stderr) => {
           resolve(
             NextResponse.json({
               success: true,

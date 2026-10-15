@@ -12,9 +12,14 @@ import {
   ExternalLink,
   ChevronRight,
   Sparkles,
+  Bell,
+  Calculator,
 } from "lucide-react";
 import { GroupedProduct, CANONICAL_CATEGORIES } from "@/components/ProductBrowser";
 import { formatInr, costPer100gProtein } from "@/lib/analytics";
+import { LiveMarketPulse } from "@/components/common/LiveMarketPulse";
+import { TrueProteinCostCalculator } from "@/components/calculator/TrueProteinCostCalculator";
+import { PriceAlertModal } from "@/components/common/PriceAlertModal";
 
 interface LandingHeroProps {
   initialProducts: GroupedProduct[];
@@ -23,6 +28,7 @@ interface LandingHeroProps {
 export const LandingHero: React.FC<LandingHeroProps> = ({ initialProducts }) => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +72,9 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ initialProducts }) => 
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+      {/* 0. Live Drops Ticker Strip (Stitch Screen 1) */}
+      <LiveMarketPulse onOpenAlertModal={() => setIsAlertOpen(true)} />
+
       {/* 1. Global Navigation Bar */}
       <header className="border-b border-slate-200 px-4 sm:px-8 py-3.5 sticky top-0 bg-white/95 backdrop-blur-md z-40 shadow-xs">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
@@ -93,6 +102,9 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ initialProducts }) => 
               <Link href="/catalog?category=mass_gainer" className="hover:text-slate-900 transition-colors">
                 Mass Gainers
               </Link>
+              <a href="#calculator" className="hover:text-slate-900 transition-colors text-emerald-700 font-bold">
+                Cost Calculator
+              </a>
               <Link href="/compare" className="hover:text-slate-900 transition-colors text-slate-400">
                 Compare Matrix
               </Link>
@@ -100,6 +112,15 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ initialProducts }) => 
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsAlertOpen(true)}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 border border-slate-300 hover:border-slate-800 text-slate-700 hover:text-slate-900 text-xs font-mono font-bold uppercase tracking-wider rounded-sm transition-colors"
+            >
+              <Bell className="size-3.5 text-emerald-600" />
+              <span>Set Alert</span>
+            </button>
+
             <Link
               href="/catalog"
               className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-900 hover:bg-emerald-800 text-white text-xs font-mono font-bold uppercase tracking-wider rounded-sm transition-colors shadow-xs"
@@ -327,6 +348,11 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ initialProducts }) => 
           })}
         </div>
 
+        {/* 4.5 Interactive True Protein Cost Calculator (Stitch Screen 1 Utility) */}
+        <div id="calculator" className="mb-14 scroll-mt-20">
+          <TrueProteinCostCalculator />
+        </div>
+
         {/* 5. Why ProteIndex Trust Pillars */}
         <div className="text-left mb-6">
           <h2 className="text-base font-bold text-slate-900 font-mono">
@@ -398,6 +424,13 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ initialProducts }) => 
           <div>© {new Date().getFullYear()} ProteIndex. Zero Sponsored Bias.</div>
         </div>
       </footer>
+
+      {/* Price Alert Subscription Modal */}
+      <PriceAlertModal
+        isOpen={isAlertOpen}
+        onClose={() => setIsAlertOpen(false)}
+        products={initialProducts}
+      />
     </div>
   );
 };

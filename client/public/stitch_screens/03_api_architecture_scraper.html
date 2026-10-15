@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"surface-overlay":"#27272a","surface-dim":"#131315","on-primary-container":"#00422b","on-tertiary-container":"#523200","price-drop":"#10b981","tertiary-fixed":"#ffddb8","on-primary-fixed":"#002113","error-container":"#93000a","tertiary":"#ffb95f","inverse-surface":"#e5e1e4","text-muted":"#71717a","secondary-fixed-dim":"#7bd0ff","text-secondary":"#a1a1aa","on-secondary-container":"#00374d","on-secondary-fixed":"#001e2c","border-prominent":"#3f3f46","on-error":"#690005","background":"#131315","surface-raised":"#121215","surface-bright":"#39393b","surface-container-high":"#2a2a2c","on-secondary":"#00354a","text-primary":"#f4f4f5","secondary-fixed":"#c4e7ff","on-error-container":"#ffdad6","on-surface":"#e5e1e4","on-surface-variant":"#bbcabf","outline":"#86948a","on-secondary-fixed-variant":"#004c69","surface-variant":"#353437","warning-amber":"#f59e0b","secondary-container":"#00a6e0","surface-container-low":"#1c1b1d","metric-highlight":"#38bdf8","surface-base":"#09090b","surface-tint":"#4edea3","primary":"#4edea3","on-tertiary-fixed-variant":"#653e00","on-tertiary-fixed":"#2a1700","tertiary-container":"#e29100","border-subtle":"#27272a","primary-fixed-dim":"#4edea3","surface-container-highest":"#353437","inverse-on-surface":"#313032","inverse-primary":"#006c49","surface-container-lowest":"#0e0e10","price-spike":"#f43f5e","error":"#ffb4ab","surface":"#131315","primary-fixed":"#6ffbbe","on-tertiary":"#472a00","on-primary-fixed-variant":"#005236","tertiary-fixed-dim":"#ffb95f","outline-variant":"#3c4a42","primary-container":"#10b981","surface-container":"#201f22","on-primary":"#003824","surface-card":"#18181b","on-background":"#e5e1e4","secondary":"#7bd0ff"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"margin":"1rem","space-md":"0.75rem","gutter-md":"1.5rem","space-lg":"1.25rem","space-xs":"0.25rem","margin-lg":"3rem","space-2xl":"3rem","margin-md":"2rem","gutter":"1rem","space-xl":"2rem","space-2xs":"0.125rem","gutter-lg":"2rem","space-sm":"0.5rem"},"fontFamily":{"body-md":["Geist"],"headline-lg":["Geist"],"headline-xl":["Geist"],"body-lg":["Geist"],"metric-display":["JetBrains Mono"],"body-sm":["Geist"],"label-md":["JetBrains Mono"],"label-sm":["JetBrains Mono"],"headline-xl-mobile":["Geist"],"headline-lg-mobile":["Geist"],"headline-md":["Geist"]},"fontSize":{"body-md":["0.875rem",{"lineHeight":"1.375rem","letterSpacing":"0em","fontWeight":"400"}],"headline-lg":["2rem",{"lineHeight":"2.5rem","letterSpacing":"-0.02em","fontWeight":"600"}],"headline-xl":["3rem",{"lineHeight":"3.5rem","letterSpacing":"-0.03em","fontWeight":"700"}],"body-lg":["1rem",{"lineHeight":"1.5rem","letterSpacing":"-0.01em","fontWeight":"400"}],"metric-display":["1.75rem",{"lineHeight":"2rem","letterSpacing":"-0.02em","fontWeight":"700"}],"body-sm":["0.75rem",{"lineHeight":"1.125rem","letterSpacing":"0em","fontWeight":"400"}],"label-md":["0.8125rem",{"lineHeight":"1rem","letterSpacing":"0.02em","fontWeight":"500"}],"label-sm":["0.6875rem",{"lineHeight":"0.875rem","letterSpacing":"0.04em","fontWeight":"600"}],"headline-xl-mobile":["2.25rem",{"lineHeight":"2.75rem","letterSpacing":"-0.025em","fontWeight":"700"}],"headline-lg-mobile":["1.5rem",{"lineHeight":"2rem","letterSpacing":"-0.02em","fontWeight":"600"}],"headline-md":["1.25rem",{"lineHeight":"1.75rem","letterSpacing":"-0.015em","fontWeight":"600"}]}}}};</script></head><body class="bg-surface-base font-body-md text-text-primary antialiased selection:bg-primary selection:text-surface-base"><header class="fixed top-0 w-full z-50 bg-surface-raised/95 backdrop-blur-md border-b border-border-subtle"><div class="h-14 max-w-7xl mx-auto px-margin lg:px-margin-lg flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-lg"><a class="flex items-center gap-space-sm group text-left" data-path="track-and-compare" href="#"><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="font-headline-md text-headline-md tracking-tight font-bold text-text-primary uppercase leading-none">PROTEINDEX</span><span class="w-1.5 h-1.5 rounded-full bg-price-drop"></span></div><span class="font-label-sm text-label-sm text-text-muted tracking-widest uppercase mt-space-2xs">PRICE ENGINE · IN</span></div></a><div class="hidden xl:block h-6 w-px bg-border-subtle"></div><nav class="hidden lg:flex items-center gap-space-2xs p-space-2xs bg-surface-dim rounded border border-border-subtle" data-active-classes="bg-surface-card text-text-primary border border-border-prominent rounded"><a class="px-space-md py-space-xs font-label-md text-label-md text-text-secondary hover:text-text-primary hover:bg-surface-card rounded transition-colors" data-path="track-and-compare" href="#">Track &amp; Compare</a><a class="px-space-md py-space-xs font-label-md text-label-md text-text-secondary hover:text-text-primary hover:bg-surface-card rounded transition-colors" data-path="price-history" href="#">Price History</a><a class="px-space-md py-space-xs font-label-md text-label-md text-text-secondary hover:text-text-primary hover:bg-surface-card rounded transition-colors" data-path="cost-per-g-protein" href="#">Cost / g Protein</a><a class="px-space-md py-space-xs font-label-md text-label-md text-text-secondary hover:text-text-primary hover:bg-surface-card rounded transition-colors" data-path="deal-alerts" href="#">Deal Alerts</a><a class="px-space-md py-space-xs font-label-md text-label-md text-text-secondary hover:text-text-primary hover:bg-surface-card rounded transition-colors" data-path="retailers" href="#">Retailers</a></nav></div><div class="flex items-center gap-space-md"><div class="hidden md:flex items-center gap-space-xs bg-surface-dim border border-border-subtle px-space-sm py-space-2xs rounded"><span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span><span class="font-label-sm text-label-sm text-text-muted">SYNCED 4M AGO · 4 RETAILERS</span></div><div class="flex items-center gap-space-xs"><button class="h-8 px-space-sm bg-surface-card hover:bg-surface-overlay text-text-secondary hover:text-text-primary border border-border-subtle rounded flex items-center gap-space-xs transition-colors"><span class="font-label-sm text-label-sm font-semibold text-primary">₹ INR</span><span class="material-symbols-outlined text-[16px] text-text-muted">expand_more</span></button><button class="h-8 px-space-sm bg-surface-dim hover:bg-surface-card text-text-muted hover:text-text-secondary border border-border-subtle rounded flex items-center gap-space-sm transition-colors"><span class="material-symbols-outlined text-[16px]">search</span><span class="font-label-sm text-label-sm hidden sm:inline text-text-muted">⌘K</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></div></header><main class="w-full pt-14 bg-surface-base min-h-screen"><div class="flex flex-col w-full">
+<!-- Top Engine Status Bar / Diagnostic Banner -->
+<section class="w-full bg-surface-raised px-margin lg:px-margin-lg py-space-md">
+<div class="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
+<!-- Title & Pipeline Info -->
+<div class="flex flex-wrap items-center gap-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-price-drop animate-pulse"></span>
+<span class="font-label-md text-label-md text-text-primary tracking-tight font-bold">INGESTION &amp; AGGREGATOR PIPELINE</span>
+</div>
+<span class="px-space-xs py-space-2xs bg-surface-card font-label-sm text-label-sm text-price-drop rounded">// v2.4-STABLE</span>
+<span class="hidden sm:inline font-label-sm text-label-sm text-text-muted">HOST: node-in-bom-04.proteindex.internal</span>
+</div>
+<!-- Control Group: Env Switcher + Metrics -->
+<div class="flex flex-wrap items-center gap-space-md">
+<!-- Environment Switcher Segmented Control -->
+<div class="flex items-center p-space-2xs bg-surface-dim rounded">
+<button class="px-space-sm py-space-2xs font-label-sm text-label-sm rounded bg-surface-overlay text-text-primary transition-colors flex items-center gap-space-xs" id="env-prod-btn" onclick="switchEnv('prod')">
+<span class="w-1.5 h-1.5 rounded-full bg-price-drop"></span>
+<span>PRODUCTION</span>
+</button>
+<button class="px-space-sm py-space-2xs font-label-sm text-label-sm rounded text-text-muted hover:text-text-secondary transition-colors flex items-center gap-space-xs" id="env-sand-btn" onclick="switchEnv('sand')">
+<span class="w-1.5 h-1.5 rounded-full bg-surface-bright"></span>
+<span>SANDBOX</span>
+</button>
+</div>
+<div class="h-5 w-px bg-surface-overlay hidden md:block"></div>
+<!-- Quick Pulse Stats -->
+<div class="flex items-center gap-space-lg font-label-sm text-label-sm">
+<div class="flex items-center gap-space-xs">
+<span class="text-text-muted">NODES:</span>
+<span class="text-price-drop font-semibold">4/4 ONLINE</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="text-text-muted">LATENCY:</span>
+<span class="text-text-primary font-semibold">42ms</span>
+</div>
+<div class="flex items-center gap-space-xs hidden sm:flex">
+<span class="text-text-muted">TODAY:</span>
+<span class="text-text-primary font-semibold">18,420 QTD</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="text-text-muted">FAIL:</span>
+<span class="text-price-drop font-semibold">0.04%</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Main Grid Canvas -->
+<div class="max-w-7xl mx-auto w-full px-margin lg:px-margin-lg py-space-xl space-y-space-xl">
+<!-- Section 1: Scraper Ingestion Workers Matrix -->
+<section class="space-y-space-md">
+<div class="flex items-center justify-between pb-space-xs">
+<div class="space-y-space-2xs">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm text-metric-highlight font-semibold uppercase tracking-wider">01 // WORKER INGESTION NODES</span>
+<span class="px-space-xs py-space-2xs bg-surface-overlay text-text-muted font-label-sm text-label-sm rounded">CRON 15M SYNC</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-text-primary">Live Retailer Scraping Workers</h2>
+</div>
+<div class="flex items-center gap-space-sm">
+<button class="h-8 px-space-md bg-surface-card hover:bg-surface-overlay text-text-secondary hover:text-text-primary rounded font-label-sm text-label-sm transition-colors flex items-center gap-space-xs" onclick="triggerManualSync()">
+<span class="material-symbols-outlined text-[16px]">refresh</span>
+<span>PROBE ALL NODES</span>
+</button>
+</div>
+</div>
+<!-- 4 Retailer Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-gutter-md">
+<!-- Node 1: Amazon IN -->
+<div class="bg-surface-card rounded p-space-md flex flex-col justify-between space-y-space-md hover:bg-surface-dim transition-colors">
+<div class="space-y-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-text-muted uppercase tracking-wider">WORKER // AMZ-IN</span>
+<span class="px-space-xs py-space-2xs bg-surface-overlay text-price-drop font-label-sm text-label-sm rounded">200 OK</span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md text-text-primary font-bold">Amazon IN</div>
+<div class="font-label-sm text-label-sm text-metric-highlight truncate">/api/v1/scrapers/amazon</div>
+</div>
+<div class="space-y-space-2xs text-body-sm font-body-sm text-text-secondary bg-surface-base p-space-sm rounded">
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-text-muted">POOL:</span>
+<span class="text-text-primary">Residential T1 (BLR)</span>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-text-muted">CYCLE:</span>
+<span class="text-text-primary">Polling / 15m</span>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-text-muted">LAST INGEST:</span>
+<span class="text-price-drop font-semibold">42s ago (64 SKUs)</span>
+</div>
+</div>
+</div>
+<!-- Terminal Snippet -->
+<div class="space-y-space-xs">
+<div class="flex items-center justify-between text-text-muted font-label-sm text-label-sm">
+<span>RAW STREAM</span>
+<button class="hover:text-text-primary text-[11px] underline" onclick="copySnippet('curl -H \'X-Engine-Key: ptk_live_8492\' https://api.proteindex.in/v1/scrapers/amazon/telemetry')">cURL</button>
+</div>
+<div class="p-space-xs bg-surface-container-lowest rounded font-label-sm text-label-sm text-text-secondary overflow-x-auto whitespace-nowrap">
+<code>[AMZ-IN] 200 {asin:"B000GIQS34", inr:3149, yield:4.32}</code>
+</div>
+</div>
+</div>
+<!-- Node 2: Flipkart -->
+<div class="bg-surface-card rounded p-space-md flex flex-col justify-between space-y-space-md hover:bg-surface-dim transition-colors">
+<div class="space-y-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-text-muted uppercase tracking-wider">WORKER // FK-DOM</span>
+<span class="px-space-xs py-space-2xs bg-surface-overlay text-price-drop font-label-sm text-label-sm rounded">200 OK</span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md text-text-primary font-bold">Flipkart Store</div>
+<div class="font-label-sm text-label-sm text-metric-highlight truncate">/api/v1/scrapers/flipkart</div>
+</div>
+<div class="space-y-space-2xs text-body-sm font-body-sm text-text-secondary bg-surface-base p-space-sm rounded">
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-text-muted">POOL:</span>
+<span class="text-text-primary">Datacenter Fallback</span>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-text-muted">STRATEGY:</span>
+<span class="text-text-primary">DOM + Direct API</span>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-text-muted">LAST INGEST:</span>
+<span class="text-price-drop font-semibold">2m ago (48 SKUs)</span>
+</div>
+</div>
+</div>
+<!-- Terminal Snippet -->
+<div class="space-y-space-xs">
+<div class="flex items-center justify-between text-text-muted font-label-sm text-label-sm">
+<span>RAW STREAM</span>
+<button class="hover:text-text-primary text-[11px] underline" onclick="copySnippet('curl -H \'X-Engine-Key: ptk_live_8492\' https://api.proteindex.in/v1/scrapers/flipkart/telemetry')">cURL</button>
+</div>
+<div class="p-space-xs bg-surface-container-lowest rounded font-label-sm text-label-sm text-text-secondary overflow-x-auto whitespace-nowrap">
+<code>[FK-IN] 200 {pid:"PRD990FK2", inr:3399, delta:+250}</code>
+</div>
+</div>
+</div>
+<!-- Node 3: Nutrabay Direct -->
+<div class="bg-surface-card rounded p-space-md flex flex-col justify-between space-y-space-md hover:bg-surface-dim transition-colors">
+<div class="space-y-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-text-muted uppercase tracking-wider">WORKER // NB-GQL</span>
+<span class="px-space-xs py-space-2xs bg-surface-overlay text-price-drop font-label-sm text-label-sm rounded">200 OK</span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md text-text-primary font-bold">Nutrabay Direct</div>
+<div class="font-label-sm text-label-sm text-metric-highlight truncate">/api/v1/scrapers/nutrabay</div>
+</div>
+<div class="space-y-space-2xs text-body-sm font-body-sm text-text-secondary bg-surface-base p-space-sm rounded">
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-text-muted">PROTOCOL:</span>
+<span class="text-text-primary">GraphQL Endpoint Hook</span>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-text-muted">COUPON ENGINE:</span>
+<span class="text-text-primary">Active (PRO10 auto-apply)</span>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-text-muted">LAST INGEST:</span>
+<span class="text-price-drop font-semibold">4m ago (31 SKUs)</span>
+</div>
+</div>
+</div>
+<!-- Terminal Snippet -->
+<div class="space-y-space-xs">
+<div class="flex items-center justify-between text-text-muted font-label-sm text-label-sm">
+<span>RAW STREAM</span>
+<button class="hover:text-text-primary text-[11px] underline" onclick="copySnippet('curl -H \'X-Engine-Key: ptk_live_8492\' https://api.proteindex.in/v1/scrapers/nutrabay/telemetry')">cURL</button>
+</div>
+<div class="p-space-xs bg-surface-container-lowest rounded font-label-sm text-label-sm text-text-secondary overflow-x-auto whitespace-nowrap">
+<code>[NB-DIR] 200 {sku:"NB-WHEY-ISOLATE", inr:3249}</code>
+</div>
+</div>
+</div>
+<!-- Node 4: HealthKart Worker -->
+<div class="bg-surface-card rounded p-space-md flex flex-col justify-between space-y-space-md hover:bg-surface-dim transition-colors">
+<div class="space-y-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-text-muted uppercase tracking-wider">WORKER // HK-REST</span>
+<span class="px-space-xs py-space-2xs bg-surface-overlay text-price-drop font-label-sm text-label-sm rounded">200 OK</span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md text-text-primary font-bold">HealthKart Official</div>
+<div class="font-label-sm text-label-sm text-metric-highlight truncate">/api/v1/scrapers/healthkart</div>
+</div>
+<div class="space-y-space-2xs text-body-sm font-body-sm text-text-secondary bg-surface-base p-space-sm rounded">
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-text-muted">PROTOCOL:</span>
+<span class="text-text-primary">Catalog Ingestion API</span>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-text-muted">EXPIRY CHECK:</span>
+<span class="text-text-primary">Syncing batch exp date</span>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-text-muted">LAST INGEST:</span>
+<span class="text-price-drop font-semibold">6m ago (29 SKUs)</span>
+</div>
+</div>
+</div>
+<!-- Terminal Snippet -->
+<div class="space-y-space-xs">
+<div class="flex items-center justify-between text-text-muted font-label-sm text-label-sm">
+<span>RAW STREAM</span>
+<button class="hover:text-text-primary text-[11px] underline" onclick="copySnippet('curl -H \'X-Engine-Key: ptk_live_8492\' https://api.proteindex.in/v1/scrapers/healthkart/telemetry')">cURL</button>
+</div>
+<div class="p-space-xs bg-surface-container-lowest rounded font-label-sm text-label-sm text-text-secondary overflow-x-auto whitespace-nowrap">
+<code>[HK-FED] 200 {item:"MB-RAW-WHEY", inr:3299}</code>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: Core REST & Aggregator API Playground / Endpoints Specification -->
+<section class="space-y-space-md">
+<div class="space-y-space-2xs">
+<span class="font-label-sm text-label-sm text-metric-highlight font-semibold uppercase tracking-wider">02 // PUBLIC &amp; INTERNAL REST MATRIX</span>
+<h2 class="font-headline-md text-headline-md text-text-primary">Engine Endpoints Specification</h2>
+</div>
+<!-- Endpoint Row 1: SKU Matrix -->
+<div class="bg-surface-card rounded p-space-md space-y-space-sm hover:bg-surface-dim transition-colors">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex flex-wrap items-center gap-space-sm">
+<span class="px-space-sm py-space-2xs bg-surface-dim text-metric-highlight font-label-sm text-label-sm rounded font-bold">GET</span>
+<span class="font-label-md text-label-md text-text-primary font-semibold">/api/v1/skus/matrix</span>
+<span class="font-body-sm text-body-sm text-text-muted">Batch yield matrix with sorting &amp; allergen filtering</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="px-space-xs py-space-2xs bg-surface-base font-label-sm text-label-sm text-text-muted rounded">CACHE: 60s REDIS</span>
+<button class="px-space-sm py-space-2xs bg-surface-overlay hover:bg-surface-bright text-text-primary font-label-sm text-label-sm rounded transition-colors" onclick="loadConsole('matrix')">TEST CONSOLE</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter bg-surface-base p-space-sm rounded font-label-sm text-label-sm">
+<div><span class="text-text-muted font-mono">formula=isolate,concentrate</span> <div class="text-text-secondary font-body-sm text-body-sm">Filter protein macro fraction</div></div>
+<div><span class="text-text-muted font-mono">sort=cost_per_gram_asc</span> <div class="text-text-secondary font-body-sm text-body-sm">Rank cheapest pure protein first</div></div>
+<div><span class="text-text-muted font-mono">tub_size=1kg,2kg,4kg</span> <div class="text-text-secondary font-body-sm text-body-sm">Filter package size in kg</div></div>
+</div>
+</div>
+<!-- Endpoint Row 2: SKU Arbitrage Spread -->
+<div class="bg-surface-card rounded p-space-md space-y-space-sm hover:bg-surface-dim transition-colors">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex flex-wrap items-center gap-space-sm">
+<span class="px-space-sm py-space-2xs bg-surface-dim text-metric-highlight font-label-sm text-label-sm rounded font-bold">GET</span>
+<span class="font-label-md text-label-md text-text-primary font-semibold">/api/v1/skus/:sku_id/arbitrage</span>
+<span class="font-body-sm text-body-sm text-text-muted">Real-time cross-retailer pricing delta &amp; stock matrix</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="px-space-xs py-space-2xs bg-surface-base font-label-sm text-label-sm text-price-drop rounded">SUB-10ms LATENCY</span>
+<button class="px-space-sm py-space-2xs bg-surface-overlay hover:bg-surface-bright text-text-primary font-label-sm text-label-sm rounded transition-colors" onclick="loadConsole('arbitrage')">TEST CONSOLE</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter bg-surface-base p-space-sm rounded font-label-sm text-label-sm">
+<div><span class="text-text-muted font-mono">:sku_id</span> <div class="text-text-secondary font-body-sm text-body-sm">Slug identifier (e.g. `on-gold-standard-907g`)</div></div>
+<div><span class="text-text-muted font-mono">delivery_pincode</span> <div class="text-text-secondary font-body-sm text-body-sm">Optional PIN for delivery fee calculation</div></div>
+<div><span class="text-text-muted font-mono">coupon_stack=true</span> <div class="text-text-secondary font-body-sm text-body-sm">Apply known checkout promos automatically</div></div>
+</div>
+</div>
+<!-- Endpoint Row 3: Yield Calculator -->
+<div class="bg-surface-card rounded p-space-md space-y-space-sm hover:bg-surface-dim transition-colors">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex flex-wrap items-center gap-space-sm">
+<span class="px-space-sm py-space-2xs bg-surface-dim text-warning-amber font-label-sm text-label-sm rounded font-bold">POST</span>
+<span class="font-label-md text-label-md text-text-primary font-semibold">/api/v1/calculator/yield</span>
+<span class="font-body-sm text-body-sm text-text-muted">Calculates normalized yield &amp; market value percentile</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="px-space-xs py-space-2xs bg-surface-base font-label-sm text-label-sm text-text-muted rounded">STATELESS COMPUTE</span>
+<button class="px-space-sm py-space-2xs bg-surface-overlay hover:bg-surface-bright text-text-primary font-label-sm text-label-sm rounded transition-colors" onclick="loadConsole('calculator')">TEST CONSOLE</button>
+</div>
+</div>
+<div class="bg-surface-base p-space-sm rounded font-label-sm text-label-sm text-text-secondary flex flex-wrap gap-space-md">
+<div><span class="text-text-muted">PAYLOAD:</span> <code>{ brand, total_weight_g, servings, protein_per_serving_g, price_inr }</code></div>
+<div class="text-price-drop"><span class="text-text-muted">RETURN:</span> <code>{ pure_protein_yield_g, cost_per_gram_inr, percentile }</code></div>
+</div>
+</div>
+<!-- Endpoint Row 4: Webhooks Alerts -->
+<div class="bg-surface-card rounded p-space-md space-y-space-sm hover:bg-surface-dim transition-colors">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex flex-wrap items-center gap-space-sm">
+<span class="px-space-sm py-space-2xs bg-surface-dim text-warning-amber font-label-sm text-label-sm rounded font-bold">POST</span>
+<span class="font-label-md text-label-md text-text-primary font-semibold">/api/v1/webhooks/alerts</span>
+<span class="font-body-sm text-body-sm text-text-muted">Subscribe channels (Telegram, WhatsApp, Webhook) to price drops</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="px-space-xs py-space-2xs bg-surface-base font-label-sm text-label-sm text-text-muted rounded">PUSH PROTOCOL</span>
+<button class="px-space-sm py-space-2xs bg-surface-overlay hover:bg-surface-bright text-text-primary font-label-sm text-label-sm rounded transition-colors" onclick="loadConsole('webhooks')">TEST CONSOLE</button>
+</div>
+</div>
+<div class="bg-surface-base p-space-sm rounded font-label-sm text-label-sm text-text-secondary flex flex-wrap gap-space-md">
+<div><span class="text-text-muted">PAYLOAD:</span> <code>{ target_sku, threshold_price_inr, channel: "webhook"|"discord"|"tg", callback_url }</code></div>
+<div><span class="text-metric-highlight">RESPONSE:</span> <code>{ subscription_id: "sub_92k01a", status: "active" }</code></div>
+</div>
+</div>
+</section>
+<!-- Section 3: Live Interactive API Inspector & Console -->
+<section class="space-y-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs">
+<div class="space-y-space-2xs">
+<span class="font-label-sm text-label-sm text-metric-highlight font-semibold uppercase tracking-wider">03 // INTERACTIVE CONSOLE</span>
+<h2 class="font-headline-md text-headline-md text-text-primary">Live Request Inspector</h2>
+</div>
+<!-- Status indicator badge -->
+<div class="flex items-center gap-space-sm font-label-sm text-label-sm">
+<span class="px-space-sm py-space-2xs bg-surface-overlay text-price-drop rounded">HTTP 200 OK</span>
+<span class="px-space-sm py-space-2xs bg-surface-overlay text-text-secondary rounded">EXECUTION: 38ms</span>
+</div>
+</div>
+<!-- The Workbench Shell -->
+<div class="bg-surface-card rounded p-space-md space-y-space-md">
+<!-- Interactive URL bar -->
+<div class="flex flex-col sm:flex-row items-stretch gap-space-xs">
+<div class="h-10 px-space-md bg-surface-dim text-metric-highlight font-label-sm text-label-sm font-bold flex items-center justify-center rounded">
+            GET
+          </div>
+<div class="relative flex-1">
+<input class="w-full h-10 px-space-md bg-surface-dim font-label-sm text-label-sm text-text-primary rounded focus:outline-none focus:bg-surface-base" id="endpoint-input" type="text" value="/api/v1/skus/on-gold-standard-907g/arbitrage"/>
+</div>
+<button class="h-10 px-space-lg bg-primary-container text-surface-base font-label-md text-label-md font-bold rounded hover:bg-primary transition-colors flex items-center justify-center gap-space-xs" id="run-btn" onclick="executeTestQuery()">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+<span>SEND QUERY</span>
+</button>
+</div>
+<!-- Request / Response Dual Pane -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-md">
+<!-- Left: Query Parameters & Request Headers (5 cols) -->
+<div class="lg:col-span-5 space-y-space-md">
+<!-- Tabs -->
+<div class="flex items-center gap-space-2xs p-space-2xs bg-surface-dim rounded font-label-sm text-label-sm">
+<button class="flex-1 py-space-2xs text-center rounded bg-surface-overlay text-text-primary" id="tab-headers-btn" onclick="switchTab('headers')">Headers (3)</button>
+<button class="flex-1 py-space-2xs text-center rounded text-text-muted hover:text-text-secondary" id="tab-params-btn" onclick="switchTab('params')">Params (2)</button>
+<button class="flex-1 py-space-2xs text-center rounded text-text-muted hover:text-text-secondary" id="tab-auth-btn" onclick="switchTab('auth')">Auth (Bearer)</button>
+</div>
+<!-- Tab Content Pane -->
+<div class="bg-surface-base p-space-md rounded space-y-space-sm font-label-sm text-label-sm" id="tab-content">
+<div class="flex justify-between items-center py-space-xs">
+<span class="text-text-muted font-mono">X-Engine-Key</span>
+<span class="text-text-primary font-mono">ptk_live_849204092bba</span>
+</div>
+<div class="flex justify-between items-center py-space-xs">
+<span class="text-text-muted font-mono">Accept</span>
+<span class="text-text-primary font-mono">application/json</span>
+</div>
+<div class="flex justify-between items-center py-space-xs">
+<span class="text-text-muted font-mono">X-Region-Affinity</span>
+<span class="text-metric-highlight font-mono">ap-south-1 (Mumbai)</span>
+</div>
+</div>
+<!-- cURL Export box -->
+<div class="space-y-space-2xs">
+<div class="flex justify-between items-center text-text-muted font-label-sm text-label-sm">
+<span>TERMINAL REPRODUCTION (cURL)</span>
+<button class="text-metric-highlight hover:underline" onclick="copySnippet(document.getElementById('curl-preview').innerText)">Copy</button>
+</div>
+<pre class="p-space-sm bg-surface-container-lowest rounded text-text-secondary font-label-sm text-label-sm overflow-x-auto whitespace-pre-wrap" id="curl-preview">curl -X GET "https://api.proteindex.in/api/v1/skus/on-gold-standard-907g/arbitrage" \
+  -H "X-Engine-Key: ptk_live_849204092bba" \
+  -H "Accept: application/json"</pre>
+</div>
+</div>
+<!-- Right: JSON Payload Response Viewer (7 cols) -->
+<div class="lg:col-span-7 flex flex-col space-y-space-2xs">
+<div class="flex items-center justify-between text-text-muted font-label-sm text-label-sm pb-space-2xs">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-price-drop"></span>
+<span class="text-text-primary font-semibold">PAYLOAD RESPONSE (JSON)</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<button class="text-text-secondary hover:text-text-primary flex items-center gap-space-2xs" onclick="copyJsonPayload()">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+<span>COPY RESULT</span>
+</button>
+</div>
+</div>
+<!-- Terminal-style JSON Box -->
+<div class="relative bg-surface-container-lowest rounded p-space-md font-label-sm text-label-sm leading-relaxed overflow-x-auto text-text-secondary max-h-[380px]">
+<pre class="font-label-sm text-label-sm font-mono whitespace-pre text-text-primary" id="json-viewer"><span class="text-text-muted">{</span>
+  <span class="text-metric-highlight">"status"</span>: <span class="text-price-drop">"success"</span>,
+  <span class="text-metric-highlight">"timestamp"</span>: <span class="text-text-secondary">"2025-02-17T14:52:10Z"</span>,
+  <span class="text-metric-highlight">"compute_latency_ms"</span>: <span class="text-tertiary">38</span>,
+  <span class="text-metric-highlight">"sku"</span>: <span class="text-text-muted">{</span>
+    <span class="text-metric-highlight">"id"</span>: <span class="text-text-secondary">"on-gold-standard-907g"</span>,
+    <span class="text-metric-highlight">"name"</span>: <span class="text-text-secondary">"Optimum Nutrition (ON) Gold Standard 100% Whey"</span>,
+    <span class="text-metric-highlight">"pure_protein_yield_grams"</span>: <span class="text-price-drop">728.0</span>,
+    <span class="text-metric-highlight">"best_deal"</span>: <span class="text-text-muted">{</span>
+      <span class="text-metric-highlight">"retailer"</span>: <span class="text-price-drop">"Amazon IN"</span>,
+      <span class="text-metric-highlight">"price_inr"</span>: <span class="text-price-drop">3149</span>,
+      <span class="text-metric-highlight">"cost_per_gram"</span>: <span class="text-price-drop">4.32</span>
+    <span class="text-text-muted">}</span>
+  <span class="text-text-muted">}</span>,
+  <span class="text-metric-highlight">"spread"</span>: <span class="text-text-muted">[</span>
+    <span class="text-text-muted">{</span> <span class="text-metric-highlight">"retailer"</span>: <span class="text-text-secondary">"Amazon IN"</span>, <span class="text-metric-highlight">"in_stock"</span>: <span class="text-price-drop">true</span>, <span class="text-metric-highlight">"price_inr"</span>: <span class="text-text-primary">3149</span>, <span class="text-metric-highlight">"spread_inr"</span>: <span class="text-price-drop">0</span> <span class="text-text-muted">}</span>,
+    <span class="text-text-muted">{</span> <span class="text-metric-highlight">"retailer"</span>: <span class="text-text-secondary">"Nutrabay"</span>, <span class="text-metric-highlight">"in_stock"</span>: <span class="text-price-drop">true</span>, <span class="text-metric-highlight">"price_inr"</span>: <span class="text-text-primary">3249</span>, <span class="text-metric-highlight">"spread_inr"</span>: <span class="text-price-spike">+100</span> <span class="text-text-muted">}</span>,
+    <span class="text-text-muted">{</span> <span class="text-metric-highlight">"retailer"</span>: <span class="text-text-secondary">"HealthKart"</span>, <span class="text-metric-highlight">"in_stock"</span>: <span class="text-price-drop">true</span>, <span class="text-metric-highlight">"price_inr"</span>: <span class="text-text-primary">3299</span>, <span class="text-metric-highlight">"spread_inr"</span>: <span class="text-price-spike">+150</span> <span class="text-text-muted">}</span>,
+    <span class="text-text-muted">{</span> <span class="text-metric-highlight">"retailer"</span>: <span class="text-text-secondary">"Flipkart"</span>, <span class="text-metric-highlight">"in_stock"</span>: <span class="text-price-drop">true</span>, <span class="text-metric-highlight">"price_inr"</span>: <span class="text-text-primary">3399</span>, <span class="text-metric-highlight">"spread_inr"</span>: <span class="text-price-spike">+250</span> <span class="text-text-muted">}</span>
+  <span class="text-text-muted">]</span>
+<span class="text-text-muted">}</span></pre>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 4: Architecture Pipeline Data Flow & Keys -->
+<section class="space-y-space-md">
+<div class="space-y-space-2xs">
+<span class="font-label-sm text-label-sm text-metric-highlight font-semibold uppercase tracking-wider">04 // SYSTEM TOPOLOGY</span>
+<h2 class="font-headline-md text-headline-md text-text-primary">Ingestion Architecture &amp; Data Pipeline</h2>
+</div>
+<!-- Flowchart Bento Diagram -->
+<div class="bg-surface-card rounded p-space-md space-y-space-lg">
+<div class="grid grid-cols-1 md:grid-cols-5 gap-space-sm items-center">
+<!-- Node 1 -->
+<div class="p-space-sm bg-surface-base rounded space-y-space-xs text-center md:text-left">
+<span class="font-label-sm text-label-sm text-text-muted uppercase">STAGE 01</span>
+<div class="font-label-md text-label-md text-text-primary font-bold">Headless Workers</div>
+<p class="font-body-sm text-body-sm text-text-secondary">Playwright &amp; Cheerio scraping cluster with rotating residential proxies.</p>
+</div>
+<div class="hidden md:flex justify-center text-text-muted">
+<span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</div>
+<!-- Node 2 -->
+<div class="p-space-sm bg-surface-base rounded space-y-space-xs text-center md:text-left">
+<span class="font-label-sm text-label-sm text-text-muted uppercase">STAGE 02</span>
+<div class="font-label-md text-label-md text-text-primary font-bold">Yield Normalizer</div>
+<p class="font-body-sm text-body-sm text-text-secondary">Calculates pure protein yield grams and cleans vendor price anomalies.</p>
+</div>
+<div class="hidden md:flex justify-center text-text-muted">
+<span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</div>
+<!-- Node 3 -->
+<div class="p-space-sm bg-surface-base rounded space-y-space-xs text-center md:text-left">
+<span class="font-label-sm text-label-sm text-metric-highlight uppercase">STAGE 03</span>
+<div class="font-label-md text-label-md text-text-primary font-bold">Distribution Tier</div>
+<p class="font-body-sm text-body-sm text-text-secondary">Pushes to Postgres master, warms Redis cache, and emits webhook triggers.</p>
+</div>
+</div>
+<!-- Technical Environment Variables & Keys Table -->
+<div class="space-y-space-sm pt-space-sm bg-surface-dim p-space-md rounded">
+<div class="font-label-sm text-label-sm text-text-muted uppercase tracking-wider">PROTEINDEX ENVIRONMENT CREDENTIALS (IN-MEMORY / VAULT)</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter-md">
+<div class="space-y-space-2xs">
+<span class="font-label-sm text-label-sm text-text-secondary font-mono">SCRAPER_API_KEY</span>
+<div class="flex items-center justify-between p-space-xs bg-surface-base rounded font-label-sm text-label-sm">
+<span class="text-text-muted">ptk_live_********************</span>
+<button class="text-metric-highlight hover:underline" onclick="copySnippet('ptk_live_849204092bba')">Copy</button>
+</div>
+</div>
+<div class="space-y-space-2xs">
+<span class="font-label-sm text-label-sm text-text-secondary font-mono">REDIS_CACHE_URL</span>
+<div class="flex items-center justify-between p-space-xs bg-surface-base rounded font-label-sm text-label-sm">
+<span class="text-text-muted">redis://default:****@bom-cache.proteindex:6379</span>
+<button class="text-metric-highlight hover:underline" onclick="copySnippet('redis://default:sec82910@bom-cache.proteindex:6379')">Copy</button>
+</div>
+</div>
+<div class="space-y-space-2xs">
+<span class="font-label-sm text-label-sm text-text-secondary font-mono">POSTGRES_PRISMA_URL</span>
+<div class="flex items-center justify-between p-space-xs bg-surface-base rounded font-label-sm text-label-sm">
+<span class="text-text-muted">postgresql://ingest_usr:****@pg-cluster.in</span>
+<button class="text-metric-highlight hover:underline" onclick="copySnippet('postgresql://ingest_usr:pw_991823@pg-cluster.in/proteindex_prod')">Copy</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Feedback Toast (Hidden by Default) -->
+<div class="fixed bottom-6 right-6 hidden bg-surface-overlay text-text-primary px-space-md py-space-sm rounded font-label-sm text-label-sm shadow-xl flex items-center gap-space-sm z-50" id="status-toast">
+<span class="w-2 h-2 rounded-full bg-price-drop"></span>
+<span id="status-toast-msg">Copied payload to clipboard</span>
+</div>
+</div>
+</div>
+<script>
+  function showToast(message) {
+    const toast = document.getElementById('status-toast');
+    const msg = document.getElementById('status-toast-msg');
+    if (!toast || !msg) return;
+    msg.innerText = message;
+    toast.classList.remove('hidden');
+    setTimeout(() => {
+      toast.classList.add('hidden');
+    }, 2800);
+  }
+
+  function copySnippet(text) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('Copied string to clipboard');
+    });
+  }
+
+  function copyJsonPayload() {
+    const viewer = document.getElementById('json-viewer');
+    if (viewer) {
+      navigator.clipboard.writeText(viewer.innerText).then(() => {
+        showToast('JSON response payload copied');
+      });
+    }
+  }
+
+  function switchEnv(env) {
+    const prodBtn = document.getElementById('env-prod-btn');
+    const sandBtn = document.getElementById('env-sand-btn');
+    if (env === 'prod') {
+      prodBtn.className = 'px-space-sm py-space-2xs font-label-sm text-label-sm rounded bg-surface-overlay text-text-primary transition-colors flex items-center gap-space-xs';
+      sandBtn.className = 'px-space-sm py-space-2xs font-label-sm text-label-sm rounded text-text-muted hover:text-text-secondary transition-colors flex items-center gap-space-xs';
+      showToast('Switched to Live Production Feeds');
+    } else {
+      sandBtn.className = 'px-space-sm py-space-2xs font-label-sm text-label-sm rounded bg-surface-overlay text-text-primary transition-colors flex items-center gap-space-xs';
+      prodBtn.className = 'px-space-sm py-space-2xs font-label-sm text-label-sm rounded text-text-muted hover:text-text-secondary transition-colors flex items-center gap-space-xs';
+      showToast('Switched to Mock / Mock-Worker Sandbox');
+    }
+  }
+
+  function switchTab(type) {
+    const tabHeadersBtn = document.getElementById('tab-headers-btn');
+    const tabParamsBtn = document.getElementById('tab-params-btn');
+    const tabAuthBtn = document.getElementById('tab-auth-btn');
+    const tabContent = document.getElementById('tab-content');
+
+    [tabHeadersBtn, tabParamsBtn, tabAuthBtn].forEach(btn => {
+      btn.className = 'flex-1 py-space-2xs text-center rounded text-text-muted hover:text-text-secondary';
+    });
+
+    if (type === 'headers') {
+      tabHeadersBtn.className = 'flex-1 py-space-2xs text-center rounded bg-surface-overlay text-text-primary';
+      tabContent.innerHTML = `
+        <div class="flex justify-between items-center py-space-xs"><span class="text-text-muted font-mono">X-Engine-Key</span><span class="text-text-primary font-mono">ptk_live_849204092bba</span></div>
+        <div class="flex justify-between items-center py-space-xs"><span class="text-text-muted font-mono">Accept</span><span class="text-text-primary font-mono">application/json</span></div>
+        <div class="flex justify-between items-center py-space-xs"><span class="text-text-muted font-mono">X-Region-Affinity</span><span class="text-metric-highlight font-mono">ap-south-1 (Mumbai)</span></div>
+      `;
+    } else if (type === 'params') {
+      tabParamsBtn.className = 'flex-1 py-space-2xs text-center rounded bg-surface-overlay text-text-primary';
+      tabContent.innerHTML = `
+        <div class="flex justify-between items-center py-space-xs"><span class="text-text-muted font-mono">include_historical</span><span class="text-text-primary font-mono">false</span></div>
+        <div class="flex justify-between items-center py-space-xs"><span class="text-text-muted font-mono">delivery_calc</span><span class="text-text-primary font-mono">true (pincode: 560001)</span></div>
+      `;
+    } else if (type === 'auth') {
+      tabAuthBtn.className = 'flex-1 py-space-2xs text-center rounded bg-surface-overlay text-text-primary';
+      tabContent.innerHTML = `
+        <div class="flex justify-between items-center py-space-xs"><span class="text-text-muted font-mono">Auth-Scheme</span><span class="text-text-primary font-mono">Bearer Token</span></div>
+        <div class="flex justify-between items-center py-space-xs"><span class="text-text-muted font-mono">Role</span><span class="text-price-drop font-mono">SUPERADMIN_INGEST</span></div>
+      `;
+    }
+  }
+
+  function loadConsole(endpointType) {
+    const input = document.getElementById('endpoint-input');
+    const curl = document.getElementById('curl-preview');
+    const viewer = document.getElementById('json-viewer');
+
+    if (endpointType === 'matrix') {
+      input.value = '/api/v1/skus/matrix?formula=isolate&sort=cost_per_gram_asc';
+      curl.innerText = `curl -X GET "https://api.proteindex.in/api/v1/skus/matrix?formula=isolate&sort=cost_per_gram_asc" \\\n  -H "X-Engine-Key: ptk_live_849204092bba"`;
+      viewer.innerHTML = `<span class="text-text-muted">{</span>\n  <span class="text-metric-highlight">"query"</span>: <span class="text-text-secondary">"formula=isolate"</span>,\n  <span class="text-metric-highlight">"total_ranked_skus"</span>: <span class="text-price-drop">142</span>,\n  <span class="text-metric-highlight">"top_deal"</span>: <span class="text-text-muted">{</span>\n    <span class="text-metric-highlight">"name"</span>: <span class="text-text-secondary">"Raw Whey Isolate 90%"</span>,\n    <span class="text-metric-highlight">"cost_per_gram_inr"</span>: <span class="text-price-drop">3.41</span>\n  <span class="text-text-muted">}</span>\n<span class="text-text-muted">}</span>`;
+    } else if (endpointType === 'arbitrage') {
+      input.value = '/api/v1/skus/on-gold-standard-907g/arbitrage';
+      curl.innerText = `curl -X GET "https://api.proteindex.in/api/v1/skus/on-gold-standard-907g/arbitrage" \\\n  -H "X-Engine-Key: ptk_live_849204092bba"`;
+      executeTestQuery();
+    } else if (endpointType === 'calculator') {
+      input.value = '/api/v1/calculator/yield';
+      curl.innerText = `curl -X POST "https://api.proteindex.in/api/v1/calculator/yield" \\\n  -H "Content-Type: application/json" \\\n  -d '{"brand":"MyProtein","total_weight_g":1000,"servings":40,"protein_per_serving_g":21,"price_inr":2899}'`;
+      viewer.innerHTML = `<span class="text-text-muted">{</span>\n  <span class="text-metric-highlight">"brand"</span>: <span class="text-text-secondary">"MyProtein"</span>,\n  <span class="text-metric-highlight">"pure_protein_yield_grams"</span>: <span class="text-price-drop">840.0</span>,\n  <span class="text-metric-highlight">"cost_per_gram_inr"</span>: <span class="text-price-drop">3.45</span>,\n  <span class="text-metric-highlight">"market_percentile"</span>: <span class="text-metric-highlight">"Top 8% Value"</span>\n<span class="text-text-muted">}</span>`;
+    } else if (endpointType === 'webhooks') {
+      input.value = '/api/v1/webhooks/alerts';
+      curl.innerText = `curl -X POST "https://api.proteindex.in/api/v1/webhooks/alerts" \\\n  -H "Content-Type: application/json" \\\n  -d '{"target_sku":"on-gold-standard-907g","threshold_price_inr":2999,"channel":"discord"}'`;
+      viewer.innerHTML = `<span class="text-text-muted">{</span>\n  <span class="text-metric-highlight">"status"</span>: <span class="text-price-drop">"subscribed"</span>,\n  <span class="text-metric-highlight">"subscription_id"</span>: <span class="text-text-secondary">"sub_disc_88192a"</span>,\n  <span class="text-metric-highlight">"trigger_delta"</span>: <span class="text-tertiary">"-150 INR under current best"</span>\n<span class="text-text-muted">}</span>`;
+    }
+    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function executeTestQuery() {
+    const btn = document.getElementById('run-btn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<span class="material-symbols-outlined text-[18px] animate-spin">refresh</span><span>QUERYING...</span>`;
+    setTimeout(() => {
+      btn.innerHTML = originalText;
+      showToast('200 OK Received (38ms)');
+    }, 380);
+  }
+
+  function triggerManualSync() {
+    showToast('Sent scrape signals to all 4 proxy clusters');
+  }
+</script></main><footer class="w-full bg-surface-container-lowest border-t border-border-subtle mt-space-2xl"><div class="max-w-7xl mx-auto px-margin lg:px-margin-lg py-space-xl"><div class="grid grid-cols-1 md:grid-cols-12 gap-gutter-md items-start pb-space-xl border-b border-border-subtle"><div class="md:col-span-5 space-y-space-xs"><div class="flex items-center gap-space-xs"><span class="font-headline-md text-headline-md font-bold text-text-primary tracking-tight uppercase">PROTEINDEX ARCHITECTURE</span><span class="px-space-xs py-space-2xs bg-surface-card border border-border-subtle text-price-drop font-label-sm text-label-sm rounded">v2.4-STABLE</span></div><p class="font-body-sm text-body-sm text-text-muted max-w-md">High-frequency unit-economics engine computing normalized price-per-gram yield across verified Indian supplement vendors. Normalized against third-party lab testing databases.</p></div><div class="md:col-span-4 space-y-space-xs"><div class="font-label-sm text-label-sm uppercase tracking-wider text-text-secondary font-semibold">INDEXED RETAILERS &amp; FEEDS</div><div class="flex flex-wrap gap-space-xs"><span class="px-space-sm py-space-2xs bg-surface-card border border-border-subtle font-label-sm text-label-sm text-text-secondary">Amazon IN (API)</span><span class="px-space-sm py-space-2xs bg-surface-card border border-border-subtle font-label-sm text-label-sm text-text-secondary">Flipkart (Scraped)</span><span class="px-space-sm py-space-2xs bg-surface-card border border-border-subtle font-label-sm text-label-sm text-text-secondary">Nutrabay Direct</span><span class="px-space-sm py-space-2xs bg-surface-card border border-border-subtle font-label-sm text-label-sm text-text-secondary">HealthKart Official</span></div></div><div class="md:col-span-3 space-y-space-xs text-left md:text-right"><div class="font-label-sm text-label-sm uppercase tracking-wider text-text-secondary font-semibold">DATA INTEGRITY &amp; LATENCY</div><div class="font-metric-display text-body-md text-price-drop">99.82% VERIFIED</div><div class="font-label-sm text-label-sm text-text-muted">Cycle: 15-min intervals · Spot Check: PASS</div></div></div><div class="pt-space-md flex flex-col md:flex-row items-start md:items-center justify-between gap-space-sm font-label-sm text-label-sm text-text-muted"><div>DISCLAIMER: Non-affiliated market intelligence. Prices reflect checkout totals including GST. Third-party logos remain property of respective brand holders.</div><div class="shrink-0 font-label-sm text-label-sm text-text-secondary">LATEST PROBE: 2025-02-17 14:48 IST</div></div></div></footer></body></html>

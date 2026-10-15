@@ -9,6 +9,9 @@ import {
   ChevronDown,
   SlidersHorizontal,
   Search,
+  Bell,
+  Calculator,
+  X,
 } from "lucide-react";
 import { GroupedProduct, DbVariant, CANONICAL_CATEGORIES } from "@/components/ProductBrowser";
 import { DecathlonSidebar } from "./DecathlonSidebar";
@@ -17,6 +20,9 @@ import { SneakopediaProductMatrix } from "./SneakopediaProductMatrix";
 import { FilterState, ViewMode, SortOption } from "./types";
 import { CompareTray, CompareItem } from "@/components/CompareTray";
 import { formatInr, costPer100gProtein, purityPct, computeCategoryMetrics } from "@/lib/analytics";
+import { LiveMarketPulse } from "@/components/common/LiveMarketPulse";
+import { TrueProteinCostCalculator } from "@/components/calculator/TrueProteinCostCalculator";
+import { PriceAlertModal } from "@/components/common/PriceAlertModal";
 
 interface CatalogViewProps {
   initialProducts: GroupedProduct[];
@@ -81,6 +87,8 @@ export function CatalogView({ initialProducts, initialCategory }: CatalogViewPro
 
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("consumer");
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
   // Sneakopedia Matrix State
   const [matrixOpen, setMatrixOpen] = useState(false);
@@ -354,6 +362,9 @@ export function CatalogView({ initialProducts, initialCategory }: CatalogViewPro
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-32">
+      {/* 0. Live Drops Ticker Strip */}
+      <LiveMarketPulse onOpenAlertModal={() => setIsAlertOpen(true)} />
+
       {/* 1. Global Navigation Bar */}
       <header className="border-b border-slate-200 px-4 sm:px-6 py-3 sticky top-0 bg-white/95 backdrop-blur-md z-40 shadow-xs">
         <div className="flex items-center justify-between w-full max-w-7xl mx-auto gap-4">
@@ -421,8 +432,29 @@ export function CatalogView({ initialProducts, initialCategory }: CatalogViewPro
             })}
           </div>
 
-          {/* Mode Switcher Toggle */}
+          {/* Right Action Controls: Calculator, Alert & View Switcher */}
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsCalculatorOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-bold text-slate-700 bg-white border border-slate-300 hover:border-slate-800 rounded-sm transition-colors shadow-xs"
+              title="True Protein Cost & Yield Calculator"
+            >
+              <Calculator className="size-3.5 text-emerald-700" />
+              <span className="hidden md:inline">Calculator</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsAlertOpen(true)}
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-bold text-slate-700 bg-white border border-slate-300 hover:border-slate-800 rounded-sm transition-colors shadow-xs"
+              title="Set Price Drop Alert"
+            >
+              <Bell className="size-3.5 text-emerald-700" />
+              <span className="hidden lg:inline">Alert</span>
+            </button>
+
+            {/* Mode Switcher Toggle */}
             <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-sm border border-slate-200">
               <button
                 type="button"
@@ -711,6 +743,29 @@ export function CatalogView({ initialProducts, initialCategory }: CatalogViewPro
         onRemove={(id) => setCompareItems((prev) => prev.filter((i) => i.variantId !== id))}
         onClear={() => setCompareItems([])}
       />
+
+      {/* Price Alert Subscription Modal */}
+      <PriceAlertModal
+        isOpen={isAlertOpen}
+        onClose={() => setIsAlertOpen(false)}
+        products={initialProducts}
+      />
+
+      {/* True Protein Cost Calculator Modal */}
+      {isCalculatorOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs font-sans">
+          <div className="max-w-3xl w-full relative">
+            <button
+              type="button"
+              onClick={() => setIsCalculatorOpen(false)}
+              className="absolute -top-10 right-0 text-white hover:text-slate-300 font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1 transition-colors"
+            >
+              <X className="size-4" /> Close Calculator [ESC]
+            </button>
+            <TrueProteinCostCalculator />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

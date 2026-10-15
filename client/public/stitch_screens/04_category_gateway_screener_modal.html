@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"border-subtle":"#27272a","text-muted":"#71717a","on-tertiary-fixed":"#2a1700","tertiary-container":"#e29100","on-tertiary":"#472a00","on-secondary-container":"#00374d","outline":"#86948a","inverse-primary":"#006c49","surface-raised":"#121215","on-tertiary-fixed-variant":"#653e00","on-secondary-fixed":"#001e2c","text-primary":"#f4f4f5","on-surface-variant":"#bbcabf","surface":"#131315","error-container":"#93000a","surface-tint":"#4edea3","tertiary":"#ffb95f","on-surface":"#e5e1e4","on-error-container":"#ffdad6","surface-container-lowest":"#0e0e10","primary-fixed":"#6ffbbe","surface-overlay":"#27272a","on-error":"#690005","surface-dim":"#131315","text-secondary":"#a1a1aa","tertiary-fixed":"#ffddb8","primary":"#4edea3","on-secondary":"#00354a","on-primary-container":"#00422b","on-tertiary-container":"#523200","surface-container-low":"#1c1b1d","metric-highlight":"#38bdf8","secondary-fixed":"#c4e7ff","inverse-surface":"#e5e1e4","surface-container-high":"#2a2a2c","price-drop":"#10b981","on-primary":"#003824","background":"#131315","on-secondary-fixed-variant":"#004c69","price-spike":"#f43f5e","primary-fixed-dim":"#4edea3","secondary":"#7bd0ff","surface-card":"#18181b","tertiary-fixed-dim":"#ffb95f","surface-container-highest":"#353437","error":"#ffb4ab","primary-container":"#10b981","surface-variant":"#353437","secondary-fixed-dim":"#7bd0ff","border-prominent":"#3f3f46","outline-variant":"#3c4a42","surface-container":"#201f22","surface-base":"#09090b","on-primary-fixed-variant":"#005236","surface-bright":"#39393b","on-background":"#e5e1e4","inverse-on-surface":"#313032","warning-amber":"#f59e0b","on-primary-fixed":"#002113","secondary-container":"#00a6e0"},borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},spacing:{"gutter-md":"1.5rem","space-2xs":"0.125rem","space-sm":"0.5rem",margin:"1rem","margin-md":"2rem","space-md":"0.75rem","space-2xl":"3rem","space-xs":"0.25rem","space-lg":"1.25rem",gutter:"1rem","margin-lg":"3rem","gutter-lg":"2rem","space-xl":"2rem"},fontFamily:{"body-md":["Geist"],"body-sm":["Geist"],"label-md":["JetBrains Mono"],"headline-xl":["Geist"],"label-sm":["JetBrains Mono"],"headline-xl-mobile":["Geist"],"headline-md":["Geist"],"headline-lg-mobile":["Geist"],"headline-lg":["Geist"],"metric-display":["JetBrains Mono"],"body-lg":["Geist"]},fontSize:{"body-md":["0.875rem",{lineHeight:"1.375rem",letterSpacing:"0em",fontWeight:"400"}],"body-sm":["0.75rem",{lineHeight:"1.125rem",letterSpacing:"0em",fontWeight:"400"}],"label-md":["0.8125rem",{lineHeight:"1rem",letterSpacing:"0.02em",fontWeight:"500"}],"headline-xl":["3rem",{lineHeight:"3.5rem",letterSpacing:"-0.03em",fontWeight:"700"}],"label-sm":["0.6875rem",{lineHeight:"0.875rem",letterSpacing:"0.04em",fontWeight:"600"}],"headline-xl-mobile":["2.25rem",{lineHeight:"2.75rem",letterSpacing:"-0.025em",fontWeight:"700"}],"headline-md":["1.25rem",{lineHeight:"1.75rem",letterSpacing:"-0.015em",fontWeight:"600"}],"headline-lg-mobile":["1.5rem",{lineHeight:"2rem",letterSpacing:"-0.02em",fontWeight:"600"}],"headline-lg":["2rem",{lineHeight:"2.5rem",letterSpacing:"-0.02em",fontWeight:"600"}],"metric-display":["1.75rem",{lineHeight:"2rem",letterSpacing:"-0.02em",fontWeight:"700"}],"body-lg":["1rem",{lineHeight:"1.5rem",letterSpacing:"-0.01em",fontWeight:"400"}]}}}}</script></head><body class="bg-surface-base font-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 z-50 bg-surface-raised/95 backdrop-blur-md"><div class="h-8 w-full bg-surface-container-lowest flex items-center overflow-x-auto px-margin md:px-margin-md lg:px-margin-lg space-x-space-lg"><div class="flex items-center space-x-space-xs text-price-drop shrink-0"><span class="material-symbols-outlined text-[14px]">trending_down</span><span class="font-label-sm text-label-sm uppercase tracking-wider">Live Drops:</span></div><div class="flex items-center space-x-space-lg font-label-sm text-label-sm shrink-0"><span class="text-text-secondary"><strong class="text-text-primary">ON Gold Whey 2kg</strong> Amazon: <span class="text-price-drop font-semibold">₹5,499 (-18%)</span></span><span class="text-border-prominent">|</span><span class="text-text-secondary"><strong class="text-text-primary">MuscleBlaze Biozyme 1kg</strong> Nutrabay: <span class="text-price-drop font-semibold">₹2,149 (-24%)</span></span><span class="text-border-prominent">|</span><span class="text-text-secondary"><strong class="text-text-primary">Dymatize ISO 100 5lb</strong> HyugaLife: <span class="text-price-drop font-semibold">₹8,799 (-12%)</span></span><span class="text-border-prominent">|</span><span class="text-text-secondary"><strong class="text-text-primary">MyProtein Impact 2.5kg</strong> Flipkart: <span class="text-price-drop font-semibold">₹4,899 (-15%)</span></span></div></div><div class="h-16 w-full max-w-[1440px] mx-auto px-margin md:px-margin-md lg:px-margin-lg flex items-center justify-between gap-space-md"><div class="flex items-center space-x-space-md shrink-0"><img alt="Proteindex Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkKLF-sGHHUxQJgoXEhZ9fSR0qEQnUwOs8ascuW-1Z5Zy3Px2ZeqrLYo2vI8V6gCOZ0Q--1tnjMvFyxpgh-4egxVRExzbDmmeo18tCLIPtY2gt_I7iOgJBqn-73Hn3wxJhK-Klv1PPlCihoMA88WLmWv1gaRG73IsiIKGauGi9KKaNcop8RPTgns-rJV0Q_eYdYa8jYKGaR26i9YLqperdc0PuPnbUBW_beHIKFqCSzYtcOV8TZRkH"/><span class="font-headline-md text-headline-md tracking-tight uppercase text-text-primary font-bold">PROTEINDEX</span></div><div class="hidden md:flex items-center flex-1 max-w-sm mx-space-md"><div class="relative w-full flex items-center bg-surface-container-low rounded-lg px-space-md py-space-xs"><span class="material-symbols-outlined text-text-muted text-[18px] mr-space-xs">search</span><input class="bg-transparent font-body-sm text-body-sm text-text-primary placeholder-text-muted focus:outline-none w-full" placeholder="Search protein, isolate, creatine..." type="text"/><div class="flex items-center space-x-space-2xs bg-surface-container-high px-space-xs py-space-2xs rounded text-text-muted font-label-sm text-label-sm"><span>⌘K</span><span class="text-border-prominent">/</span><span>/</span></div></div></div><nav class="hidden lg:flex items-center space-x-space-md font-label-md text-label-md" data-active-classes="bg-primary-container text-on-primary-container font-semibold rounded-lg px-space-md py-space-xs"><a class="text-on-surface-variant hover:text-on-surface px-space-xs py-space-2xs transition-colors" data-path="categories" href="#">Categories</a><a class="text-on-surface-variant hover:text-on-surface px-space-xs py-space-2xs transition-colors" data-path="deals-and-drops" href="#">Deals &amp; Drops</a><a class="text-on-surface-variant hover:text-on-surface px-space-xs py-space-2xs transition-colors" data-path="cost-calculator" href="#">Cost Calculator</a><a class="text-on-surface-variant hover:text-on-surface px-space-xs py-space-2xs transition-colors" data-path="price-index" href="#">Price Index</a></nav><div class="flex items-center space-x-space-md shrink-0"><button class="flex items-center space-x-space-xs bg-primary text-on-primary font-label-md text-label-md font-semibold px-space-md py-space-xs rounded-lg hover:bg-primary-fixed-dim transition-colors" type="button"><span class="material-symbols-outlined text-[16px]">notifications_active</span><span>Set Alert</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-24 min-h-screen bg-surface-base max-w-[1440px] mx-auto px-margin md:px-margin-md lg:px-margin-lg"><div class="flex flex-col w-full pb-space-2xl space-y-space-xl">
+<!-- System Status Banner -->
+<div class="w-full bg-surface-card px-space-md py-space-xs rounded flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center space-x-space-sm font-label-sm text-label-sm">
+<span class="inline-block w-2 h-2 rounded-full bg-price-drop animate-pulse"></span>
+<span class="text-text-primary uppercase tracking-wider font-semibold">FEED: NUTRITION_ARBITRAGE_L2</span>
+<span class="text-text-muted">|</span>
+<span class="text-text-secondary">SCANNING 184 ACTIVE DOMESTIC SKUS</span>
+<span class="text-text-muted">|</span>
+<span class="text-text-muted">LAST RECALIBRATION: <span class="text-metric-highlight tabular-nums font-mono">14s AGO</span></span>
+</div>
+<div class="flex items-center space-x-space-md font-label-sm text-label-sm text-text-muted">
+<span>FX: <span class="text-text-primary font-mono">1 USD = ₹86.82</span></span>
+<span>NABL AUDIT COMPLIANCE: <span class="text-price-drop font-mono">98.4%</span></span>
+</div>
+</div>
+<!-- Module 1: Unvarnished Mission Header -->
+<div class="w-full flex flex-col space-y-space-xs">
+<div class="flex items-center space-x-space-xs font-label-sm text-label-sm text-text-muted uppercase tracking-widest">
+<span>INDEX DEFINITION // v2.4 DOMESTIC</span>
+<span>•</span>
+<span class="text-primary-container">INR NORMALIZED</span>
+</div>
+<div class="flex flex-col lg:flex-row lg:items-end justify-between gap-space-md">
+<div>
+<h1 class="font-headline-xl text-headline-xl text-text-primary tracking-tight uppercase">
+          PROTEINDEX <span class="text-text-muted font-normal">//</span> ARBITRAGE INDEX
+        </h1>
+<p class="font-body-md text-body-md text-text-secondary max-w-3xl mt-space-xs leading-relaxed">
+          Real-time landed price monitoring across Amazon IN, Nutrabay, Flipkart, HyugaLife, and brand D2C stores. 
+          Prices normalized strictly by laboratory-verified protein mass, authentic yield, and clinically audited dosing.
+        </p>
+</div>
+<div class="flex items-center space-x-space-sm shrink-0">
+<div class="bg-surface-card px-space-md py-space-sm rounded text-left">
+<div class="font-label-sm text-label-sm text-text-muted uppercase">MARKET SPREAD MEDIAN</div>
+<div class="font-metric-display text-metric-display text-price-drop tabular-nums font-mono">-21.4%</div>
+</div>
+<div class="bg-surface-card px-space-md py-space-sm rounded text-left">
+<div class="font-label-sm text-label-sm text-text-muted uppercase">TOP VALUE EFFICIENCY</div>
+<div class="font-metric-display text-metric-display text-metric-highlight tabular-nums font-mono">₹0.98<span class="text-body-sm font-normal text-text-secondary">/g</span></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Module 2: Asymmetric 4-Category Selection Gateway -->
+<div class="w-full flex flex-col space-y-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-text-muted uppercase tracking-wider">SELECT BENCHMARK CATEGORY ARBITRAGE MATRIX</span>
+<span class="font-label-sm text-label-sm text-text-muted">SHOWING 4 OF 4 SECTORS</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter-md">
+<!-- 01. Protein Powders -->
+<div class="group cursor-pointer bg-surface-card hover:bg-surface-raised transition-colors p-space-lg rounded flex flex-col justify-between h-56 relative overflow-hidden" onclick="selectCategory('whey')">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-label-sm text-primary font-mono font-bold tracking-widest">01 // ACTIVE</span>
+<span class="bg-surface-container px-space-xs py-space-2xs rounded font-label-sm text-label-sm text-text-secondary font-mono">84 SKUs</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-text-primary uppercase group-hover:text-primary transition-colors">Protein Powders</h3>
+<p class="font-body-sm text-body-sm text-text-muted mt-space-2xs">Whey Isolate, Concentrate, Hydrolyzed, Micellar Casein &amp; Fermented Plant.</p>
+</div>
+<div class="bg-surface-base px-space-md py-space-xs rounded flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-text-muted uppercase">BENCHMARK</span>
+<span class="text-metric-highlight font-mono font-semibold">₹ / 100g Pure Protein</span>
+</div>
+</div>
+<!-- 02. Mass Gainers -->
+<div class="group cursor-pointer bg-surface-card hover:bg-surface-raised transition-colors p-space-lg rounded flex flex-col justify-between h-56 relative overflow-hidden" onclick="selectCategory('gainers')">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-label-sm text-text-muted font-mono font-bold tracking-widest">02</span>
+<span class="bg-surface-container px-space-xs py-space-2xs rounded font-label-sm text-label-sm text-text-secondary font-mono">32 SKUs</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-text-primary uppercase group-hover:text-primary transition-colors">Mass Gainers</h3>
+<p class="font-body-sm text-body-sm text-text-muted mt-space-2xs">Caloric surplus density, complex carbohydrate and high-protein blend formulations.</p>
+</div>
+<div class="bg-surface-base px-space-md py-space-xs rounded flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-text-muted uppercase">BENCHMARK</span>
+<span class="text-text-secondary font-mono font-semibold">₹ / 1,000 kcal</span>
+</div>
+</div>
+<!-- 03. Creatine -->
+<div class="group cursor-pointer bg-surface-card hover:bg-surface-raised transition-colors p-space-lg rounded flex flex-col justify-between h-56 relative overflow-hidden" onclick="selectCategory('creatine')">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-label-sm text-text-muted font-mono font-bold tracking-widest">03</span>
+<span class="bg-surface-container px-space-xs py-space-2xs rounded font-label-sm text-label-sm text-text-secondary font-mono">41 SKUs</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-text-primary uppercase group-hover:text-primary transition-colors">Creatine</h3>
+<p class="font-body-sm text-body-sm text-text-muted mt-space-2xs">Micronized Monohydrate 200 Mesh, Creapure® certified raw and buffered blends.</p>
+</div>
+<div class="bg-surface-base px-space-md py-space-xs rounded flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-text-muted uppercase">BENCHMARK</span>
+<span class="text-text-secondary font-mono font-semibold">₹ / 3g Serving</span>
+</div>
+</div>
+<!-- 04. Pre-Workout -->
+<div class="group cursor-pointer bg-surface-card hover:bg-surface-raised transition-colors p-space-lg rounded flex flex-col justify-between h-56 relative overflow-hidden" onclick="selectCategory('preworkout')">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-label-sm text-text-muted font-mono font-bold tracking-widest">04</span>
+<span class="bg-surface-container px-space-xs py-space-2xs rounded font-label-sm text-label-sm text-text-secondary font-mono">29 SKUs</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-text-primary uppercase group-hover:text-primary transition-colors">Pre-Workout</h3>
+<p class="font-body-sm text-body-sm text-text-muted mt-space-2xs">High-stimulant central focus, L-Citrulline nitric oxide and stimulant-free pump profiles.</p>
+</div>
+<div class="bg-surface-base px-space-md py-space-xs rounded flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-text-muted uppercase">BENCHMARK</span>
+<span class="text-text-secondary font-mono font-semibold">₹ / Clinical Scoop</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Module 3: Category Screener Catalog View -->
+<div class="w-full flex flex-col space-y-space-md pt-space-md" id="screener-section">
+<!-- Breadcrumb & Control Toolbar -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md bg-surface-raised p-space-md rounded">
+<div class="flex items-center space-x-space-md flex-wrap gap-y-space-xs">
+<button class="text-text-muted hover:text-text-primary font-label-sm text-label-sm flex items-center space-x-space-2xs transition-colors" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+<span class="material-symbols-outlined text-[14px]">arrow_back</span>
+<span>ALL CATEGORIES</span>
+</button>
+<span class="text-border-prominent">/</span>
+<div class="flex items-center space-x-space-xs">
+<span class="font-headline-md text-headline-md text-text-primary uppercase font-bold" id="current-category-name">CATEGORY: WHEY &amp; PLANT PROTEIN</span>
+<span class="bg-surface-card px-space-xs py-space-2xs rounded font-label-sm text-label-sm text-metric-highlight font-mono" id="current-sku-count">84 SKUs</span>
+</div>
+</div>
+<!-- Filters & Sorting Mechanism -->
+<div class="flex flex-wrap items-center gap-space-sm font-label-sm text-label-sm">
+<!-- Form filter chips -->
+<div class="flex items-center space-x-space-2xs bg-surface-base p-1 rounded">
+<button class="filter-chip px-space-sm py-1 rounded bg-surface-card text-text-primary font-semibold" onclick="setFilter(this, 'all')">ALL</button>
+<button class="filter-chip px-space-sm py-1 rounded text-text-muted hover:text-text-secondary" onclick="setFilter(this, 'isolate')">ISOLATE</button>
+<button class="filter-chip px-space-sm py-1 rounded text-text-muted hover:text-text-secondary" onclick="setFilter(this, 'blend')">BLEND</button>
+<button class="filter-chip px-space-sm py-1 rounded text-text-muted hover:text-text-secondary" onclick="setFilter(this, 'plant')">PLANT</button>
+</div>
+<!-- In-Stock Toggle -->
+<label class="flex items-center space-x-space-xs bg-surface-base px-space-sm py-space-xs rounded cursor-pointer select-none">
+<input checked="" class="accent-price-drop w-3.5 h-3.5 rounded bg-surface-card" type="checkbox"/>
+<span class="text-text-secondary">IN-STOCK ONLY</span>
+</label>
+<!-- Sort dropdown -->
+<div class="flex items-center space-x-space-xs bg-surface-base px-space-sm py-space-xs rounded">
+<span class="text-text-muted">SORT:</span>
+<select class="bg-transparent text-text-primary focus:outline-none cursor-pointer font-mono font-medium" id="sort-select" onchange="sortCards(this.value)">
+<option class="bg-surface-card text-text-primary" value="pure-protein">₹ / Pure Protein (Asc)</option>
+<option class="bg-surface-card text-text-primary" value="price-low">Lowest Landed Price</option>
+<option class="bg-surface-card text-text-primary" value="lab-score">NABL Lab Score (Desc)</option>
+</select>
+</div>
+</div>
+</div>
+<!-- Screener Grid Header Metrics -->
+<div class="hidden lg:grid grid-cols-12 gap-gutter px-space-md py-space-xs font-label-sm text-label-sm text-text-muted uppercase">
+<div class="col-span-5">PRODUCT &amp; VERIFIED LAB PURITY PROFILE</div>
+<div class="col-span-2 text-right">MACROS / 30G</div>
+<div class="col-span-2 text-center">PACK SIZES</div>
+<div class="col-span-3 text-right">BEST LANDED BID &amp; COST / GRAM</div>
+</div>
+<!-- Module 3 Cards List -->
+<div class="flex flex-col space-y-space-xs" id="cards-container">
+<!-- Card 1: MuscleBlaze Biozyme Whey Isolate -->
+<div class="screener-card group cursor-pointer bg-surface-card hover:bg-surface-raised transition-colors p-space-md rounded flex flex-col lg:grid lg:grid-cols-12 gap-space-md items-start lg:items-center" data-cost="1.46" data-form="isolate" data-lab="81.2" data-price="3659" onclick="openProductModal('muscleblaze')">
+<!-- Col 1: Brand, Product, Lab Certificate -->
+<div class="w-full lg:col-span-5 flex items-start space-x-space-md">
+<div class="w-12 h-12 bg-surface-base rounded shrink-0 flex items-center justify-center p-1 overflow-hidden">
+<img class="w-full h-full object-contain" data-alt="Black and neon yellow tub of MuscleBlaze Biozyme Whey Isolate on clean dark metallic lab table with analytical test labels" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9Rfo0GihIZLztasiHv4p5yL4TgbVkI0Kq9himiTfUAHGNup2nrCLomm62IhRBvXM677ARhXLxv5s71h-0YoIgvA3CYLU9K1HPGivedzUQv6n9hXFaEE1JKqrgRsSpIBhxupfgGVkQFUv8s22VCgwcPkiZ-BBiMhb1pdRDBX_sVBHy27v7wLwnu15ccRG3CW0hSxOwlSHqU2HqlOAl1NE5kAv6n0Mb0WeZPdCZ6HKs0W0Idw_zHfG_"/>
+</div>
+<div class="flex flex-col space-y-space-2xs min-w-0">
+<div class="flex items-center space-x-space-xs flex-wrap">
+<span class="font-label-sm text-label-sm text-text-muted font-mono uppercase">MUSCLEBLAZE</span>
+<span class="bg-primary-container/20 text-price-drop font-label-sm text-label-sm px-space-xs py-space-2xs rounded font-mono font-semibold flex items-center space-x-space-2xs">
+<span class="material-symbols-outlined text-[12px]">verified</span>
+<span>NABL AUDIT: 81.2%</span>
+</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-text-primary group-hover:text-primary transition-colors truncate">
+              Biozyme Whey Isolate
+            </h4>
+<span class="font-body-sm text-body-sm text-text-muted">Enhanced Absorption Formula (EAF®), Low Lactose</span>
+</div>
+</div>
+<!-- Col 2: Macros -->
+<div class="w-full lg:col-span-2 flex lg:flex-col justify-between lg:justify-center items-center lg:items-end font-mono">
+<div class="text-text-primary font-semibold text-body-md"><span class="text-price-drop">25g</span> Prot</div>
+<div class="text-text-muted text-body-sm">1.8g Carb · 1.2g Fat</div>
+</div>
+<!-- Col 3: Pack Sizes Available -->
+<div class="w-full lg:col-span-2 flex items-center justify-start lg:justify-center space-x-space-xs font-mono text-body-sm text-text-secondary">
+<span class="bg-surface-base px-space-xs py-space-2xs rounded">1kg</span>
+<span class="bg-surface-base px-space-xs py-space-2xs rounded text-text-primary font-semibold">2kg</span>
+<span class="bg-surface-base px-space-xs py-space-2xs rounded">4kg</span>
+</div>
+<!-- Col 4: Landed Pricing & CTA -->
+<div class="w-full lg:col-span-3 flex items-center justify-between lg:justify-end space-x-space-lg">
+<div class="flex flex-col items-start lg:items-end">
+<div class="flex items-baseline space-x-space-xs">
+<span class="font-metric-display text-metric-display text-text-primary font-mono tabular-nums">₹3,659</span>
+<span class="text-text-muted font-body-sm">/ 2kg</span>
+</div>
+<div class="flex items-center space-x-space-xs font-label-sm text-label-sm">
+<span class="text-price-drop font-mono font-bold">₹1.46 / g pure</span>
+<span class="text-text-muted">via Nutrabay (2d)</span>
+</div>
+</div>
+<button class="bg-surface-base group-hover:bg-primary group-hover:text-on-primary text-text-primary p-space-xs rounded transition-colors shrink-0">
+<span class="material-symbols-outlined text-[18px]">query_stats</span>
+</button>
+</div>
+</div>
+<!-- Card 2: Optimum Nutrition (ON) Gold Standard 100% Whey -->
+<div class="screener-card group cursor-pointer bg-surface-card hover:bg-surface-raised transition-colors p-space-md rounded flex flex-col lg:grid lg:grid-cols-12 gap-space-md items-start lg:items-center" data-cost="1.74" data-form="blend" data-lab="78.4" data-price="3149" onclick="openProductModal('on-gold')">
+<!-- Col 1 -->
+<div class="w-full lg:col-span-5 flex items-start space-x-space-md">
+<div class="w-12 h-12 bg-surface-base rounded shrink-0 flex items-center justify-center p-1 overflow-hidden">
+<img class="w-full h-full object-contain" data-alt="Optimum Nutrition Gold Standard 100% Whey iconic red and black tub container with authentic hologram label" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4FIglkTnXVW--D0VzarduIX8twCc83Rc7XiB8RHxDHCOWtBRjdy68sXw5IJE2IuvN0YaDoeME0kP5COzrje9lWfEMRRQTMlLJvcrPQKMgOdVbI6YKQOAzCfUodPKwWhlstcI-2FM7qUT9r1q04XbAowGMIM47_CnToAGG2Q2jdTb0721ellY3mmxMeAY0bJGS2IaGDrzPqM1XD5THeWZhY_EkKn_xSP2hyLYhlRbF5S90JtVSOoyA"/>
+</div>
+<div class="flex flex-col space-y-space-2xs min-w-0">
+<div class="flex items-center space-x-space-xs flex-wrap">
+<span class="font-label-sm text-label-sm text-text-muted font-mono uppercase">OPTIMUM NUTRITION</span>
+<span class="bg-primary-container/20 text-price-drop font-label-sm text-label-sm px-space-xs py-space-2xs rounded font-mono font-semibold flex items-center space-x-space-2xs">
+<span class="material-symbols-outlined text-[12px]">verified</span>
+<span>LAB ✓: 78.4%</span>
+</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-text-primary group-hover:text-primary transition-colors truncate">
+              Gold Standard 100% Whey
+            </h4>
+<span class="font-body-sm text-body-sm text-text-muted">Whey Isolate Primary Source with Peptides</span>
+</div>
+</div>
+<!-- Col 2 -->
+<div class="w-full lg:col-span-2 flex lg:flex-col justify-between lg:justify-center items-center lg:items-end font-mono">
+<div class="text-text-primary font-semibold text-body-md"><span class="text-price-drop">24g</span> Prot</div>
+<div class="text-text-muted text-body-sm">3.0g Carb · 1.0g Fat</div>
+</div>
+<!-- Col 3 -->
+<div class="w-full lg:col-span-2 flex items-center justify-start lg:justify-center space-x-space-xs font-mono text-body-sm text-text-secondary">
+<span class="bg-surface-base px-space-xs py-space-2xs rounded">2lb</span>
+<span class="bg-surface-base px-space-xs py-space-2xs rounded text-text-primary font-semibold">5lb</span>
+<span class="bg-surface-base px-space-xs py-space-2xs rounded">10lb</span>
+</div>
+<!-- Col 4 -->
+<div class="w-full lg:col-span-3 flex items-center justify-between lg:justify-end space-x-space-lg">
+<div class="flex flex-col items-start lg:items-end">
+<div class="flex items-baseline space-x-space-xs">
+<span class="font-metric-display text-metric-display text-text-primary font-mono tabular-nums">₹3,149</span>
+<span class="text-text-muted font-body-sm">/ 2lb</span>
+</div>
+<div class="flex items-center space-x-space-xs font-label-sm text-label-sm">
+<span class="text-price-drop font-mono font-bold">₹1.74 / g pure</span>
+<span class="text-text-muted">via Amazon IN (1d)</span>
+</div>
+</div>
+<button class="bg-surface-base group-hover:bg-primary group-hover:text-on-primary text-text-primary p-space-xs rounded transition-colors shrink-0">
+<span class="material-symbols-outlined text-[18px]">query_stats</span>
+</button>
+</div>
+</div>
+<!-- Card 3: As-It-Is Nutrition ATOM Whey Isolate -->
+<div class="screener-card group cursor-pointer bg-surface-card hover:bg-surface-raised transition-colors p-space-md rounded flex flex-col lg:grid lg:grid-cols-12 gap-space-md items-start lg:items-center" data-cost="1.12" data-form="isolate" data-lab="83.1" data-price="1899" onclick="openProductModal('atom')">
+<!-- Col 1 -->
+<div class="w-full lg:col-span-5 flex items-start space-x-space-md">
+<div class="w-12 h-12 bg-surface-base rounded shrink-0 flex items-center justify-center p-1 overflow-hidden">
+<img class="w-full h-full object-contain" data-alt="As-It-Is ATOM Whey Protein Isolate minimalist silver and yellow pouch packaging with analytical lab tag" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3rGaSxV7HzTonWl_FcFzKw2Xa0D63modWVbQ0dTB9xLUcvF0JHVwaG3kXctkUobCqSqDLQ3J_2QEkr3q-Ehymr9IA8fPTx5-0xX4F8v8OogCA3mm9uIFvmSs8xjkwns1TeD4ZwcUwZmN91lhJPej1_MIkDnDLeCUJXr9DQdEalmcEBemhU0c1ahpuyRfSssmo3e6o5YHuJ5dwJ-UzqQOY10_hJupAHTV2ouV_yRWJiWEsKCUTRpmY"/>
+</div>
+<div class="flex flex-col space-y-space-2xs min-w-0">
+<div class="flex items-center space-x-space-xs flex-wrap">
+<span class="font-label-sm text-label-sm text-text-muted font-mono uppercase">AS-IT-IS NUTRITION</span>
+<span class="bg-primary-container/20 text-price-drop font-label-sm text-label-sm px-space-xs py-space-2xs rounded font-mono font-semibold flex items-center space-x-space-2xs">
+<span class="material-symbols-outlined text-[12px]">verified</span>
+<span>LAB ✓: 83.1%</span>
+</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-text-primary group-hover:text-primary transition-colors truncate">
+              ATOM Whey Isolate
+            </h4>
+<span class="font-body-sm text-body-sm text-text-muted">Zero Sugar, Digestive Enzyme Matrix Added</span>
+</div>
+</div>
+<!-- Col 2 -->
+<div class="w-full lg:col-span-2 flex lg:flex-col justify-between lg:justify-center items-center lg:items-end font-mono">
+<div class="text-text-primary font-semibold text-body-md"><span class="text-price-drop">27g</span> Prot</div>
+<div class="text-text-muted text-body-sm">1.0g Carb · 0.5g Fat</div>
+</div>
+<!-- Col 3 -->
+<div class="w-full lg:col-span-2 flex items-center justify-start lg:justify-center space-x-space-xs font-mono text-body-sm text-text-secondary">
+<span class="bg-surface-base px-space-xs py-space-2xs rounded text-text-primary font-semibold">1kg</span>
+<span class="bg-surface-base px-space-xs py-space-2xs rounded">2kg</span>
+</div>
+<!-- Col 4 -->
+<div class="w-full lg:col-span-3 flex items-center justify-between lg:justify-end space-x-space-lg">
+<div class="flex flex-col items-start lg:items-end">
+<div class="flex items-baseline space-x-space-xs">
+<span class="font-metric-display text-metric-display text-text-primary font-mono tabular-nums">₹1,899</span>
+<span class="text-text-muted font-body-sm">/ 1kg</span>
+</div>
+<div class="flex items-center space-x-space-xs font-label-sm text-label-sm">
+<span class="text-price-drop font-mono font-bold">₹1.12 / g pure</span>
+<span class="text-text-muted">via Nutrabay</span>
+</div>
+</div>
+<button class="bg-surface-base group-hover:bg-primary group-hover:text-on-primary text-text-primary p-space-xs rounded transition-colors shrink-0">
+<span class="material-symbols-outlined text-[18px]">query_stats</span>
+</button>
+</div>
+</div>
+<!-- Card 4: Nakpro Platinum 100% Whey Isolate -->
+<div class="screener-card group cursor-pointer bg-surface-card hover:bg-surface-raised transition-colors p-space-md rounded flex flex-col lg:grid lg:grid-cols-12 gap-space-md items-start lg:items-center" data-cost="0.98" data-form="isolate" data-lab="86.5" data-price="1749" onclick="openProductModal('nakpro')">
+<!-- Col 1 -->
+<div class="w-full lg:col-span-5 flex items-start space-x-space-md">
+<div class="w-12 h-12 bg-surface-base rounded shrink-0 flex items-center justify-center p-1 overflow-hidden">
+<img class="w-full h-full object-contain" data-alt="Nakpro Platinum Whey Isolate glossy dark grey canister with blue micro-filtration label" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAIhvOkJ6LKd2ZvgRs3fnDZBmnkD_jCJGG85-vVjbTZxG1XkrYlzg7yrsu959HjrXPefyrx5_pB72_bExUytNcBcXawGC9RfSex8jxrz2IHz1BmmkxchzU4sOdw2yHTsTa2XLgDy1WnUQ5semu6iK29s1Srw60UgchU7ZkanMuT6haxnIJajUWckQk4f8O5FEAS-kmBbUaws8YcyPfa1bQljSy32Nj_WAGl39xxjm5ENZoRMCG4L7sM"/>
+</div>
+<div class="flex flex-col space-y-space-2xs min-w-0">
+<div class="flex items-center space-x-space-xs flex-wrap">
+<span class="font-label-sm text-label-sm text-text-muted font-mono uppercase">NAKPRO</span>
+<span class="bg-primary-container/20 text-price-drop font-label-sm text-label-sm px-space-xs py-space-2xs rounded font-mono font-semibold flex items-center space-x-space-2xs">
+<span class="material-symbols-outlined text-[12px]">verified</span>
+<span>LAB ✓: 86.5%</span>
+</span>
+<span class="bg-secondary-container/20 text-metric-highlight font-label-sm text-label-sm px-space-xs py-space-2xs rounded font-mono">VALUE LEADER</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-text-primary group-hover:text-primary transition-colors truncate">
+              Platinum 100% Whey Isolate
+            </h4>
+<span class="font-body-sm text-body-sm text-text-muted">Cross-Flow Microfiltered, Zero Added Fillers</span>
+</div>
+</div>
+<!-- Col 2 -->
+<div class="w-full lg:col-span-2 flex lg:flex-col justify-between lg:justify-center items-center lg:items-end font-mono">
+<div class="text-text-primary font-semibold text-body-md"><span class="text-price-drop">28g</span> Prot</div>
+<div class="text-text-muted text-body-sm">0.2g Carb · 0.3g Fat</div>
+</div>
+<!-- Col 3 -->
+<div class="w-full lg:col-span-2 flex items-center justify-start lg:justify-center space-x-space-xs font-mono text-body-sm text-text-secondary">
+<span class="bg-surface-base px-space-xs py-space-2xs rounded text-text-primary font-semibold">1kg</span>
+<span class="bg-surface-base px-space-xs py-space-2xs rounded">2kg</span>
+</div>
+<!-- Col 4 -->
+<div class="w-full lg:col-span-3 flex items-center justify-between lg:justify-end space-x-space-lg">
+<div class="flex flex-col items-start lg:items-end">
+<div class="flex items-baseline space-x-space-xs">
+<span class="font-metric-display text-metric-display text-text-primary font-mono tabular-nums">₹1,749</span>
+<span class="text-text-muted font-body-sm">/ 1kg</span>
+</div>
+<div class="flex items-center space-x-space-xs font-label-sm text-label-sm">
+<span class="text-price-drop font-mono font-bold">₹0.98 / g pure</span>
+<span class="text-text-muted">via Flipkart</span>
+</div>
+</div>
+<button class="bg-surface-base group-hover:bg-primary group-hover:text-on-primary text-text-primary p-space-xs rounded transition-colors shrink-0">
+<span class="material-symbols-outlined text-[18px]">query_stats</span>
+</button>
+</div>
+</div>
+<!-- Card 5: The Whole Truth 100% Whey Isolate -->
+<div class="screener-card group cursor-pointer bg-surface-card hover:bg-surface-raised transition-colors p-space-md rounded flex flex-col lg:grid lg:grid-cols-12 gap-space-md items-start lg:items-center" data-cost="1.82" data-form="isolate" data-lab="82.0" data-price="3499" onclick="openProductModal('whole-truth')">
+<!-- Col 1 -->
+<div class="w-full lg:col-span-5 flex items-start space-x-space-md">
+<div class="w-12 h-12 bg-surface-base rounded shrink-0 flex items-center justify-center p-1 overflow-hidden">
+<img class="w-full h-full object-contain" data-alt="The Whole Truth minimalist cardboard textured protein canister with bold clean typography and zero-chemical statement" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-JWE7A20sY3TzbeX5MP8qeKSw8e9ZwYz29ZwpX3qxLqcdonCOw_NwmOTnR4bAusYZStMyyNVK0gnzBrF1QKKf8qvIKWkOwAkpL4B0pnZ011mJDrg_mO8y9CMnPGXBw8nVyhPx-O7ZoTB7DAcKrsu4IuFHQwZK0aUqlo4-0q1POngRdYM596yvEYObA4Cf5aA_vDMOpQPyv1K8_1xewhFdMf0De-Nr1yNjHEFoAG06YIGohYnsol-B"/>
+</div>
+<div class="flex flex-col space-y-space-2xs min-w-0">
+<div class="flex items-center space-x-space-xs flex-wrap">
+<span class="font-label-sm text-label-sm text-text-muted font-mono uppercase">THE WHOLE TRUTH</span>
+<span class="bg-primary-container/20 text-price-drop font-label-sm text-label-sm px-space-xs py-space-2xs rounded font-mono font-semibold flex items-center space-x-space-2xs">
+<span class="material-symbols-outlined text-[12px]">verified</span>
+<span>LAB ✓: 82.0%</span>
+</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-text-primary group-hover:text-primary transition-colors truncate">
+              100% Pure Whey Isolate
+            </h4>
+<span class="font-body-sm text-body-sm text-text-muted">Zero Artificial Sweeteners, Raw Cocoa &amp; Stevia</span>
+</div>
+</div>
+<!-- Col 2 -->
+<div class="w-full lg:col-span-2 flex lg:flex-col justify-between lg:justify-center items-center lg:items-end font-mono">
+<div class="text-text-primary font-semibold text-body-md"><span class="text-price-drop">26g</span> Prot</div>
+<div class="text-text-muted text-body-sm">1.2g Carb · 0.8g Fat</div>
+</div>
+<!-- Col 3 -->
+<div class="w-full lg:col-span-2 flex items-center justify-start lg:justify-center space-x-space-xs font-mono text-body-sm text-text-secondary">
+<span class="bg-surface-base px-space-xs py-space-2xs rounded text-text-primary font-semibold">1kg</span>
+<span class="bg-surface-base px-space-xs py-space-2xs rounded">2.5kg</span>
+</div>
+<!-- Col 4 -->
+<div class="w-full lg:col-span-3 flex items-center justify-between lg:justify-end space-x-space-lg">
+<div class="flex flex-col items-start lg:items-end">
+<div class="flex items-baseline space-x-space-xs">
+<span class="font-metric-display text-metric-display text-text-primary font-mono tabular-nums">₹3,499</span>
+<span class="text-text-muted font-body-sm">/ 1kg</span>
+</div>
+<div class="flex items-center space-x-space-xs font-label-sm text-label-sm">
+<span class="text-price-drop font-mono font-bold">₹1.82 / g pure</span>
+<span class="text-text-muted">via Amazon IN</span>
+</div>
+</div>
+<button class="bg-surface-base group-hover:bg-primary group-hover:text-on-primary text-text-primary p-space-xs rounded transition-colors shrink-0">
+<span class="material-symbols-outlined text-[18px]">query_stats</span>
+</button>
+</div>
+</div>
+<!-- Card 6: Dymatize ISO 100 Hydrolyzed Whey -->
+<div class="screener-card group cursor-pointer bg-surface-card hover:bg-surface-raised transition-colors p-space-md rounded flex flex-col lg:grid lg:grid-cols-12 gap-space-md items-start lg:items-center" data-cost="2.40" data-form="isolate" data-lab="85.0" data-price="5499" onclick="openProductModal('dymatize')">
+<!-- Col 1 -->
+<div class="w-full lg:col-span-5 flex items-start space-x-space-md">
+<div class="w-12 h-12 bg-surface-base rounded shrink-0 flex items-center justify-center p-1 overflow-hidden">
+<img class="w-full h-full object-contain" data-alt="Dymatize ISO 100 white and cyan bottle with Hydrolyzed 100% Whey Isolate text and gourmet chocolate branding" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXGrozO7ladrfZF60gcZo9RUe5RtQ1PTmAhhFvYXyUk97HWsqmW5YeSIfpLwUb_4kydneJzV93jaP-9pYEcSeKlz3zyNNryKGM4yhyvjnnXIjsmgArX-UnIHpdw0eaYYvIwIiexbUzR91Mt_cmkg1zMCGDupdDdmUgeOELnUaxFPxb8vuDJml4uKsQjQ3tAHWaUdQA3ZJGCudSCyR1cdNU3skdf0c9v9_kl_3snQyo4yV9yMcjSuHh"/>
+</div>
+<div class="flex flex-col space-y-space-2xs min-w-0">
+<div class="flex items-center space-x-space-xs flex-wrap">
+<span class="font-label-sm text-label-sm text-text-muted font-mono uppercase">DYMATIZE</span>
+<span class="bg-primary-container/20 text-price-drop font-label-sm text-label-sm px-space-xs py-space-2xs rounded font-mono font-semibold flex items-center space-x-space-2xs">
+<span class="material-symbols-outlined text-[12px]">verified</span>
+<span>LAB ✓: 85.0%</span>
+</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-text-primary group-hover:text-primary transition-colors truncate">
+              ISO 100 Hydrolyzed Whey
+            </h4>
+<span class="font-body-sm text-body-sm text-text-muted">Rapidly Absorbing Hydrolyzed 100% Whey Isolate</span>
+</div>
+</div>
+<!-- Col 2 -->
+<div class="w-full lg:col-span-2 flex lg:flex-col justify-between lg:justify-center items-center lg:items-end font-mono">
+<div class="text-text-primary font-semibold text-body-md"><span class="text-price-drop">25g</span> Prot</div>
+<div class="text-text-muted text-body-sm">1.0g Carb · 0.0g Fat</div>
+</div>
+<!-- Col 3 -->
+<div class="w-full lg:col-span-2 flex items-center justify-start lg:justify-center space-x-space-xs font-mono text-body-sm text-text-secondary">
+<span class="bg-surface-base px-space-xs py-space-2xs rounded">2.5lb</span>
+<span class="bg-surface-base px-space-xs py-space-2xs rounded text-text-primary font-semibold">5lb</span>
+</div>
+<!-- Col 4 -->
+<div class="w-full lg:col-span-3 flex items-center justify-between lg:justify-end space-x-space-lg">
+<div class="flex flex-col items-start lg:items-end">
+<div class="flex items-baseline space-x-space-xs">
+<span class="font-metric-display text-metric-display text-text-primary font-mono tabular-nums">₹5,499</span>
+<span class="text-text-muted font-body-sm">/ 2.5lb</span>
+</div>
+<div class="flex items-center space-x-space-xs font-label-sm text-label-sm">
+<span class="text-price-drop font-mono font-bold">₹2.40 / g pure</span>
+<span class="text-text-muted">via HyugaLife</span>
+</div>
+</div>
+<button class="bg-surface-base group-hover:bg-primary group-hover:text-on-primary text-text-primary p-space-xs rounded transition-colors shrink-0">
+<span class="material-symbols-outlined text-[18px]">query_stats</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Module 4: Dedicated Product Inspection Modal (Shown Active by default with full interaction) -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-margin md:p-margin-md bg-surface-base/80 backdrop-blur-sm transition-opacity duration-200" id="inspector-modal">
+<div class="bg-surface-card w-full max-w-4xl max-h-[942px] overflow-y-auto rounded-xl flex flex-col p-space-lg space-y-space-lg">
+<!-- Modal Header -->
+<div class="flex items-start justify-between pb-space-md">
+<div class="flex flex-col space-y-space-2xs">
+<div class="flex items-center space-x-space-xs font-label-sm text-label-sm text-metric-highlight font-mono">
+<span>TERMINAL SKU ARBITRAGE MATRIX</span>
+<span>//</span>
+<span class="uppercase" id="modal-brand-tag">MUSCLEBLAZE · SKU INSPECTOR</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-text-primary tracking-tight" id="modal-title">
+            MuscleBlaze Biozyme Whey Isolate
+          </h2>
+<div class="flex items-center space-x-space-sm text-body-sm text-text-muted">
+<span>Primary SKU: <span class="font-mono text-text-secondary">MB-W-ISO-2000-CHOC</span></span>
+<span>•</span>
+<span class="text-price-drop font-mono">Verified Authentic 1P Distribution</span>
+</div>
+</div>
+<button class="flex items-center space-x-space-xs bg-surface-base hover:bg-surface-overlay text-text-secondary hover:text-text-primary px-space-sm py-space-xs rounded font-label-sm text-label-sm font-mono transition-colors" onclick="closeProductModal()">
+<span>ESC</span>
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- Size Matrix Selector -->
+<div class="flex flex-col space-y-space-xs">
+<span class="font-label-sm text-label-sm text-text-muted uppercase tracking-wider">01 // SELECT PACKAGE SIZE (UNIT WEIGHT SPREAD)</span>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-sm font-mono">
+<button class="weight-btn bg-surface-raised hover:bg-surface-overlay p-space-md rounded text-left flex flex-col justify-between space-y-space-2xs transition-colors" onclick="selectWeight(this, '1kg', 2199)">
+<span class="text-body-sm text-text-muted">1 kg (~30 scoops)</span>
+<span class="text-body-md text-text-primary font-bold">₹2,199</span>
+<span class="font-label-sm text-label-sm text-text-muted">₹1.52 / g pure</span>
+</button>
+<button class="weight-btn bg-surface-base p-space-md rounded text-left flex flex-col justify-between space-y-space-2xs transition-colors" onclick="selectWeight(this, '2kg', 3659)">
+<div class="flex items-center justify-between">
+<span class="text-body-sm text-price-drop font-semibold">● 2 kg (~60 scoops)</span>
+<span class="font-label-sm text-label-sm bg-price-drop/20 text-price-drop px-space-xs rounded">SWEET SPOT</span>
+</div>
+<span class="text-headline-md text-headline-md text-text-primary font-bold">₹3,659</span>
+<span class="font-label-sm text-label-sm text-price-drop font-semibold">₹1.46 / g pure</span>
+</button>
+<button class="weight-btn bg-surface-raised hover:bg-surface-overlay p-space-md rounded text-left flex flex-col justify-between space-y-space-2xs transition-colors" onclick="selectWeight(this, '4kg', 7299)">
+<span class="text-body-sm text-text-muted">4 kg (~120 scoops)</span>
+<span class="text-body-md text-text-primary font-bold">₹7,299</span>
+<span class="font-label-sm text-label-sm text-text-muted">₹1.49 / g pure</span>
+</button>
+</div>
+</div>
+<!-- Flavor Arbitrage Pills -->
+<div class="flex flex-col space-y-space-xs">
+<span class="font-label-sm text-label-sm text-text-muted uppercase tracking-wider">02 // FLAVOR DELTA ARBITRAGE</span>
+<div class="flex flex-wrap gap-space-xs font-label-sm text-label-sm font-mono">
+<button class="flavor-pill bg-surface-base text-price-drop px-space-md py-space-xs rounded font-semibold" onclick="selectFlavor(this, 0)">
+            ● Rich Chocolate (Baseline)
+          </button>
+<button class="flavor-pill bg-surface-raised text-text-secondary hover:text-text-primary px-space-md py-space-xs rounded" onclick="selectFlavor(this, 50)">
+            Cafe Mocha (+₹50)
+          </button>
+<button class="flavor-pill bg-surface-raised text-text-secondary hover:text-text-primary px-space-md py-space-xs rounded" onclick="selectFlavor(this, 90)">
+            Magical Mango (+₹90)
+          </button>
+<button class="flavor-pill bg-surface-raised text-price-drop hover:bg-surface-overlay px-space-md py-space-xs rounded font-semibold" onclick="selectFlavor(this, -240)">
+            Unflavored (Save ₹240)
+          </button>
+</div>
+</div>
+<!-- 90-Day Range Spread Meter -->
+<div class="bg-surface-raised p-space-md rounded flex flex-col space-y-space-sm">
+<div class="flex items-center justify-between font-label-sm text-label-sm text-text-muted uppercase">
+<span>90-DAY LANDED PRICE SPREAD</span>
+<span class="text-text-primary font-mono font-medium">VOLATILITY INDEX: <span class="text-price-drop">LOW (7.2%)</span></span>
+</div>
+<!-- Spread Bar -->
+<div class="relative w-full h-3 bg-surface-base rounded-full overflow-hidden flex items-center">
+<div class="absolute left-0 top-0 bottom-0 bg-primary-container/20 w-1/4"></div>
+<div class="absolute left-1/4 top-0 bottom-0 bg-metric-highlight/30 w-1/2"></div>
+<!-- Current Landed Marker -->
+<div class="absolute left-[38%] top-0 bottom-0 w-2 bg-price-drop rounded-full z-10"></div>
+</div>
+<div class="grid grid-cols-3 font-mono text-body-sm">
+<div>
+<div class="text-text-muted font-label-sm text-label-sm uppercase">ALL-TIME LOW</div>
+<div class="text-price-drop font-bold">₹3,499</div>
+</div>
+<div class="text-center">
+<div class="text-text-muted font-label-sm text-label-sm uppercase">ACTIVE LANDED ASK</div>
+<div class="text-text-primary font-bold" id="modal-active-price">₹3,659</div>
+</div>
+<div class="text-right">
+<div class="text-text-muted font-label-sm text-label-sm uppercase">MARKET MEDIAN</div>
+<div class="text-text-secondary">₹3,920</div>
+</div>
+</div>
+</div>
+<!-- NABL Lab Audit Report Card -->
+<div class="bg-surface-base p-space-md rounded flex flex-col space-y-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-space-xs">
+<span class="material-symbols-outlined text-price-drop text-[18px]">verified</span>
+<span class="font-label-sm text-label-sm font-semibold text-text-primary uppercase tracking-wider">NABL THIRD-PARTY LAB AUDIT REPORT</span>
+</div>
+<span class="font-label-sm text-label-sm text-text-muted font-mono">DATE: 08-FEB-2025</span>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-space-sm pt-space-xs font-mono text-body-sm">
+<div>
+<span class="text-text-muted text-label-sm font-label-sm block uppercase">BATCH NUMBER</span>
+<span class="text-text-primary font-semibold">MB-2026-X89</span>
+</div>
+<div>
+<span class="text-text-muted text-label-sm font-label-sm block uppercase">TESTED PROTEIN</span>
+<span class="text-price-drop font-bold">81.2% <span class="text-text-muted font-normal">(Claim: 80.0%)</span></span>
+</div>
+<div>
+<span class="text-text-muted text-label-sm font-label-sm block uppercase">HEAVY METALS (Pb/Cd/As)</span>
+<span class="text-price-drop font-semibold">Not Detected (ND)</span>
+</div>
+<div>
+<span class="text-text-muted text-label-sm font-label-sm block uppercase">TESTING LAB</span>
+<span class="text-text-secondary truncate block">Eurofins Analytic NABL</span>
+</div>
+</div>
+</div>
+<!-- Multi-Store Landed Order Book -->
+<div class="flex flex-col space-y-space-xs">
+<div class="flex items-center justify-between font-label-sm text-label-sm text-text-muted uppercase">
+<span>03 // REAL-TIME LANDED ORDER BOOK (SORTED BY TRUE DELIVERED COST)</span>
+<span>CURRENCY: INR (₹)</span>
+</div>
+<div class="flex flex-col space-y-space-2xs font-mono" id="order-book-list">
+<!-- Vendor 1: Nutrabay -->
+<div class="bg-surface-base hover:bg-surface-raised transition-colors p-space-md rounded flex flex-col md:flex-row items-start md:items-center justify-between gap-space-sm">
+<div class="flex items-center space-x-space-md">
+<span class="w-2 h-2 rounded-full bg-price-drop shrink-0"></span>
+<div class="flex flex-col">
+<div class="flex items-center space-x-space-xs">
+<span class="text-body-md text-text-primary font-bold">Nutrabay</span>
+<span class="bg-surface-card px-space-xs py-space-2xs rounded font-label-sm text-label-sm text-text-secondary">Authorized Dist ✓</span>
+</div>
+<span class="text-body-sm text-text-muted">Est. 2-Day Express · Free Delivery</span>
+</div>
+</div>
+<div class="flex items-center justify-between w-full md:w-auto space-x-space-lg">
+<div class="text-right">
+<div class="text-metric-display text-metric-display text-price-drop font-bold tabular-nums" data-base="3659">₹3,659</div>
+<span class="bg-primary-container/20 text-price-drop font-label-sm text-label-sm px-space-xs rounded">LOWEST ASK</span>
+</div>
+<a class="bg-primary hover:bg-primary-fixed-dim text-on-primary px-space-md py-space-xs rounded font-label-md text-label-md font-bold transition-colors" href="#" target="_blank">
+                Go to Store →
+              </a>
+</div>
+</div>
+<!-- Vendor 2: Amazon IN -->
+<div class="bg-surface-base hover:bg-surface-raised transition-colors p-space-md rounded flex flex-col md:flex-row items-start md:items-center justify-between gap-space-sm">
+<div class="flex items-center space-x-space-md">
+<span class="w-2 h-2 rounded-full bg-border-prominent shrink-0"></span>
+<div class="flex flex-col">
+<div class="flex items-center space-x-space-xs">
+<span class="text-body-md text-text-primary font-bold">Amazon IN</span>
+<span class="bg-surface-card px-space-xs py-space-2xs rounded font-label-sm text-label-sm text-text-secondary">Appario Retail 1P ✓</span>
+</div>
+<span class="text-body-sm text-text-muted">Prime 1-Day Delivery · Free Delivery</span>
+</div>
+</div>
+<div class="flex items-center justify-between w-full md:w-auto space-x-space-lg">
+<div class="text-right">
+<div class="text-headline-md text-headline-md text-text-primary font-bold tabular-nums" data-base="3729">₹3,729</div>
+<span class="text-body-sm text-text-muted">+₹70 spread</span>
+</div>
+<a class="bg-surface-card hover:bg-surface-overlay text-text-primary px-space-md py-space-xs rounded font-label-md text-label-md font-semibold transition-colors" href="#" target="_blank">
+                Go to Store →
+              </a>
+</div>
+</div>
+<!-- Vendor 3: MuscleBlaze D2C -->
+<div class="bg-surface-base hover:bg-surface-raised transition-colors p-space-md rounded flex flex-col md:flex-row items-start md:items-center justify-between gap-space-sm">
+<div class="flex items-center space-x-space-md">
+<span class="w-2 h-2 rounded-full bg-border-prominent shrink-0"></span>
+<div class="flex flex-col">
+<div class="flex items-center space-x-space-xs">
+<span class="text-body-md text-text-primary font-bold">MuscleBlaze</span>
+<span class="bg-surface-card px-space-xs py-space-2xs rounded font-label-sm text-label-sm text-text-secondary">Brand Direct ✓</span>
+</div>
+<span class="text-body-sm text-text-muted">Direct Warehouse Dispatch · Est. 3-4 Days</span>
+</div>
+</div>
+<div class="flex items-center justify-between w-full md:w-auto space-x-space-lg">
+<div class="text-right">
+<div class="text-headline-md text-headline-md text-text-primary font-bold tabular-nums" data-base="3849">₹3,849</div>
+<span class="text-body-sm text-text-muted">+₹190 spread</span>
+</div>
+<a class="bg-surface-card hover:bg-surface-overlay text-text-primary px-space-md py-space-xs rounded font-label-md text-label-md font-semibold transition-colors" href="#" target="_blank">
+                Go to Store →
+              </a>
+</div>
+</div>
+<!-- Vendor 4: Flipkart -->
+<div class="bg-surface-base hover:bg-surface-raised transition-colors p-space-md rounded flex flex-col md:flex-row items-start md:items-center justify-between gap-space-sm">
+<div class="flex items-center space-x-space-md">
+<span class="w-2 h-2 rounded-full bg-border-prominent shrink-0"></span>
+<div class="flex flex-col">
+<div class="flex items-center space-x-space-xs">
+<span class="text-body-md text-text-primary font-bold">Flipkart</span>
+<span class="bg-surface-card px-space-xs py-space-2xs rounded font-label-sm text-label-sm text-text-secondary">RetailEZ Assured ✓</span>
+</div>
+<span class="text-body-sm text-text-muted">Est. 3-Day · +₹40 Logistics Fee Included</span>
+</div>
+</div>
+<div class="flex items-center justify-between w-full md:w-auto space-x-space-lg">
+<div class="text-right">
+<div class="text-headline-md text-headline-md text-text-primary font-bold tabular-nums" data-base="3899">₹3,899</div>
+<span class="text-body-sm text-text-muted">+₹240 spread</span>
+</div>
+<a class="bg-surface-card hover:bg-surface-overlay text-text-primary px-space-md py-space-xs rounded font-label-md text-label-md font-semibold transition-colors" href="#" target="_blank">
+                Go to Store →
+              </a>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  let activeWeightMultiplier = 1;
+  let activeFlavorOffset = 0;
+  let currentBasePrice = 3659;
+
+  const productData = {
+    'muscleblaze': {
+      brand: 'MUSCLEBLAZE',
+      name: 'MuscleBlaze Biozyme Whey Isolate',
+      basePrice: 3659,
+      labTested: '81.2%',
+      labelClaim: '80.0%',
+      batch: 'MB-2026-X89',
+      lab: 'Eurofins Analytic NABL'
+    },
+    'on-gold': {
+      brand: 'OPTIMUM NUTRITION',
+      name: 'Gold Standard 100% Whey',
+      basePrice: 3149,
+      labTested: '78.4%',
+      labelClaim: '80.0%',
+      batch: 'ON-2026-IN02',
+      lab: 'SGS India Testing'
+    },
+    'atom': {
+      brand: 'AS-IT-IS NUTRITION',
+      name: 'ATOM Whey Isolate',
+      basePrice: 1899,
+      labTested: '83.1%',
+      labelClaim: '83.0%',
+      batch: 'AI-2025-V77',
+      lab: 'Eurofins Analytic NABL'
+    },
+    'nakpro': {
+      brand: 'NAKPRO',
+      name: 'Platinum 100% Whey Isolate',
+      basePrice: 1749,
+      labTested: '86.5%',
+      labelClaim: '86.0%',
+      batch: 'NK-2026-P91',
+      lab: 'TUV SUD South Asia'
+    },
+    'whole-truth': {
+      brand: 'THE WHOLE TRUTH',
+      name: '100% Pure Whey Isolate',
+      basePrice: 3499,
+      labTested: '82.0%',
+      labelClaim: '80.0%',
+      batch: 'TWT-2026-W11',
+      lab: 'Eurofins Analytic NABL'
+    },
+    'dymatize': {
+      brand: 'DYMATIZE',
+      name: 'ISO 100 Hydrolyzed Whey',
+      basePrice: 5499,
+      labTested: '85.0%',
+      labelClaim: '83.3%',
+      batch: 'DY-2025-IMP8',
+      lab: 'Informed Choice UK'
+    }
+  };
+
+  function selectCategory(catKey) {
+    const titles = {
+      'whey': 'CATEGORY: WHEY & PLANT PROTEIN',
+      'gainers': 'CATEGORY: MASS GAINERS',
+      'creatine': 'CATEGORY: CREATINE MONOHYDRATE',
+      'preworkout': 'CATEGORY: PRE-WORKOUT FORMULATIONS'
+    };
+    const skuCounts = {
+      'whey': '84 SKUs',
+      'gainers': '32 SKUs',
+      'creatine': '41 SKUs',
+      'preworkout': '29 SKUs'
+    };
+    
+    document.getElementById('current-category-name').textContent = titles[catKey] || titles['whey'];
+    document.getElementById('current-sku-count').textContent = skuCounts[catKey] || '84 SKUs';
+
+    const screener = document.getElementById('screener-section');
+    screener.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function setFilter(el, formType) {
+    document.querySelectorAll('.filter-chip').forEach(btn => {
+      btn.className = 'filter-chip px-space-sm py-1 rounded text-text-muted hover:text-text-secondary';
+    });
+    el.className = 'filter-chip px-space-sm py-1 rounded bg-surface-card text-text-primary font-semibold';
+
+    const cards = document.querySelectorAll('.screener-card');
+    cards.forEach(card => {
+      if (formType === 'all' || card.getAttribute('data-form') === formType) {
+        card.style.display = 'flex';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+
+  function sortCards(criteria) {
+    const container = document.getElementById('cards-container');
+    const cards = Array.from(container.children);
+
+    cards.sort((a, b) => {
+      if (criteria === 'pure-protein') {
+        return parseFloat(a.getAttribute('data-cost')) - parseFloat(b.getAttribute('data-cost'));
+      } else if (criteria === 'price-low') {
+        return parseFloat(a.getAttribute('data-price')) - parseFloat(b.getAttribute('data-price'));
+      } else if (criteria === 'lab-score') {
+        return parseFloat(b.getAttribute('data-lab')) - parseFloat(a.getAttribute('data-lab'));
+      }
+      return 0;
+    });
+
+    cards.forEach(c => container.appendChild(c));
+  }
+
+  function openProductModal(key) {
+    const prod = productData[key] || productData['muscleblaze'];
+    document.getElementById('modal-title').textContent = prod.name;
+    document.getElementById('modal-brand-tag').textContent = prod.brand + ' · SKU INSPECTOR';
+    currentBasePrice = prod.basePrice;
+    
+    // Reset weight/flavor selections
+    activeWeightMultiplier = 1;
+    activeFlavorOffset = 0;
+    recalculateOrderBook();
+
+    const modal = document.getElementById('inspector-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeProductModal() {
+    const modal = document.getElementById('inspector-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = 'auto';
+  }
+
+  function selectWeight(btn, weight, price) {
+    document.querySelectorAll('.weight-btn').forEach(b => {
+      b.className = 'weight-btn bg-surface-raised hover:bg-surface-overlay p-space-md rounded text-left flex flex-col justify-between space-y-space-2xs transition-colors';
+    });
+    btn.className = 'weight-btn bg-surface-base p-space-md rounded text-left flex flex-col justify-between space-y-space-2xs transition-colors';
+
+    if (weight === '1kg') activeWeightMultiplier = 0.6;
+    else if (weight === '2kg') activeWeightMultiplier = 1.0;
+    else if (weight === '4kg') activeWeightMultiplier = 1.95;
+
+    recalculateOrderBook();
+  }
+
+  function selectFlavor(btn, offset) {
+    document.querySelectorAll('.flavor-pill').forEach(b => {
+      b.className = 'flavor-pill bg-surface-raised text-text-secondary hover:text-text-primary px-space-md py-space-xs rounded';
+    });
+    btn.className = 'flavor-pill bg-surface-base text-price-drop px-space-md py-space-xs rounded font-semibold';
+
+    activeFlavorOffset = offset;
+    recalculateOrderBook();
+  }
+
+  function recalculateOrderBook() {
+    const list = document.getElementById('order-book-list');
+    const rows = list.querySelectorAll('[data-base]');
+    
+    rows.forEach(item => {
+      const base = parseInt(item.getAttribute('data-base'), 10);
+      const computed = Math.round((base * activeWeightMultiplier) + activeFlavorOffset);
+      item.textContent = '₹' + computed.toLocaleString('en-IN');
+    });
+
+    const activeDisplay = document.getElementById('modal-active-price');
+    if (activeDisplay) {
+      const mainComputed = Math.round((currentBasePrice * activeWeightMultiplier) + activeFlavorOffset);
+      activeDisplay.textContent = '₹' + mainComputed.toLocaleString('en-IN');
+    }
+  }
+
+  // Keyboard navigation & dismissal
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeProductModal();
+    }
+  });
+
+  // Modal backdrop click dismissal
+  document.getElementById('inspector-modal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('inspector-modal')) {
+      closeProductModal();
+    }
+  });
+</script></main><footer class="w-full bg-surface-container-lowest mt-space-2xl"><div class="max-w-[1440px] mx-auto px-margin md:px-margin-md lg:px-margin-lg py-space-xl"><div class="grid grid-cols-1 md:grid-cols-4 gap-gutter-lg pb-space-xl"><div class="space-y-space-sm"><div class="flex items-center space-x-space-xs"><span class="font-headline-md text-headline-md text-text-primary uppercase font-bold tracking-tight">PROTEINDEX</span><span class="font-label-sm text-label-sm text-price-drop bg-surface-card px-space-xs py-space-2xs rounded">v2.4 API</span></div><p class="font-body-sm text-body-sm text-text-muted">The automated algorithmic price tracker, per-gram protein cost comparator, and nutrition volatility terminal.</p></div><div class="space-y-space-sm"><span class="font-label-sm text-label-sm uppercase tracking-wider text-text-primary font-semibold">Supported Retailers</span><div class="flex flex-wrap gap-space-xs text-text-secondary font-label-sm text-label-sm"><span class="bg-surface-card px-space-xs py-space-2xs rounded">Amazon IN</span><span class="bg-surface-card px-space-xs py-space-2xs rounded">Flipkart</span><span class="bg-surface-card px-space-xs py-space-2xs rounded">Nutrabay</span><span class="bg-surface-card px-space-xs py-space-2xs rounded">HyugaLife</span><span class="bg-surface-card px-space-xs py-space-2xs rounded">HealthKart</span></div></div><div class="space-y-space-sm"><span class="font-label-sm text-label-sm uppercase tracking-wider text-text-primary font-semibold">Developer &amp; API</span><ul class="space-y-space-xs font-body-sm text-body-sm text-text-muted"><li><a class="hover:text-text-primary transition-colors" href="#">REST API Endpoints</a></li><li><a class="hover:text-text-primary transition-colors" href="#">Webhooks &amp; Price Feeds</a></li><li><a class="hover:text-text-primary transition-colors" href="#">Rate Limits &amp; SLA</a></li></ul></div><div class="space-y-space-sm"><span class="font-label-sm text-label-sm uppercase tracking-wider text-text-primary font-semibold">Disclaimer</span><p class="font-body-sm text-body-sm text-text-muted leading-relaxed">Prices, batch availability, and lab tests update every 180 seconds. Proteindex receives affiliate compensation on qualified purchases. Verify final figures on vendor checkouts.</p></div></div><div class="pt-space-md flex flex-col md:flex-row items-center justify-between text-text-muted font-body-sm text-body-sm"><p>© 2025 Proteindex Systems Corp. High-performance nutrition data indexing.</p><div class="flex space-x-space-lg mt-space-sm md:mt-0 font-label-sm text-label-sm"><span>Status: <strong class="text-price-drop">All Feeds Operational</strong></span><span>Latency: <strong class="text-metric-highlight">42ms</strong></span></div></div></div></footer></body></html>

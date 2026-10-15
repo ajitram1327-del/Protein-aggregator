@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Scale, ShieldCheck, AlertCircle, ArrowUpRight } from "lucide-react";
+import { Scale, ShieldCheck, AlertCircle, ArrowUpRight, TrendingDown } from "lucide-react";
 import { GroupedProduct, DbVariant } from "../ProductBrowser";
 import { formatInr, computeCategoryMetrics } from "@/lib/analytics";
 
@@ -163,8 +163,14 @@ export const SneakopediaCard: React.FC<SneakopediaCardProps> = ({
             </div>
           )}
 
-          {/* Pricing & Sneakopedia Green Headline */}
-          <div className="mt-3 pt-3 border-t border-slate-100 flex items-baseline justify-between gap-1">
+          {/* Quantitative Macro & Purity Pill */}
+          <div className="mt-2.5 text-[10px] font-mono text-slate-600 bg-slate-50 border border-slate-200/80 px-2 py-1 rounded-xs flex items-center justify-between">
+            <span>{proteinG}g Prot / {servingSize}g scoop</span>
+            <span className="font-bold text-slate-800">{Math.round((proteinG / servingSize) * 100)}% Purity</span>
+          </div>
+
+          {/* Pricing & Sneakopedia Headline with Sparkline */}
+          <div className="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-1">
             <div>
               <span className="text-[10px] font-mono text-slate-400 uppercase block">Starting from</span>
               <span className="text-lg font-mono tabular-nums font-black text-emerald-700">
@@ -172,10 +178,24 @@ export const SneakopediaCard: React.FC<SneakopediaCardProps> = ({
               </span>
             </div>
 
-            <div className="text-right">
-              <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-xs border border-emerald-300 bg-emerald-50 text-emerald-800">
+            {/* Sparkline & Benchmark Tag */}
+            <div className="flex flex-col items-end">
+              <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded-xs border border-emerald-300 bg-emerald-50 text-emerald-800">
                 {catMetrics.primaryValue} {catMetrics.primaryLabel}
               </span>
+              <div className="flex items-center gap-1 text-[9px] font-mono font-bold text-emerald-700 mt-1">
+                <TrendingDown className="size-2.5" />
+                <span>30D Low</span>
+                <svg className="w-12 h-3.5 text-emerald-600 inline-block ml-0.5" viewBox="0 0 48 14" fill="none">
+                  <path
+                    d="M2 3 L10 6 L18 2 L28 8 L36 5 L46 11"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
             </div>
           </div>
         </div>
