@@ -175,24 +175,48 @@ def detect_canonical_brand(title: str) -> Optional[str]:
 
 # 3. Dynamic Marketplace Query Generation (Lane 2)
 def build_marketplace_targets() -> List[Dict[str, Any]]:
-    # HealthKart queries: categories + brand queries
-    hk_queries = ["whey protein", "whey isolate", "creatine monohydrate", "mass gainer", "plant protein"]
-    for b in CANONICAL_BRANDS:
-        channels = [c.lower() for c in b.get("channels", [])]
-        if any("healthkart" in c for c in channels) or b.get("tier") == "Global / Import":
-            clean = re.sub(r"\(.*?\)", "", b["brand"]).strip()
-            q = f"{clean} whey"
-            if q not in hk_queries:
-                hk_queries.append(q)
+    # Core multi-category search terms
+    base_categories = [
+        "whey protein", "whey isolate", "creatine monohydrate", "creapure creatine",
+        "mass gainer", "weight gainer", "pre workout powder", "plant protein"
+    ]
 
-    # Nutrabay queries: categories + brand queries
-    nb_queries = ["whey protein", "whey isolate", "creatine", "mass gainer"]
+    hk_queries = list(base_categories)
+    nb_queries = ["whey protein", "whey isolate", "creatine", "mass gainer", "pre workout"]
+    amazon_queries = list(base_categories)
+    flipkart_queries = list(base_categories)
+    nykaa_queries = ["whey protein", "plant protein", "creatine", "pre workout", "mass gainer"]
+    tata_queries = ["whey protein powder", "creatine monohydrate", "mass gainer", "pre workout"]
+    hyuga_queries = ["whey protein", "isolate", "creatine", "pre workout", "mass gainer"]
+
+    # Extract all flagship products across the 81 canonical brands
     for b in CANONICAL_BRANDS:
+        c_brand = re.sub(r"\(.*?\)", "", b["brand"]).strip()
         channels = [c.lower() for c in b.get("channels", [])]
-        if any("nutrabay" in c for c in channels) or b.get("tier") == "Global / Import":
-            clean = re.sub(r"\(.*?\)", "", b["brand"]).strip()
-            if clean not in nb_queries:
-                nb_queries.append(clean)
+        is_global = b.get("tier") == "Global / Import"
+
+        for fp in b.get("flagship_products", []):
+            fp_clean = fp.strip()
+            plow = fp_clean.lower()
+            if any(cat in plow for cat in ["creatine", "creapure", "mass", "gainer", "pre-workout", "pre workout", "pump", "whey", "protein", "isolate", "plant"]):
+                query = f"{c_brand} {fp_clean}"
+
+                # Route to appropriate channels
+                if any("healthkart" in c for c in channels) or is_global:
+                    if query not in hk_queries:
+                        hk_queries.append(query)
+                if any("nutrabay" in c for c in channels) or is_global:
+                    if query not in nb_queries:
+                        nb_queries.append(query)
+                if any("amazon" in c for c in channels) or is_global:
+                    if query not in amazon_queries:
+                        amazon_queries.append(query)
+                if any("flipkart" in c for c in channels):
+                    if query not in flipkart_queries:
+                        flipkart_queries.append(query)
+                if any("1mg" in c for c in channels):
+                    if query not in tata_queries:
+                        tata_queries.append(query)
 
     return [
         {
@@ -217,11 +241,7 @@ def build_marketplace_targets() -> List[Dict[str, Any]]:
             "card_selector": "div._1AtVbE, div.slAVV4, div.c3e8SH",
             "title_selector": "a.IRpwTa, a.s1Q9rs, a.WKTcLC",
             "price_selector": "div._30jeq3, div.Nx9bqj",
-            "queries": [
-                "Optimum Nutrition whey protein", "MuscleTech whey protein", "Dymatize ISO 100", 
-                "MuscleBlaze Biozyme whey", "Nakpro whey", "AS-IT-IS whey", "Avvatar whey", 
-                "Labrada whey", "Isopure whey", "Cellucor whey"
-            ]
+            "queries": flipkart_queries
         },
         {
             "platform": "Amazon",
@@ -229,11 +249,7 @@ def build_marketplace_targets() -> List[Dict[str, Any]]:
             "card_selector": "div[data-component-type='s-search-result']",
             "title_selector": "h2 span",
             "price_selector": "span.a-price-whole",
-            "queries": [
-                "Optimum Nutrition Gold Standard Whey", "MuscleTech NitroTech", "Dymatize ISO100", 
-                "MuscleBlaze Biozyme Whey", "Nakpro Whey", "AS-IT-IS Whey", "Avvatar Whey", 
-                "Isopure Whey", "Rule 1 Whey", "Universal Animal Whey"
-            ]
+            "queries": amazon_queries
         },
         {
             "platform": "Tata 1mg",
@@ -241,7 +257,7 @@ def build_marketplace_targets() -> List[Dict[str, Any]]:
             "card_selector": ".product-card, .style__product-box___vrGyH",
             "title_selector": ".style__pro-title___3zxNC, h2",
             "price_selector": ".style__price-tag___KzOkY, .price",
-            "queries": ["whey protein powder", "creatine monohydrate", "Optimum Nutrition", "MuscleBlaze", "MuscleTech"]
+            "queries": tata_queries
         },
         {
             "platform": "HyugaLife",
@@ -249,7 +265,7 @@ def build_marketplace_targets() -> List[Dict[str, Any]]:
             "card_selector": ".product-card, .item, .product-block",
             "title_selector": ".product-title, h2, h3",
             "price_selector": ".product-price, .price",
-            "queries": ["whey protein", "isolate", "creatine", "MuscleBlaze", "Optimum Nutrition"]
+            "queries": hyuga_queries
         },
         {
             "platform": "Nykaa",
@@ -257,7 +273,7 @@ def build_marketplace_targets() -> List[Dict[str, Any]]:
             "card_selector": ".productWrapper, .css-1rd7vky",
             "title_selector": ".css-xrzmfa, .title",
             "price_selector": ".css-111z9ua, .price",
-            "queries": ["whey protein", "plant protein", "Optimum Nutrition", "MuscleBlaze"]
+            "queries": nykaa_queries
         },
         {
             "platform": "MyProtein",
@@ -265,13 +281,13 @@ def build_marketplace_targets() -> List[Dict[str, Any]]:
             "card_selector": ".productListProducts_product, .athenaProductBlock",
             "title_selector": ".athenaProductBlock_title, h3",
             "price_selector": ".athenaProductBlock_priceValue, .price",
-            "queries": ["Impact Whey Protein", "Impact Whey Isolate", "Creatine Monohydrate"]
+            "queries": ["Impact Whey Protein", "Impact Whey Isolate", "Creatine Monohydrate", "The Pre-Workout", "Weight Gainer Blend"]
         }
     ]
 
 MARKETPLACE_TARGETS = build_marketplace_targets()
 
-TARGET_FILTER = re.compile(r"protein|whey|isolate|casein|plant|pea|creatine|mass.?gainer|weight.?gainer", re.I)
+TARGET_FILTER = re.compile(r"protein|whey|isolate|casein|plant|pea|creatine|creapure|mass.?gainer|weight.?gainer|pre.?workout|preworkout|pump", re.I)
 JUNK_FILTER = re.compile(r"shaker|bottle|t-shirt|tshirt|bag|cap|combo|bundle|multivitamin|bar\b|cookie|snack|chips|peanut\s*butter|gummies|fish oil|omega|collagen|biotin", re.I)
 
 def find_nutrition_label_url(images: List[Dict[str, Any]]) -> str:
@@ -315,22 +331,6 @@ class ProteIndexOrchestrator:
             return None
 
         try:
-            # Category and DIAAS derivation
-            combined_text = f"{product_name} {flavor} {raw_description}".lower()
-            category = MasterCatalogMatcher.detect_category(combined_text)
-            
-            silo = "protein"
-            if "mass" in combined_text or "gainer" in combined_text:
-                silo = "mass_gainers"
-            elif "creatine" in combined_text:
-                silo = "creatine"
-
-            psource = "Whey"
-            if "plant" in combined_text or "pea" in combined_text or "vegan" in combined_text:
-                psource = "Plant"
-            elif "casein" in combined_text:
-                psource = "Casein"
-
             # PRD Trust Modules
             ingredient_audit = IngredientAuditor.audit(raw_description)
             base_trust_score = 100 - ingredient_audit.get("trust_deduction", 0)
@@ -451,6 +451,7 @@ class ProteIndexOrchestrator:
                 try:
                     supabase.table("price_listings").upsert({
                         "variant_id": variant_id,
+                        "product_id": product_id,
                         "source": platform_name,
                         "platform_name": platform_name.lower(),
                         "source_url": product_url,
@@ -488,93 +489,105 @@ class ProteIndexOrchestrator:
         for target in D2C_SHOPIFY_REGISTRY:
             brand = target["brand"]
             domain = target["domain"]
-            endpoint = f"https://{domain}/products.json?limit=250"
-            logger.info(f"[{brand}] Querying endpoint: {endpoint}")
-
-            try:
-                status, body, _, _ = await self.fetcher.fetch(endpoint, timeout=12)
-            except Exception as net_err:
-                logger.warning(f"[{brand}] Network fetch exception for {domain}: {net_err}. Skipping.")
-                continue
-
-            if status != 200 or not body:
-                logger.warning(f"[{brand}] Endpoint returned HTTP {status}. Skipping.")
-                continue
-
-            try:
-                catalog = json.loads(body)
-                products = catalog.get("products", [])
-            except Exception as e:
-                logger.warning(f"[{brand}] JSON parse failed: {e}. Skipping.")
-                continue
-
             brand_count = 0
-            for p in products:
+            page = 1
+            max_pages = 5
+
+            while page <= max_pages:
+                endpoint = f"https://{domain}/products.json?limit=250&page={page}"
+                logger.info(f"[{brand}] Querying endpoint (page {page}): {endpoint}")
+
                 try:
-                    title = p.get("title", "")
-                    if not TARGET_FILTER.search(title) or JUNK_FILTER.search(title):
-                        continue
+                    status, body, _, _ = await self.fetcher.fetch(endpoint, timeout=12)
+                except Exception as net_err:
+                    logger.warning(f"[{brand}] Network fetch exception for {domain}: {net_err}. Skipping.")
+                    break
 
-                    images = p.get("images", [])
-                    image_url = images[0].get("src") if images else ""
-                    label_image_url = find_nutrition_label_url(images)
-                    handle = p.get("handle", "")
-                    product_url = f"https://{domain}/products/{handle}" if handle else f"https://{domain}"
+                if status != 200 or not body:
+                    if page == 1:
+                        logger.warning(f"[{brand}] Endpoint returned HTTP {status}. Skipping.")
+                    break
 
-                    for v in p.get("variants", []):
-                        try:
-                            var_title = v.get("title", "")
-                            price = float(v.get("price", 0))
-                            sku_label = f"{title} [{var_title}]"
+                try:
+                    catalog = json.loads(body)
+                    products = catalog.get("products", [])
+                except Exception as e:
+                    logger.warning(f"[{brand}] JSON parse failed: {e}. Skipping.")
+                    break
 
-                            if price <= 0:
-                                continue
+                if not products:
+                    break
 
-                            # 1. First priority: Check variant title directly (e.g. "Mango / 2Kg", "1kg / Chocolate")
-                            weight_g = VariantNormalizer.parse_weight(var_title, default=None)
-
-                            # 2. Second priority: Check variant grams field if valid tub weight (>= 100g)
-                            if not weight_g:
-                                v_grams = v.get("grams")
-                                if v_grams and isinstance(v_grams, (int, float)) and v_grams >= 100:
-                                    weight_g = int(round(v_grams))
-
-                            # 3. Third priority: Parse from parent product title (nutrient claims stripped)
-                            if not weight_g:
-                                weight_g = VariantNormalizer.parse_weight(title, default=1000)
-
-                            # For flavor: check var_title first, then combined title
-                            flavor = VariantNormalizer.parse_flavor(var_title)
-                            if flavor == "unflavored":
-                                flavor = VariantNormalizer.parse_flavor(f"{title} {var_title}")
-
-                            if not weight_g:
-                                continue
-
-                            v_id = await self.upsert_variant_to_db(
-                                brand=brand,
-                                product_name=title,
-                                flavor=flavor,
-                                weight_g=weight_g,
-                                price_inr=price,
-                                product_url=product_url,
-                                image_url=image_url,
-                                platform_name="D2C",
-                                seller_name=f"{brand} Official",
-                                raw_description=p.get("body_html", "") or "",
-                                extraction_method="shopify_api",
-                                label_image_url=label_image_url
-                            )
-                            if v_id:
-                                brand_count += 1
-                                total_ingested += 1
-                        except Exception as item_err:
-                            logger.warning(f"Error processing SKU '{title}': {item_err}. Moving on.")
+                for p in products:
+                    try:
+                        title = p.get("title", "")
+                        if not TARGET_FILTER.search(title) or JUNK_FILTER.search(title):
                             continue
 
-                except Exception as p_err:
-                    logger.warning(f"Error processing product in {brand}: {p_err}. Moving on.")
-                    continue
+                        images = p.get("images", [])
+                        image_url = images[0].get("src") if images else ""
+                        label_image_url = find_nutrition_label_url(images)
+                        handle = p.get("handle", "")
+                        product_url = f"https://{domain}/products/{handle}" if handle else f"https://{domain}"
+
+                        for v in p.get("variants", []):
+                            try:
+                                var_title = v.get("title", "")
+                                price = float(v.get("price", 0))
+                                sku_label = f"{title} [{var_title}]"
+
+                                if price <= 0:
+                                    continue
+
+                                # 1. First priority: Check variant title directly (e.g. "Mango / 2Kg", "1kg / Chocolate")
+                                weight_g = VariantNormalizer.parse_weight(var_title, default=None)
+
+                                # 2. Second priority: Check variant grams field if valid tub weight (>= 100g)
+                                if not weight_g:
+                                    v_grams = v.get("grams")
+                                    if v_grams and isinstance(v_grams, (int, float)) and v_grams >= 100:
+                                        weight_g = int(round(v_grams))
+
+                                # 3. Third priority: Parse from parent product title (nutrient claims stripped)
+                                if not weight_g:
+                                    weight_g = VariantNormalizer.parse_weight(title, default=1000)
+
+                                # For flavor: check var_title first, then combined title
+                                flavor = VariantNormalizer.parse_flavor(var_title)
+                                if flavor == "unflavored":
+                                    flavor = VariantNormalizer.parse_flavor(f"{title} {var_title}")
+
+                                if not weight_g:
+                                    continue
+
+                                v_id = await self.upsert_variant_to_db(
+                                    brand=brand,
+                                    product_name=title,
+                                    flavor=flavor,
+                                    weight_g=weight_g,
+                                    price_inr=price,
+                                    product_url=product_url,
+                                    image_url=image_url,
+                                    platform_name="D2C",
+                                    seller_name=f"{brand} Official",
+                                    raw_description=p.get("body_html", "") or "",
+                                    extraction_method="shopify_api",
+                                    label_image_url=label_image_url
+                                )
+                                if v_id:
+                                    brand_count += 1
+                                    total_ingested += 1
+                            except Exception as item_err:
+                                logger.warning(f"Error processing SKU '{title}': {item_err}. Moving on.")
+                                continue
+
+                    except Exception as p_err:
+                        logger.warning(f"Error processing product in {brand}: {p_err}. Moving on.")
+                        continue
+
+                if len(products) < 250:
+                    break
+                page += 1
 
             logger.info(f"  > [{brand}] Successfully ingested {brand_count} clean SKUs.")
 
@@ -666,6 +679,7 @@ class ProteIndexOrchestrator:
                                 # Upsert hot price listing
                                 supabase.table("price_listings").upsert({
                                     "variant_id": variant_id,
+                                    "product_id": matched.get("product_id"),
                                     "source": platform,
                                     "platform_name": platform.lower(),
                                     "source_url": link,

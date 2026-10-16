@@ -1,4 +1,6 @@
 import re
+import os
+import json
 import hashlib
 from typing import Dict, Optional, Tuple
 from dataclasses import dataclass
@@ -248,7 +250,7 @@ class CanonicalProductNormalizer:
     Categorizes clean formulations (guaranteeing Isolate & Concentrate blends map to whey_blend).
     """
 
-    BRAND_ALIASES: Dict[str, str] = {
+    _BASE_BRAND_ALIASES: Dict[str, str] = {
         "nakpro nutrition": "Nakpro",
         "nakpro": "Nakpro",
         "optimum nutrition (on)": "Optimum Nutrition",
@@ -282,6 +284,38 @@ class CanonicalProductNormalizer:
         "fast&up": "Fast&Up",
         "wellcore": "Wellcore"
     }
+
+    @classmethod
+    def _build_brand_aliases(cls) -> Dict[str, str]:
+        aliases = dict(cls._BASE_BRAND_ALIASES)
+        data_path = os.path.join(os.path.dirname(__file__), "..", "data", "canonical_brands.json")
+        if os.path.exists(data_path):
+            try:
+                with open(data_path, "r", encoding="utf-8") as f:
+                    brands = json.load(f).get("brands", [])
+                for b in brands:
+                    c_name = b["brand"]
+                    clean_c = re.sub(r"\(.*?\)", "", c_name).strip()
+                    if c_name.lower() not in aliases:
+                        aliases[c_name.lower()] = clean_c
+                    cleaned = clean_c.lower()
+                    if len(cleaned) >= 3 and cleaned not in aliases:
+                        aliases[cleaned] = clean_c
+                    stripped = re.sub(r"\b(nutrition|foods|life|sports|india)\b", "", cleaned).strip()
+                    if len(stripped) >= 3 and stripped not in aliases:
+                        aliases[stripped] = clean_c
+                    for part in re.split(r"[/,]", c_name):
+                        p = re.sub(r"\(.*?\)", "", part).strip().lower()
+                        if len(p) >= 3 and p not in aliases:
+                            aliases[p] = clean_c
+                        p_strip = re.sub(r"\b(nutrition|foods|life|sports|india)\b", "", p).strip()
+                        if len(p_strip) >= 3 and p_strip not in aliases:
+                            aliases[p_strip] = clean_c
+            except Exception:
+                pass
+        return aliases
+
+    BRAND_ALIASES: Dict[str, str] = {}
 
     FLAVORS_ORDERED = [
         "double rich chocolate", "chocolate fudge", "belgian chocolate", "dark chocolate",
@@ -489,4 +523,7 @@ class CanonicalProductNormalizer:
             is_bundle=is_bundle,
             bundle_reason=bundle_reason
         )
+
+# Initialize brand aliases dynamically from canonical dataset
+CanonicalProductNormalizer.BRAND_ALIASES = CanonicalProductNormalizer._build_brand_aliases()
 

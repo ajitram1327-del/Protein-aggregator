@@ -203,6 +203,11 @@ class MasterCatalogMatcher:
         return None
 
     @classmethod
+    def detect_category(cls, text: str) -> str:
+        silo, _ = CanonicalProductNormalizer.detect_category_and_formulation(text)
+        return silo
+
+    @classmethod
     def _query_llm_disambiguator(
         cls, 
         raw_title: str, 
