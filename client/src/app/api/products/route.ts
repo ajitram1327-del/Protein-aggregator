@@ -24,6 +24,9 @@ const VALID_SILOS = new Set([
   "creatine",
   "pre_workout",
   "preworkout",
+  "snacks",
+  "snack",
+  "protein_snacks",
 ]);
 
 export async function GET(request: NextRequest) {
@@ -74,7 +77,7 @@ export async function GET(request: NextRequest) {
       if (!VALID_SILOS.has(siloParam)) {
         return NextResponse.json(
           {
-            error: `Invalid 'silo' parameter '${siloParam}'. Permitted categories: protein, mass_gainers, creatine, pre_workout.`,
+            error: `Invalid 'silo' parameter '${siloParam}'. Permitted categories: protein, mass_gainers, creatine, pre_workout, snacks.`,
           },
           { status: 400 }
         );
@@ -245,6 +248,13 @@ export async function GET(request: NextRequest) {
           primaryMetricValue = servingsCount > 0 && lowestPrice > 0 ? Number((lowestPrice / servingsCount).toFixed(1)) : null;
           secondaryMetricLabel = "Total Scoops";
           secondaryMetricValue = servingsCount;
+          isReliable = primaryMetricValue !== null;
+        } else if (categorySilo === "snacks" || categorySilo === "snack" || categorySilo === "protein_snacks") {
+          primaryMetricLabel = "₹/100g";
+          const effectiveGrams = weightGrams > 0 ? weightGrams : (servingSizeGrams > 0 ? servingSizeGrams : 100);
+          primaryMetricValue = effectiveGrams > 0 && lowestPrice > 0 ? Number(((lowestPrice / effectiveGrams) * 100).toFixed(1)) : null;
+          secondaryMetricLabel = "Protein/Serving (g)";
+          secondaryMetricValue = proteinPerServing > 0 ? proteinPerServing : null;
           isReliable = primaryMetricValue !== null;
         } else {
           // Standard Protein Silo: ₹/g protein using total package protein

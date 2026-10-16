@@ -108,6 +108,9 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ initialProducts }) => 
               <Link href="/catalog?category=mass_gainer" className="hover:text-slate-900 transition-colors">
                 Mass Gainers
               </Link>
+              <Link href="/catalog?category=snacks" className="hover:text-slate-900 transition-colors">
+                Snacks
+              </Link>
               <Link href="/calculator" className="hover:text-slate-900 transition-colors text-emerald-700 font-bold">
                 Cost Calculator
               </Link>

@@ -276,6 +276,25 @@ export function computeCategoryMetrics(
       };
     }
 
+    case 'snacks': {
+      const p = nutrition || {};
+      const servingSize = Number(p.servingSizeGrams || p.label_serving_size_g || 0);
+      const proteinG = Number(p.proteinPerServingGrams || p.label_protein_per_serving_g || 0);
+      const effectiveWeight = fallbackWeightGrams > 0 ? fallbackWeightGrams : (servingSize > 0 ? servingSize : 100);
+      const costPer100g = effectiveWeight > 0 && priceInr > 0 ? (priceInr / effectiveWeight) * 100 : 0;
+
+      return {
+        primaryLabel: '₹ / 100g',
+        primaryValue: costPer100g > 0 ? `₹${costPer100g.toFixed(1)}` : '—',
+        numericSortValue: costPer100g > 0 ? costPer100g : Infinity,
+        secondaryLabel: proteinG > 0 ? `${proteinG}g Protein/Serving` : 'Serving Profile',
+        secondaryValue: proteinG > 0 ? `${proteinG}g Prot` : (servingSize > 0 ? `${servingSize}g Pack` : 'Functional Snack'),
+        badge: 'High-Protein Snack',
+        badgeTone: 'rose',
+        isPending: costPer100g <= 0,
+      };
+    }
+
     case 'protein':
     default: {
       const p = nutrition || {};

@@ -1,4 +1,4 @@
-export type SupplementCategory = 'protein' | 'creatine' | 'pre_workout' | 'mass_gainer';
+export type SupplementCategory = 'protein' | 'creatine' | 'pre_workout' | 'mass_gainer' | 'snacks';
 
 export type ProteinCategory =
   | "whey_concentrate"

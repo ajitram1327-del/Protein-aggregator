@@ -189,6 +189,7 @@ export const DecathlonSidebar: React.FC<DecathlonSidebarProps> = ({
                 { id: "creatine", label: "Creatine Monohydrate" },
                 { id: "pre_workout", label: "Pre-Workout & Pump" },
                 { id: "mass_gainer", label: "Mass Gainers" },
+                { id: "snacks", label: "Protein Snacks & Bars" },
               ].map((c) => {
                 const isSelected = filters.category.toLowerCase() === c.id;
                 return (

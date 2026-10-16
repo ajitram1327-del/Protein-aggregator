@@ -369,7 +369,20 @@ class CanonicalProductNormalizer:
         if any(w in t_low for w in ["pre workout", "pre-workout", "preworkout"]):
             return "pre_workout", "Pre-Workout"
 
-        # 2. Protein Formulations
+        # 2. Snacks Silo detection (Wafers, Bars, Cookies, Brownies, Granola, Chips, RTD Milkshakes)
+        # Exclude powder flavor names (e.g. "Cookies & Cream Whey Protein", "Chocolate Brownie Whey Isolate")
+        is_powder_flavor = bool(re.search(r"\b(?:cookies\s*(?:and|&|n)\s*cream|chocolate\s*brownie|fudge\s*brownie)\b", t_low))
+        has_powder_kw = bool(re.search(r"\b(?:whey|isolate|concentrate|casein|plant\s*protein|raw\s*whey|powder)\b", t_low))
+        
+        if re.search(r"\b(?:wafers?|granola|protein\s*spread|milkshake)\b", t_low):
+            return "snacks", "Protein Snack"
+        if re.search(r"\b(?:protein\s*bars?|energy\s*bars?|active\s*bar|snack\s*bars?|protein\s*bites?|protein\s*chips?|protein\s*crisps?)\b", t_low):
+            return "snacks", "Protein Snack"
+        if re.search(r"\b(?:cookies?|brownies?)\b", t_low):
+            if not (is_powder_flavor and has_powder_kw and not re.search(r"\b(?:pack\s*of|box\s*of|piece|baked)\b", t_low)):
+                return "snacks", "Protein Snack"
+
+        # 3. Protein Formulations
         silo = "protein"
         if any(w in t_low for w in ["plant protein", "pea protein", "soy protein", "vegan protein", "brown rice protein", "organic plant", "plant-based protein", "yeast protein"]):
             return silo, "Plant"

@@ -214,6 +214,25 @@ class EqualizerEngine:
                 res["flavorTaxPct"] = max(flavor_tax, 0.0)
             return res
 
+        elif silo_key in ("snacks", "snack", "protein_snacks"):
+            # Silo 5: Protein Snacks (Wafers, Bars, Cookies, Brownies, Granola)
+            # Primary: Price per 100g = (safe_price / total_weight_g) * 100
+            total_weight_g = max(0.0, cls._safe_float(pkg.get("weight_grams") or (serving_size_g * servings), 100.0))
+            cost_per_100g = round((safe_price / total_weight_g) * 100, 2) if total_weight_g > 0 and safe_price > 0 else 0.0
+            raw_prot = nutr.get("proteinPerServingGrams") or nutr.get("activeIngredientPerServingGrams")
+            protein_g = max(0.0, cls._safe_float(raw_prot, 10.0))
+
+            res = {
+                "primaryMetricLabel": "₹/100g",
+                "primaryMetricValue": cost_per_100g,
+                "secondaryMetricLabel": "Protein/Serving (g)",
+                "secondaryMetricValue": protein_g,
+                "totalWeightGrams": total_weight_g
+            }
+            if safe_unflavored_price > 0:
+                res["flavorTaxPct"] = max(flavor_tax, 0.0)
+            return res
+
         else:
             # Default fallback to standard protein metric
             return cls.calculate_silo_equalizer("protein", safe_price, pkg, nutr, unflavored_price_inr=unflavored_price_inr)
