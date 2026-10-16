@@ -241,7 +241,7 @@ export function CatalogView({ initialProducts, initialCategory }: CatalogViewPro
           productName: group.baseProductName,
           flavor: variant.flavor,
           weightGrams: variant.weight_grams,
-          effectiveCost: variant.best_value_metric,
+          effectiveCost: variant.best_value_metric ?? undefined,
           lowestPrice: variant.lowest_price_inr,
         },
       ];

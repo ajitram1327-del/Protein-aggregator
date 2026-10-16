@@ -33,7 +33,14 @@ export async function getGroupedProducts(params?: {
     const res = await GET(req);
 
     if (!res.ok) {
-      errorMsg = `HTTP error! status: ${res.status}`;
+      let detail = "";
+      try {
+        const errJson = await res.json();
+        detail = errJson.error || errJson.message || JSON.stringify(errJson);
+      } catch {
+        detail = res.statusText || "";
+      }
+      errorMsg = `HTTP error! status: ${res.status}${detail ? ` - ${detail}` : ""}`;
     } else {
       const json = await res.json();
       data = json.data || [];
@@ -63,8 +70,10 @@ export async function getGroupedProducts(params?: {
         lowestPrice: Infinity,
         bestValueMetric: Infinity,
         isFairyDusted: sku.usefulDoseAnalysis.fillersDetected.length > 0,
+        aminoSpikeRisk: Boolean(sku.usefulDoseAnalysis.aminoSpikeRisk),
+        aminoSpikeBadge: sku.usefulDoseAnalysis.aminoSpikeRisk ? "⚠️ High Amino Spiking Risk" : undefined,
         labVerified: sku.verification.tier === "gold",
-        trustScore: 100,
+        trustScore: sku.usefulDoseAnalysis.aminoSpikeRisk ? 60 : 100,
         labReportUrl: sku.verification.records[0]?.proofUrl || "",
       };
     }
@@ -111,7 +120,7 @@ export async function getGroupedProducts(params?: {
     if (
       variant.best_value_metric !== null &&
       variant.best_value_metric > 0 &&
-      variant.best_value_metric < group.bestValueMetric
+      variant.best_value_metric < (group.bestValueMetric ?? Infinity)
     ) {
       group.bestValueMetric = variant.best_value_metric;
     }

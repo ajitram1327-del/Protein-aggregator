@@ -174,7 +174,9 @@ export default async function ComparePage({ searchParams }: PageProps) {
     );
   }
 
-  const validCosts = items.map((i) => i.effectiveCostPerBioavailableGram).filter((c) => c > 0);
+  const validCosts = items
+    .map((i) => i.effectiveCostPerBioavailableGram)
+    .filter((c): c is number => typeof c === "number" && c > 0 && isFinite(c));
   const lowestEffectiveCost = validCosts.length ? Math.min(...validCosts) : 0;
   const maxCost = validCosts.length ? Math.max(...validCosts, 5.0) : 5.0;
 

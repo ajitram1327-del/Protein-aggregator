@@ -277,7 +277,7 @@ export async function GET(request: NextRequest) {
           nutritionalProfile: {
             activeIngredientPerServingGrams: isValidNutrition ? proteinPerServing : null,
             pdcaasScore: diaasScore,
-            bioavailableProteinPerServing,
+            bioavailableProteinPerServing: bioavailableProtein,
             proteinPurityPct: purityPct,
             caloriesPerServing: isValidNutrition ? Number(rawAnalytics?.caloriesPerServing) || null : null,
             carbsPerServingGrams: isValidNutrition ? Number(rawAnalytics?.carbsPerServing) || null : null,
