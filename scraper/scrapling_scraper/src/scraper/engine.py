@@ -25,7 +25,7 @@ from src.analytics.ingredient_auditor import IngredientAuditor
 from src.vision.review_authenticity import ReviewAuthenticityEngine
 from src.vision.label_auditor import VisionLabelAuditor
 from src.pipeline.seller_matrix import SellerMatrix
-from src.pipeline.normalizer import VariantNormalizer
+from src.pipeline.normalizer import VariantNormalizer, CanonicalProductNormalizer
 from src.pipeline.extractor import MultiLevelExtractor
 from src.pipeline.matcher import MasterCatalogMatcher, insert_quarantine_product
 from src.scraper.fetcher import ResilientStealthFetcher
@@ -337,16 +337,20 @@ class ProteIndexOrchestrator:
             review_audit = ReviewAuthenticityEngine.audit_reviews(product_name)
             is_authorized = SellerMatrix.verify_seller(seller_name, brand)
 
-            # 1. Master Product Check / Insert
-            clean_base = re.split(r"\s*\|\s*|\s+[-–—]\s+", product_name)[0].strip()
-            clean_base = re.sub(r",\s*\d+.*$", "", clean_base).strip()[:100]
-            prod_res = supabase.table("products").select("id").eq("brand", brand).eq("base_name", clean_base).execute()
+            # 1. Master Product Check / Insert using Canonical Normalizer
+            norm_info = CanonicalProductNormalizer.normalize_product(product_name, brand)
+            canon_brand = norm_info.canonical_brand
+            clean_base = norm_info.canonical_line
+            silo = norm_info.category_silo
+            psource = norm_info.formulation
+
+            prod_res = supabase.table("products").select("id").eq("brand", canon_brand).eq("base_name", clean_base).execute()
             
             if prod_res.data and len(prod_res.data) > 0:
                 product_id = prod_res.data[0]["id"]
             else:
                 p_insert = supabase.table("products").upsert({
-                    "brand": brand,
+                    "brand": canon_brand,
                     "base_name": clean_base,
                     "category_silo": silo,
                     "protein_source": psource,
@@ -360,7 +364,7 @@ class ProteIndexOrchestrator:
                 product_id = p_insert.data[0]["id"]
 
             # 2. Mint Deterministic Variant Hash
-            norm = VariantNormalizer.execute(product_id=product_id, raw_title=f"{brand} {clean_base} {flavor} {weight_g}g")
+            norm = VariantNormalizer.execute(product_id=product_id, raw_title=f"{canon_brand} {clean_base} {flavor} {weight_g}g")
             v_hash = norm.variant_hash
             sku_id = f"{brand.lower().replace(' ', '')[:8]}-{flavor[:6]}-{weight_g}g-{v_hash[:6]}"
 
@@ -685,57 +689,17 @@ class ProteIndexOrchestrator:
 
                                 total_matched += 1
                             else:
-                                # Catalog Expansion: check if product belongs to a known brand
                                 detected_brand = detect_canonical_brand(raw_title)
-                                min_weight = 100 if "creatine" in raw_title.lower() else 250
-                                
-                                if detected_brand and weight_g >= min_weight and price >= 200:
-                                    clean_base = re.split(r"\s*\|\s*|\s+[-–—]\s+", raw_title)[0].strip()
-                                    clean_base = re.sub(r",\s*\d+.*$", "", clean_base).strip()[:100]
-
-                                    v_id = await self.upsert_variant_to_db(
-                                        brand=detected_brand,
-                                        product_name=clean_base,
-                                        flavor=flavor,
-                                        weight_g=weight_g,
-                                        price_inr=price,
-                                        product_url=link,
-                                        image_url=img,
-                                        platform_name=platform,
-                                        seller_name=platform,
-                                        raw_description=raw_title,
-                                        extraction_method=f"marketplace_catalog_{method}"
-                                    )
-                                    if v_id:
-                                        total_catalog_built += 1
-                                        MasterCatalogMatcher.add_runtime_variant(
-                                            variant_id=v_id,
-                                            brand=detected_brand,
-                                            base_name=clean_base,
-                                            flavor=flavor,
-                                            weight_g=weight_g
-                                        )
-                                        logger.info(f"[{platform}] CATALOG EXPANDED & LOCKED: {detected_brand} - {clean_base[:35]} [{flavor}, {weight_g}g] @ INR {price}")
-                                    else:
-                                        insert_quarantine_product(
-                                            platform=platform,
-                                            raw_title=raw_title,
-                                            raw_price=price,
-                                            raw_url=link,
-                                            detected_brand=detected_brand or "",
-                                            detected_weight_g=weight_g or 0,
-                                            failure_reason="CATALOG_UPSERT_FAILED"
-                                        )
-                                else:
-                                    insert_quarantine_product(
-                                        platform=platform,
-                                        raw_title=raw_title,
-                                        raw_price=price,
-                                        raw_url=link,
-                                        detected_brand=detected_brand or "",
-                                        detected_weight_g=weight_g or 0,
-                                        failure_reason="NO_CATALOG_MATCH_AND_UNRESOLVED_BRAND_OR_WEIGHT"
-                                    )
+                                insert_quarantine_product(
+                                    platform=platform,
+                                    raw_title=raw_title,
+                                    raw_price=price,
+                                    raw_url=link,
+                                    detected_brand=detected_brand or "",
+                                    detected_weight_g=weight_g or 0,
+                                    failure_reason="UNMATCHED_MARKETPLACE_LISTING"
+                                )
+                                logger.info(f"[{platform}] UNMATCHED -> Staged for review: '{raw_title[:38]}...' [{weight_g}g]")
 
                         except Exception as card_err:
                             logger.debug(f"[{platform}] Card parsing skipped: {card_err}")
