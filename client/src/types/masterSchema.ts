@@ -127,6 +127,10 @@ export interface ProductListingView {
   labVerified?: boolean;
   affiliateUrl?: string;
   costPer100gProtein?: number | null;
+  proteinPerServingGrams?: number | null;
+  carbsPerServingGrams?: number | null;
+  fatPerServingGrams?: number | null;
+  servingSizeGrams?: number | null;
   fairyDusted?: boolean;
   isGlitchPrice?: boolean;
 }

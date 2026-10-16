@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle2, AlertTriangle, ShieldCheck, ExternalLink } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { ProductListingView } from '@/types/masterSchema';
 import { supabase } from '@/lib/supabase';
 import {
@@ -13,6 +13,7 @@ import {
   formatInr,
 } from '@/lib/analytics';
 import { generateAffiliateUrl } from '@/utils/affiliate';
+import CompareTable from '@/components/compare/CompareTable';
 
 interface PageProps {
   searchParams: Promise<{ ids?: string; snapshotId?: string }>;
@@ -152,6 +153,10 @@ export default async function ComparePage({ searchParams }: PageProps) {
       labVerified: prod.lab_verified ?? false,
       affiliateUrl,
       costPer100gProtein: cost100gProt,
+      proteinPerServingGrams: proteinPerServing || null,
+      carbsPerServingGrams: Number(rawAnalytics?.nutritional_profile?.carbsPerServingGrams) || null,
+      fatPerServingGrams: Number(rawAnalytics?.nutritional_profile?.fatPerServingGrams) || null,
+      servingSizeGrams: servingSize || null,
       fairyDusted: isFairyDusted,
       isGlitchPrice: lowestPrice > 0 && lowestPrice < 800,
     };
@@ -235,159 +240,8 @@ export default async function ComparePage({ searchParams }: PageProps) {
           </div>
         </div>
 
-        {/* Tabular Matrix */}
-        <div className="bg-white border border-[#E5E7EB] overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-[#E5E7EB] bg-[#F9FAFB] text-[#6B7280] uppercase text-[11px]">
-                <th className="p-3.5 font-semibold w-48">Metric / Attribute</th>
-                {items.map((item) => (
-                  <th key={item.variantId} className="p-3.5 font-bold text-[#111827] min-w-[200px]">
-                    <div>{item.brandName}</div>
-                    <div className="text-[11px] text-[#4B5563] font-normal">{item.productName}</div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#E5E7EB]">
-              <tr>
-                <td className="p-3.5 font-bold bg-[#F9FAFB]">₹/100g Pure Protein</td>
-                {items.map((item) => (
-                  <td key={item.variantId} className="p-3.5 font-bold">
-                    {item.costPer100gProtein !== null && item.costPer100gProtein !== undefined
-                      ? `₹${Math.round(item.costPer100gProtein).toLocaleString("en-IN")}`
-                      : "Pending"}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="p-3.5 font-bold bg-[#F9FAFB]">₹/g Bioavailable Protein</td>
-                {items.map((item) => {
-                  const hasVal = item.effectiveCostPerBioavailableGram !== null && item.effectiveCostPerBioavailableGram !== undefined;
-                  const isBest = hasVal && item.effectiveCostPerBioavailableGram === lowestEffectiveCost;
-                  return (
-                    <td key={item.variantId} className={`p-3.5 font-bold ${isBest ? "bg-emerald-50 text-emerald-700" : ""}`}>
-                      {hasVal ? `₹${item.effectiveCostPerBioavailableGram!.toFixed(2)}/g` : "Pending audit"}
-                      {isBest && <span className="ml-2 text-[10px] bg-emerald-600 text-white px-1.5 py-0.5">OPTIMAL</span>}
-                    </td>
-                  );
-                })}
-              </tr>
-              <tr>
-                <td className="p-3.5 font-bold bg-[#F9FAFB]">Lowest Active Price</td>
-                {items.map((item) => (
-                  <td key={item.variantId} className="p-3.5 font-bold">
-                    ₹{item.lowestPriceInr.toLocaleString("en-IN")}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="p-3.5 font-bold bg-[#F9FAFB]">Purity %</td>
-                {items.map((item) => (
-                  <td key={item.variantId} className="p-3.5">
-                    {item.purityPct !== null && item.purityPct !== undefined
-                      ? `${item.purityPct.toFixed(1)}%`
-                      : "Pending audit"}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="p-3.5 font-bold bg-[#F9FAFB]">DIAAS Digestibility</td>
-                {items.map((item) => (
-                  <td key={item.variantId} className="p-3.5">
-                    {item.diaasScore !== null && item.diaasScore !== undefined
-                      ? item.diaasScore.toFixed(2)
-                      : "Not available"}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="p-3.5 font-bold bg-[#F9FAFB]">Flavor & Weight</td>
-                {items.map((item) => (
-                  <td key={item.variantId} className="p-3.5">
-                    {item.flavorName} • {item.weightGrams}g
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="p-3.5 font-bold bg-[#F9FAFB]">Trust Score</td>
-                {items.map((item) => (
-                  <td key={item.variantId} className="p-3.5">
-                    <span className={(item.trustScore ?? 100) >= 85 ? "text-emerald-700 font-bold" : "text-amber-700 font-bold"}>
-                      {item.trustScore ?? 100}/100
-                    </span>
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="p-3.5 font-bold bg-[#F9FAFB]">Review Authenticity</td>
-                {items.map((item) => (
-                  <td key={item.variantId} className="p-3.5">
-                    {(item.authenticityScore ?? 100) >= 60 ? (
-                      <span className="text-emerald-700 font-bold">LEGIT ({item.authenticityScore}%)</span>
-                    ) : (
-                      <span className="text-red-600 font-bold flex items-center gap-1">
-                        <AlertTriangle className="w-3.5 h-3.5" /> HIGH BOT RISK
-                      </span>
-                    )}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="p-3.5 font-bold bg-[#F9FAFB]">Fairy Dusting Flag</td>
-                {items.map((item) => (
-                  <td key={item.variantId} className="p-3.5">
-                    {item.fairyDusted ? (
-                      <span className="text-amber-700 font-bold bg-amber-50 border border-amber-300 px-1.5 py-0.5 text-[10px]">
-                        FILLER DETECTED
-                      </span>
-                    ) : (
-                      <span className="text-emerald-700 font-bold">CLEAN ORDER ✓</span>
-                    )}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="p-3.5 font-bold bg-[#F9FAFB]">Lab Verification</td>
-                {items.map((item) => (
-                  <td key={item.variantId} className="p-3.5">
-                    {item.labVerified ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-700 font-bold">
-                        <ShieldCheck className="w-4 h-4" /> 3rd-Party PASS
-                      </span>
-                    ) : (
-                      <span className="text-[#9CA3AF]">Unverified</span>
-                    )}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="p-3.5 font-bold bg-[#F9FAFB]">Best Fulfillment</td>
-                {items.map((item) => (
-                  <td key={item.variantId} className="p-3.5 capitalize">
-                    {item.bestPlatform}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="p-3.5 font-bold bg-[#F9FAFB]">Direct Order Action</td>
-                {items.map((item) => (
-                  <td key={item.variantId} className="p-3.5">
-                    <a
-                      href={item.affiliateUrl || "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 bg-[#111827] hover:bg-black text-white px-3 py-1.5 font-bold text-xs uppercase"
-                    >
-                      <span>Buy via {item.bestPlatform}</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        {/* Tabular Matrix with Sticky Columns, Difference Highlighting & Macro Bars */}
+        <CompareTable items={items} lowestEffectiveCost={lowestEffectiveCost} />
       </div>
     </div>
   );
