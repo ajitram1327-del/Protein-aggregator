@@ -287,8 +287,18 @@ def build_marketplace_targets() -> List[Dict[str, Any]]:
 
 MARKETPLACE_TARGETS = build_marketplace_targets()
 
-TARGET_FILTER = re.compile(r"protein|whey|isolate|casein|plant|pea|creatine|creapure|mass.?gainer|weight.?gainer|pre.?workout|preworkout|pump", re.I)
-JUNK_FILTER = re.compile(r"shaker|bottle|t-shirt|tshirt|bag|cap|combo|bundle|multivitamin|bar\b|cookie|snack|chips|peanut\s*butter|gummies|fish oil|omega|collagen|biotin", re.I)
+TARGET_FILTER = re.compile(
+    r"\b(?:whey|isolate|casein|plant\s*protein|vegan\s*protein|pea\s*protein|soy\s*protein|yeast\s*protein|creatine|creapure|mass\s*gainer|weight\s*gainer|pre\s*workout|preworkout|pump)\b",
+    re.I
+)
+JUNK_FILTER = re.compile(
+    r"\b(tablets?|capsules?|gummies|drops|syrup|chews?|softgels?|"
+    r"e-?cook\s*book|cookbook|e-?book|recipe|guide|book\b|"
+    r"shaker|sipper|bottle|t-?shirt|vest|bag|cap|combo|bundle|apparel|"
+    r"oats?|muesli|bars?\b|cookies?\b|snack|chips|peanut\s*butter|atta|flour|pasta|hydration\s*drink)\b|"
+    r"\b(?:plant[- ]based\s+)?(?:true\s+)?vitamin\s+[a-z0-9]+\b|\bmultivitamin\b|\bshilajit\b|\bashwagandha\b|\bspirulina\b",
+    re.I
+)
 
 def find_nutrition_label_url(images: List[Dict[str, Any]]) -> str:
     """

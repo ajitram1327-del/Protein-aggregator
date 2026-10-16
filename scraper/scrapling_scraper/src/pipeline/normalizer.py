@@ -330,10 +330,12 @@ class CanonicalProductNormalizer:
     COMBO_PATTERNS = [
         re.compile(r"\b(combo|bundle|twin\s*pack|pack\s*of\s*[2-9]|buy\s*1\s*get\s*1|bogo)\b", re.I),
         re.compile(r"\b(free\s*(?:shaker|sipper|bottle|creatine|t-?shirt|multivitamin))\b", re.I),
-        re.compile(r"\b(with\s+(?:free\s+)?(?:shaker|sipper|bottle|creatine|gym\s*bag|t-?shirt))\b", re.I),
+        re.compile(r"\b(with\s+(?:free\s+)?(?:shaker|sipper|bottle|creatine|gym\s*bag|t-?shirt|vest))\b", re.I),
         re.compile(r"\b(creatine\s*(?:\+|and|&)\s*whey|whey\s*(?:\+|and|&)\s*creatine|pre[- ]?workout\s*(?:\+|and|&)\s*whey)\b", re.I),
-        re.compile(r"\+\s*(?:free|shaker|sipper|bottle|creatine|pre[- ]?workout)", re.I),
+        re.compile(r"\+\s*(?:free|shaker|sipper|bottle|creatine|pre[- ]?workout|gym\s*vest)", re.I),
         re.compile(r"(\d+(?:\.\d+)?\s*(?:kg|g|lbs?))\s*(?:\+|and|&)\s*(\d+(?:\.\d+)?\s*(?:kg|g|lbs?))", re.I),
+        re.compile(r"\b(tablets?|capsules?|gummies|drops|syrup|chews?|softgels?|e-?cook\s*book|cookbook|e-?book|recipe|guide|vest|apparel)\b", re.I),
+        re.compile(r"\b(?:plant[- ]based\s+)?(?:true\s+)?vitamin\s+[a-z0-9]+\b|\bmultivitamin\b|\bshilajit\b|\bashwagandha\b|\bspirulina\b", re.I),
     ]
 
     @classmethod
@@ -369,7 +371,7 @@ class CanonicalProductNormalizer:
 
         # 2. Protein Formulations
         silo = "protein"
-        if any(w in t_low for w in ["plant", "pea protein", "soy protein", "vegan protein", "brown rice", "organic plant"]):
+        if any(w in t_low for w in ["plant protein", "pea protein", "soy protein", "vegan protein", "brown rice protein", "organic plant", "plant-based protein", "yeast protein"]):
             return silo, "Plant"
         if "casein" in t_low:
             return silo, "Casein"
