@@ -52,17 +52,23 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ initialProducts }) => 
     return initialProducts.filter((p) => p.labVerified).length;
   }, [initialProducts]);
 
-  // Curated Top Value Picks (Lowest ₹ / 100g Pure Protein)
+  // Curated Top Value Picks (Lowest ₹ / 100g Pure Protein with verified nutrition)
   const topValuePicks = useMemo(() => {
     return initialProducts
+      .filter((p) => {
+        const v0 = p.variants[0];
+        const s = v0?.label_serving_size_g;
+        const prot = v0?.label_protein_per_serving_g;
+        return s && prot && s > 0 && prot > 0 && prot <= s;
+      })
       .slice()
       .sort((a, b) => {
         const getCost = (p: GroupedProduct) => {
           if (p.bestValueMetric && isFinite(p.bestValueMetric)) return p.bestValueMetric;
           const v0 = p.variants[0];
           const w = v0?.weight_grams || 1000;
-          const s = v0?.label_serving_size_g || 33;
-          const prot = v0?.label_protein_per_serving_g || 24;
+          const s = v0?.label_serving_size_g!;
+          const prot = v0?.label_protein_per_serving_g!;
           return costPer100gProtein(p.lowestPrice, Math.round(w / s), prot) || Infinity;
         };
         return getCost(a) - getCost(b);
@@ -102,9 +108,9 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ initialProducts }) => 
               <Link href="/catalog?category=mass_gainer" className="hover:text-slate-900 transition-colors">
                 Mass Gainers
               </Link>
-              <a href="#calculator" className="hover:text-slate-900 transition-colors text-emerald-700 font-bold">
+              <Link href="/calculator" className="hover:text-slate-900 transition-colors text-emerald-700 font-bold">
                 Cost Calculator
-              </a>
+              </Link>
               <Link href="/compare" className="hover:text-slate-900 transition-colors text-slate-400">
                 Compare Matrix
               </Link>

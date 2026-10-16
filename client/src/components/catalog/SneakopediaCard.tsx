@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Scale, ShieldCheck, AlertCircle, ArrowUpRight, TrendingDown } from "lucide-react";
+import { Scale, ShieldCheck, AlertCircle, ArrowUpRight, Check, Clock } from "lucide-react";
 import { GroupedProduct, DbVariant } from "../ProductBrowser";
-import { formatInr, computeCategoryMetrics } from "@/lib/analytics";
+import { formatInr, computeCategoryMetrics, indexedAgo } from "@/lib/analytics";
 
 interface SneakopediaCardProps {
   product: GroupedProduct;
@@ -46,67 +46,100 @@ export const SneakopediaCard: React.FC<SneakopediaCardProps> = ({
       weight_grams: selectedWeight,
       lowest_price_inr: product.lowestPrice,
       best_value_metric: product.bestValueMetric,
-      label_protein_per_serving_g: 24,
-      label_serving_size_g: 33,
+      label_protein_per_serving_g: null,
+      label_serving_size_g: null,
+      calculated_purity_pct: null,
       raw_json_data: null,
       price_listings: [],
     };
   }, [variants, selectedWeight, product]);
 
   const currentPrice = activeVariant.lowest_price_inr || product.lowestPrice || 0;
-  const servingSize = Math.max(10, activeVariant.label_serving_size_g || 33);
-  const proteinG = Math.max(5, activeVariant.label_protein_per_serving_g || 24);
-  const totalServings = Math.max(1, Math.round(activeVariant.weight_grams / servingSize));
+  
+  // Real values without corrupt 24/33 fallbacks
+  const rawServingSize = activeVariant.label_serving_size_g ?? null;
+  const rawProteinG = activeVariant.label_protein_per_serving_g ?? null;
+  const hasValidProtein = rawProteinG !== null && rawServingSize !== null && rawServingSize > 0 && rawProteinG > 0 && rawProteinG <= rawServingSize;
+
+  const servingSize = hasValidProtein ? rawServingSize! : 0;
+  const proteinG = hasValidProtein ? rawProteinG! : 0;
+  const totalServings = hasValidProtein && servingSize > 0 ? Math.max(1, Math.round(activeVariant.weight_grams / servingSize)) : 0;
 
   const catMetrics = useMemo(() => {
     return computeCategoryMetrics(
       product.categorySilo,
       currentPrice,
-      activeVariant.raw_json_data || {
+      activeVariant.raw_json_data || (hasValidProtein ? {
         servingSizeGrams: servingSize,
         proteinPerServingGrams: proteinG,
         servingsPerContainer: totalServings,
         totalProteinPerTubGrams: proteinG * totalServings,
-        diaasScore: 1.15,
-      },
+      } : {}),
       activeVariant.weight_grams
     );
-  }, [product.categorySilo, currentPrice, activeVariant, servingSize, proteinG, totalServings]);
+  }, [product.categorySilo, currentPrice, activeVariant, hasValidProtein, servingSize, proteinG, totalServings]);
 
-  const storeCount = Math.max(1, activeVariant.price_listings?.length || 4);
+  const listings = activeVariant.price_listings || [];
+  const storeCount = Math.max(1, listings.length || product.sellerCount || 1);
+  const inStockOffers = listings.filter((l) => l.in_stock !== false && l.is_in_stock !== false);
+  const isInStock = listings.length === 0 ? true : inStockOffers.length > 0;
+
+  // Real freshness timestamp from listing data or fallback
+  const freshestScrapedAt = useMemo(() => {
+    for (const l of listings) {
+      if (l.scraped_at) return l.scraped_at;
+    }
+    return activeVariant.last_observed_at || product.lastObservedAt;
+  }, [listings, activeVariant, product]);
+
+  const freshnessLabel = freshestScrapedAt ? indexedAgo(freshestScrapedAt) : "Recently";
+
+  // Category normalization for UI labels
+  const isCreatine = product.categorySilo?.toLowerCase().includes("creatine");
+  const isGainer = product.categorySilo?.toLowerCase().includes("gainer");
 
   return (
-    <article className="group flex flex-col justify-between bg-white border border-slate-200 rounded-sm hover:border-slate-400 transition-colors overflow-hidden">
-      <div>
-        {/* Clean Image Frame (Inspired by Sneakopedia drops) */}
-        <div className="relative aspect-square w-full bg-slate-50 flex items-center justify-center p-5 border-b border-slate-100">
+    <article className="group flex flex-col justify-between bg-white border border-slate-200 rounded-sm hover:border-slate-400 transition-colors overflow-hidden h-[438px] max-w-full">
+      <div className="flex flex-col">
+        {/* Top Image Frame with Trust Signals & Direct Compare Trigger */}
+        <div className="relative h-44 w-full bg-slate-50 flex items-center justify-center p-4 border-b border-slate-100 shrink-0">
           {/* Trust Badges */}
           <div className="absolute left-2.5 top-2.5 z-10 flex flex-col gap-1 items-start">
-            {product.labVerified && (
+            {product.labVerified ? (
               <span className="inline-flex items-center gap-1 rounded-xs bg-emerald-700 px-2 py-0.5 text-[10px] font-mono font-bold uppercase text-white shadow-xs">
                 <ShieldCheck className="size-3" /> Lab Verified
               </span>
-            )}
-            {product.isFairyDusted && (
+            ) : null}
+            {product.isFairyDusted ? (
               <span className="inline-flex items-center gap-1 rounded-xs bg-amber-600 px-2 py-0.5 text-[10px] font-mono font-bold uppercase text-white shadow-xs">
                 <AlertCircle className="size-3" /> Filler Warning
+              </span>
+            ) : null}
+            {!product.labVerified && !product.isFairyDusted && (
+              <span className="inline-flex items-center gap-1 rounded-xs bg-slate-200/90 text-slate-700 px-1.5 py-0.5 text-[9px] font-mono font-semibold uppercase">
+                {product.proteinSource || product.categorySilo.replace(/_/g, " ")}
               </span>
             )}
           </div>
 
-          {/* Compare tray icon */}
+          {/* Direct Compare Tray Toggle */}
           {onToggleCompareTray && (
             <button
               type="button"
-              onClick={() => onToggleCompareTray(activeVariant, product)}
-              className={`absolute right-2.5 top-2.5 z-10 p-1.5 rounded-xs border text-xs font-mono transition-colors ${
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleCompareTray(activeVariant, product);
+              }}
+              className={`absolute right-2.5 top-2.5 z-10 flex items-center gap-1 px-2 py-1 rounded-xs border text-[10px] font-mono font-bold transition-all ${
                 isTraySelected
-                  ? "bg-emerald-700 border-emerald-700 text-white"
-                  : "bg-white/95 border-slate-200 text-slate-600 hover:bg-white hover:text-slate-900"
+                  ? "bg-emerald-700 border-emerald-700 text-white shadow-xs"
+                  : "bg-white/95 border-slate-200 text-slate-700 hover:border-slate-900 hover:text-slate-900 shadow-xs"
               }`}
-              title="Add to Cross-Product Matrix"
+              title="Add to Cross-Product Comparison"
+              aria-label={`Compare ${product.baseProductName}`}
             >
-              <Scale className="size-3.5" />
+              <Scale className="size-3" />
+              <span>{isTraySelected ? "Comparing" : "Compare"}</span>
             </button>
           )}
 
@@ -122,27 +155,56 @@ export const SneakopediaCard: React.FC<SneakopediaCardProps> = ({
               className="h-full w-full object-contain mix-blend-multiply"
             />
           ) : (
-            <div className="text-xs text-slate-400 font-mono font-medium">No Image</div>
+            <div className="text-xs text-slate-400 font-mono font-medium">No Image Available</div>
           )}
         </div>
 
-        {/* Product Meta */}
-        <div className="p-3.5 sm:p-4">
-          <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-1">
-            <span>{product.brand}</span>
-            <span>{product.proteinSource || product.categorySilo.replace(/_/g, " ")}</span>
+        {/* Product Identity & Primary Metric Anchor */}
+        <div className="p-3.5 flex flex-col gap-1.5">
+          {/* Brand & Silo Header */}
+          <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">
+            <span className="text-slate-700 font-black">{product.brand}</span>
+            <span className="text-slate-400">{product.categorySilo.replace(/_/g, " ")}</span>
           </div>
 
+          {/* Clamped 2-line Title */}
           <h3
             title={product.baseProductName}
-            className="line-clamp-2 text-sm font-bold text-slate-900 leading-snug h-[40px]"
+            className="line-clamp-2 text-xs sm:text-sm font-bold text-slate-900 leading-snug h-9"
           >
             {product.baseProductName}
           </h3>
 
-          {/* In-Card Weight Switcher */}
-          {availableWeights.length > 1 && (
-            <div className="mt-2.5 flex flex-wrap gap-1">
+          {/* Primary Equalized Metric Anchor (₹/g Protein Dominant) */}
+          <div className="flex items-baseline justify-between gap-1 pt-0.5">
+            <div className="flex items-baseline gap-1.5">
+              {catMetrics.isPending ? (
+                <span className="text-xs font-mono font-bold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-xs">
+                  Pending Verification
+                </span>
+              ) : (
+                <>
+                  <span className="text-lg font-mono font-black text-emerald-800 tabular-nums tracking-tight">
+                    {catMetrics.primaryValue}
+                  </span>
+                  <span className="text-[11px] font-mono text-slate-500 font-semibold">
+                    {catMetrics.primaryLabel}
+                  </span>
+                </>
+              )}
+            </div>
+
+            {/* Benchmark pill */}
+            {!catMetrics.isPending && (
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-xs border border-slate-200 bg-slate-50 text-slate-700">
+                {catMetrics.secondaryValue} {catMetrics.secondaryLabel}
+              </span>
+            )}
+          </div>
+
+          {/* Weight Variant Switcher */}
+          {availableWeights.length > 1 ? (
+            <div className="flex flex-wrap gap-1 mt-0.5">
               {availableWeights.map((w) => {
                 const isSelected = selectedWeight === w;
                 return (
@@ -150,9 +212,9 @@ export const SneakopediaCard: React.FC<SneakopediaCardProps> = ({
                     key={w}
                     type="button"
                     onClick={() => setSelectedWeight(w)}
-                    className={`px-2 py-0.5 text-[10px] font-mono font-semibold rounded-xs transition-colors ${
+                    className={`px-1.5 py-0.5 text-[9px] font-mono font-bold rounded-xs transition-colors ${
                       isSelected
-                        ? "bg-slate-900 text-white font-bold"
+                        ? "bg-slate-900 text-white"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }`}
                   >
@@ -161,54 +223,69 @@ export const SneakopediaCard: React.FC<SneakopediaCardProps> = ({
                 );
               })}
             </div>
+          ) : (
+            <div className="text-[10px] font-mono text-slate-400 mt-0.5">
+              Standard Pack: {selectedWeight >= 1000 ? `${selectedWeight / 1000}kg` : `${selectedWeight}g`}
+            </div>
           )}
 
-          {/* Quantitative Macro & Purity Pill */}
-          <div className="mt-2.5 text-[10px] font-mono text-slate-600 bg-slate-50 border border-slate-200/80 px-2 py-1 rounded-xs flex items-center justify-between">
-            <span>{proteinG}g Prot / {servingSize}g scoop</span>
-            <span className="font-bold text-slate-800">{Math.round((proteinG / servingSize) * 100)}% Purity</span>
+          {/* Quantitative Nutrition / Purity Data State */}
+          <div className="text-[10px] font-mono text-slate-600 bg-slate-50 border border-slate-200/80 px-2 py-1 rounded-xs flex items-center justify-between mt-0.5">
+            {isCreatine ? (
+              <>
+                <span>Creatine Monohydrate</span>
+                <span className="font-bold text-cyan-800">100% Purity</span>
+              </>
+            ) : isGainer ? (
+              <>
+                <span>Calorie & Carb Formula</span>
+                <span className="font-bold text-violet-800">{catMetrics.secondaryValue}</span>
+              </>
+            ) : hasValidProtein ? (
+              <>
+                <span>{proteinG}g Prot / {servingSize}g scoop</span>
+                <span className="font-bold text-slate-800">
+                  {Math.round((proteinG / servingSize) * 100)}% Purity
+                </span>
+              </>
+            ) : (
+              <span className="text-slate-400 italic">Nutrition label pending audit</span>
+            )}
           </div>
 
-          {/* Pricing & Sneakopedia Headline with Sparkline */}
-          <div className="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-1">
+          {/* Pricing, Seller Freshness & Stock Metadata */}
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-mono">
             <div>
-              <span className="text-[10px] font-mono text-slate-400 uppercase block">Starting from</span>
-              <span className="text-lg font-mono tabular-nums font-black text-emerald-700">
+              <span className="text-[9px] text-slate-400 uppercase tracking-wider block">Best Price</span>
+              <span className="text-base font-black text-slate-900 tabular-nums">
                 {formatInr(currentPrice)}
               </span>
             </div>
 
-            {/* Sparkline & Benchmark Tag */}
-            <div className="flex flex-col items-end">
-              <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded-xs border border-emerald-300 bg-emerald-50 text-emerald-800">
-                {catMetrics.primaryValue} {catMetrics.primaryLabel}
-              </span>
-              <div className="flex items-center gap-1 text-[9px] font-mono font-bold text-emerald-700 mt-1">
-                <TrendingDown className="size-2.5" />
-                <span>30D Low</span>
-                <svg className="w-12 h-3.5 text-emerald-600 inline-block ml-0.5" viewBox="0 0 48 14" fill="none">
-                  <path
-                    d="M2 3 L10 6 L18 2 L28 8 L36 5 L46 11"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+            <div className="flex flex-col items-end text-[10px]">
+              <div className="flex items-center gap-1.5 font-semibold">
+                <span className={`inline-block size-1.5 rounded-full ${isInStock ? "bg-emerald-600" : "bg-red-500"}`} />
+                <span className={isInStock ? "text-slate-700" : "text-red-600 font-bold"}>
+                  {isInStock ? `${storeCount} ${storeCount === 1 ? "seller" : "sellers"}` : "Out of stock"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 text-[9px] text-slate-400 mt-0.5">
+                <Clock className="size-2.5" />
+                <span>{freshnessLabel}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Action Footer: Sneakopedia Open Matrix Button */}
-      <div className="p-3.5 sm:p-4 pt-0">
+      {/* Action Footer: View Best Price & Full History */}
+      <div className="p-3.5 pt-0">
         <button
           type="button"
           onClick={() => onOpenMatrix(product, activeVariant)}
           className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-900 hover:bg-emerald-800 text-white text-xs font-mono font-bold uppercase tracking-wider rounded-sm transition-colors"
         >
-          <span>Compare {storeCount} Stores & History</span>
+          <span>View Best Price ({storeCount})</span>
           <ArrowUpRight className="size-3.5 text-slate-400" />
         </button>
       </div>

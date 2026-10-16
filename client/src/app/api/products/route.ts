@@ -151,32 +151,115 @@ export async function GET(request: NextRequest) {
           rawAnalytics = {};
         }
 
+        const categorySilo = (product.category_silo || "protein").toLowerCase();
         const weightGrams = Math.max(1, Number(v.weight_grams) || 1000);
-        const servingSizeGrams = Math.max(1.0, Number(v.label_serving_size_g) || 33.0);
-        const servingsCount = Math.max(1, Math.round(weightGrams / servingSizeGrams));
-        const proteinPerServing = Math.max(0.0, Number(v.label_protein_per_serving_g) || 24.0);
-        const diaas = Math.max(0.0, Number(rawAnalytics?.analytics?.diaas_score) || 1.0);
-        const bioavailableProtein = Number((proteinPerServing * diaas).toFixed(1));
-        const rawPurity = (proteinPerServing / servingSizeGrams) * 100;
-        const purityPct = Math.min(100.0, Math.max(0.0, Number(v.calculated_purity_pct) || Number(rawPurity.toFixed(1))));
+        
+        // Raw values without fallback to 33 / 24
+        const rawServingSize = v.label_serving_size_g !== null && v.label_serving_size_g !== undefined ? Number(v.label_serving_size_g) : null;
+        const rawProteinPerServing = v.label_protein_per_serving_g !== null && v.label_protein_per_serving_g !== undefined ? Number(v.label_protein_per_serving_g) : null;
+        
+        // Provenance & Quality Status Evaluation
+        let nutritionStatus: "verified" | "observed" | "pending_verification" | "stale" | "unknown" | "not_applicable" = "pending_verification";
+        let nutritionReason: string | undefined = undefined;
+
+        if (categorySilo === "creatine") {
+          nutritionStatus = "not_applicable";
+          nutritionReason = "Creatine purity is measured by creatine monohydrate content, not protein macros.";
+        } else if (rawProteinPerServing !== null && rawServingSize !== null && rawServingSize > 0 && rawProteinPerServing > 0) {
+          if (rawProteinPerServing > rawServingSize) {
+            nutritionStatus = "unknown";
+            nutritionReason = "Protein claim exceeds serving scoop size.";
+          } else if (product.lab_verified || v.ocr_verified || v.nutrition_audited_at) {
+            nutritionStatus = "verified";
+          } else {
+            nutritionStatus = "observed";
+          }
+        } else {
+          nutritionStatus = "pending_verification";
+          nutritionReason = "Serving size or declared protein is pending label audit.";
+        }
+
+        const isValidNutrition = nutritionStatus === "verified" || nutritionStatus === "observed";
+        const servingSizeGrams = isValidNutrition ? rawServingSize! : 0;
+        const proteinPerServing = isValidNutrition ? rawProteinPerServing! : 0;
+        const servingsCount = isValidNutrition && servingSizeGrams > 0 ? Math.max(1, Math.round(weightGrams / servingSizeGrams)) : Math.max(1, Math.round(weightGrams / 30));
+
+        // DIAAS calculation adhering to DC-03: must not be inferred from protein % alone
+        const declaredDiaas = rawAnalytics?.analytics?.diaas_score ? Number(rawAnalytics.analytics.diaas_score) : null;
+        const diaasScore = declaredDiaas && isFinite(declaredDiaas) && declaredDiaas > 0 ? declaredDiaas : null;
+        const diaasBasis = rawAnalytics?.analytics?.diaas_basis || (diaasScore ? "Source amino acid assay" : "Unavailable");
+        const diaasEvidence = rawAnalytics?.analytics?.diaas_source_evidence || null;
+        const aminoStatus = rawAnalytics?.analytics?.amino_acid_completeness_status || (diaasScore ? "COMPLETE" : "UNAUDITED");
+
+        const bioavailableProtein = isValidNutrition && diaasScore ? Number((proteinPerServing * diaasScore).toFixed(1)) : (isValidNutrition ? proteinPerServing : null);
+        const purityPct = isValidNutrition && servingSizeGrams > 0 ? Number(((proteinPerServing / servingSizeGrams) * 100).toFixed(1)) : null;
 
         // Obfuscate raw store URLs behind signed temporary HMAC redirect tokens
-        const offers = (v.price_listings || []).map((pl: any) => ({
-          platform: pl.source || pl.platform_name || "Direct",
-          url: pl.id ? `/api/out?token=${generateStoreToken(pl.id)}` : "#",
-          priceInr: Math.max(0, Number(pl.current_price_inr || pl.price_inr || 0)),
-          inStock: pl.in_stock ?? true,
-          sellerName: pl.seller_name || "",
-          isAuthorizedSeller: pl.is_authorized_seller ?? true,
-        }));
+        let latestScrapedTime: string | undefined = undefined;
+        const offers = (v.price_listings || []).map((pl: any) => {
+          if (pl.scraped_at) {
+            if (!latestScrapedTime || new Date(pl.scraped_at).getTime() > new Date(latestScrapedTime).getTime()) {
+              latestScrapedTime = pl.scraped_at;
+            }
+          }
+          return {
+            platform: pl.source || pl.platform_name || "Direct",
+            url: pl.id ? `/api/out?token=${generateStoreToken(pl.id)}` : "#",
+            priceInr: Math.max(0, Number(pl.current_price_inr || pl.price_inr || 0)),
+            inStock: pl.in_stock ?? true,
+            sellerName: pl.seller_name || "",
+            isAuthorizedSeller: pl.is_authorized_seller ?? true,
+            observedAt: pl.scraped_at || new Date().toISOString(),
+          };
+        });
 
         const authorizedOffers = offers.filter((o: any) => o.isAuthorizedSeller && o.priceInr > 0);
         const lowestAuthorized = authorizedOffers.length ? Math.min(...authorizedOffers.map((o: any) => o.priceInr)) : undefined;
         const validPrices = offers.map((o: any) => o.priceInr).filter((p: number) => p > 0);
         const lowestPrice = validPrices.length ? Math.min(...validPrices) : (Math.max(0, Number(v.lowest_price_inr)) || 0);
+        const hasStock = offers.some((o: any) => o.inStock !== false);
 
-        const proteinPool = servingsCount * bioavailableProtein;
-        const fallbackMetric = (proteinPool > 0 && lowestPrice > 0) ? Number((lowestPrice / proteinPool).toFixed(2)) : 0.0;
+        // Category-specific equalized metric
+        let primaryMetricLabel = "₹/g bioavailable protein";
+        let primaryMetricValue: number | null = null;
+        let secondaryMetricLabel = "Purity %";
+        let secondaryMetricValue: number | null = null;
+        let isReliable = false;
+
+        if (categorySilo === "creatine") {
+          primaryMetricLabel = "₹/3g dose";
+          primaryMetricValue = weightGrams > 0 && lowestPrice > 0 ? Number(((lowestPrice / weightGrams) * 3).toFixed(2)) : null;
+          secondaryMetricLabel = "Cost/100g";
+          secondaryMetricValue = weightGrams > 0 && lowestPrice > 0 ? Number(((lowestPrice / weightGrams) * 100).toFixed(0)) : null;
+          isReliable = primaryMetricValue !== null;
+        } else if (categorySilo === "mass_gainer" || categorySilo === "mass_gainers") {
+          primaryMetricLabel = "₹/1,000 kcal";
+          const calories = Number(rawAnalytics?.caloriesPerServing) || 0;
+          const totalCals = calories * servingsCount;
+          primaryMetricValue = totalCals > 0 && lowestPrice > 0 ? Number(((lowestPrice / totalCals) * 1000).toFixed(1)) : null;
+          secondaryMetricLabel = "Serving Count";
+          secondaryMetricValue = servingsCount;
+          isReliable = primaryMetricValue !== null;
+        } else if (categorySilo === "pre_workout" || categorySilo === "preworkout") {
+          primaryMetricLabel = "₹/scoop";
+          primaryMetricValue = servingsCount > 0 && lowestPrice > 0 ? Number((lowestPrice / servingsCount).toFixed(1)) : null;
+          secondaryMetricLabel = "Total Scoops";
+          secondaryMetricValue = servingsCount;
+          isReliable = primaryMetricValue !== null;
+        } else {
+          // Standard Protein Silo: ₹/g protein using total package protein
+          if (isValidNutrition && proteinPerServing > 0 && servingsCount > 0 && lowestPrice > 0) {
+            const effectiveProteinPool = servingsCount * (bioavailableProtein || proteinPerServing);
+            primaryMetricValue = effectiveProteinPool > 0 ? Number((lowestPrice / effectiveProteinPool).toFixed(2)) : null;
+            secondaryMetricLabel = "Purity %";
+            secondaryMetricValue = purityPct;
+            isReliable = true;
+          } else {
+            primaryMetricValue = null;
+            secondaryMetricValue = null;
+            isReliable = false;
+          }
+        }
 
         universalSKUs.push({
           skuId: v.sku_id || `${(product.brand || "brand").toLowerCase()}-${(v.flavor || "flavor").toLowerCase()}-${weightGrams}g`,
@@ -192,28 +275,38 @@ export async function GET(request: NextRequest) {
             servingSizeGrams,
           },
           nutritionalProfile: {
-            activeIngredientPerServingGrams: proteinPerServing,
-            pdcaasScore: diaas,
-            bioavailableProteinPerServing: bioavailableProtein,
+            activeIngredientPerServingGrams: isValidNutrition ? proteinPerServing : null,
+            pdcaasScore: diaasScore,
+            bioavailableProteinPerServing,
             proteinPurityPct: purityPct,
-            caloriesPerServing: 120,
-            carbsPerServingGrams: 1.5,
+            caloriesPerServing: isValidNutrition ? Number(rawAnalytics?.caloriesPerServing) || null : null,
+            carbsPerServingGrams: isValidNutrition ? Number(rawAnalytics?.carbsPerServing) || null : null,
+            nutritionStatus,
+            nutritionStatusReason: nutritionReason,
+            diaasScore,
+            diaasBasis,
+            diaasSourceEvidence: diaasEvidence,
+            aminoAcidCompletenessStatus: aminoStatus,
           },
           usefulDoseAnalysis: {
-            leucinePerServingGrams: 2.7,
-            meetsMpsThreshold: proteinPerServing >= 20,
-            aminoSpikeRisk: false,
+            leucinePerServingGrams: isValidNutrition && proteinPerServing >= 20 ? Number((proteinPerServing * 0.11).toFixed(1)) : null,
+            meetsMpsThreshold: isValidNutrition ? proteinPerServing >= 20 : null,
+            aminoSpikeRisk: Boolean(rawAnalytics?.aminoSpikeRisk),
             fillersDetected: product.is_fairy_dusted ? ["Maltodextrin"] : [],
           },
           equalizerMetrics: {
-            primaryMetricLabel: "₹/g bioavailable protein",
-            primaryMetricValue: Number(v.best_value_metric) || fallbackMetric,
-            secondaryMetricLabel: "Purity %",
-            secondaryMetricValue: purityPct,
+            primaryMetricLabel,
+            primaryMetricValue,
+            secondaryMetricLabel,
+            secondaryMetricValue,
+            isReliable,
           },
           pricing: {
             lowestPriceInr: lowestPrice,
             lowestAuthorizedPriceInr: lowestAuthorized,
+            sellerCount: offers.length,
+            lastObservedAt: latestScrapedTime || new Date().toISOString(),
+            inStock: hasStock,
             vendorOffers: offers,
           },
           verification: {

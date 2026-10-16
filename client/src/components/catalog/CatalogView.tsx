@@ -30,40 +30,124 @@ interface CatalogViewProps {
 }
 
 export function CatalogView({ initialProducts, initialCategory }: CatalogViewProps) {
-  const [filters, setFilters] = useState<FilterState>({
-    query: "",
-    category: initialCategory || "",
-    formulations: [],
-    maxCostPer100gProtein: 600,
-    selectedBrands: [],
-    maxPrice: 15000,
-    verifiedOnly: false,
-    minPurityPct: 0,
-    authorizedOnly: false,
-    digestiveEnzymesOnly: false,
-    sugarFreeOnly: false,
-    unflavoredOnly: false,
-    sort: "featured",
+  // Initialize from URL search parameters if available
+  const [filters, setFilters] = useState<FilterState>(() => {
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search);
+      const brands = p.get("brand") ? [p.get("brand")!] : p.get("brands") ? p.get("brands")!.split(",") : [];
+      const forms = p.get("formulations") ? p.get("formulations")!.split(",") : [];
+      return {
+        query: p.get("q") || p.get("search") || "",
+        category: p.get("category") || initialCategory || "",
+        formulations: forms,
+        maxCostPer100gProtein: p.get("maxCost") ? Number(p.get("maxCost")) : 600,
+        selectedBrands: brands,
+        maxPrice: p.get("maxPrice") ? Number(p.get("maxPrice")) : 15000,
+        verifiedOnly: p.get("verified") === "true",
+        minPurityPct: p.get("minPurity") ? Number(p.get("minPurity")) : 0,
+        authorizedOnly: p.get("authorized") === "true",
+        digestiveEnzymesOnly: p.get("enzymes") === "true",
+        sugarFreeOnly: p.get("sugarFree") === "true",
+        unflavoredOnly: p.get("unflavored") === "true",
+        sort: (p.get("sort") as SortOption) || "featured",
+      };
+    }
+    return {
+      query: "",
+      category: initialCategory || "",
+      formulations: [],
+      maxCostPer100gProtein: 600,
+      selectedBrands: [],
+      maxPrice: 15000,
+      verifiedOnly: false,
+      minPurityPct: 0,
+      authorizedOnly: false,
+      digestiveEnzymesOnly: false,
+      sugarFreeOnly: false,
+      unflavoredOnly: false,
+      sort: "featured",
+    };
   });
 
-  // URL query sync
+  const [searchInputValue, setSearchInputValue] = useState(filters.query);
+
+  // 300ms Debounce for search query input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setFilters((prev) => {
+        if (prev.query === searchInputValue) return prev;
+        return { ...prev, query: searchInputValue };
+      });
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [searchInputValue]);
+
+  // Synchronize filter state changes to URL search parameters
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const currentUrl = new URL(window.location.href);
+    const params = currentUrl.searchParams;
+
+    if (filters.query) params.set("search", filters.query);
+    else params.delete("search");
+    params.delete("q");
+
+    if (filters.category) params.set("category", filters.category);
+    else params.delete("category");
+
+    if (filters.selectedBrands.length > 0) params.set("brand", filters.selectedBrands[0]);
+    else params.delete("brand");
+
+    if (filters.formulations.length > 0) params.set("formulations", filters.formulations.join(","));
+    else params.delete("formulations");
+
+    if (filters.sort && filters.sort !== "featured") params.set("sort", filters.sort);
+    else params.delete("sort");
+
+    if (filters.maxPrice < 15000) params.set("maxPrice", filters.maxPrice.toString());
+    else params.delete("maxPrice");
+
+    if (filters.verifiedOnly) params.set("verified", "true");
+    else params.delete("verified");
+
+    const newSearch = params.toString();
+    const newRelativePath = `${window.location.pathname}${newSearch ? `?${newSearch}` : ""}`;
+    window.history.replaceState({}, "", newRelativePath);
+  }, [filters]);
+
+  // Browser back/forward (popstate) restoration
+  useEffect(() => {
+    const handlePopState = () => {
+      if (typeof window === "undefined") return;
+      const p = new URLSearchParams(window.location.search);
+      const query = p.get("search") || p.get("q") || "";
+      const cat = p.get("category") || "";
+      const brand = p.get("brand");
+      const sort = (p.get("sort") as SortOption) || "featured";
+
+      setSearchInputValue(query);
+      setFilters((prev) => ({
+        ...prev,
+        query,
+        category: cat,
+        selectedBrands: brand ? [brand] : [],
+        sort,
+      }));
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  // Deep link to product modal if specified in URL on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      const catParam = params.get("category");
-      const qParam = params.get("q");
-      const brandParam = params.get("brand");
       const productParam = params.get("product");
       const variantParam = params.get("variant");
 
-      setFilters((prev) => ({
-        ...prev,
-        category: catParam || prev.category,
-        query: qParam || prev.query,
-        selectedBrands: brandParam ? [brandParam] : prev.selectedBrands,
-      }));
-
-      // Deep link to product modal if specified in URL
       if (productParam) {
         const foundProduct = initialProducts.find(
           (p) =>
@@ -254,13 +338,15 @@ export function CatalogView({ initialProducts, initialCategory }: CatalogViewPro
 
         // True Value (₹ / 100g Pure Protein)
         const bestVariant = g.variants[0];
-        const servingSize = Math.max(10, bestVariant?.label_serving_size_g || 33);
-        const proteinG = Math.max(5, bestVariant?.label_protein_per_serving_g || 24);
-        const totalServings = Math.max(1, Math.round((bestVariant?.weight_grams || 1000) / servingSize));
-        const cost100g = costPer100gProtein(g.lowestPrice, totalServings, proteinG);
+        const rawServingSize = bestVariant?.label_serving_size_g ?? null;
+        const rawProteinG = bestVariant?.label_protein_per_serving_g ?? null;
+        const hasValidNutrition = rawServingSize && rawProteinG && rawServingSize > 0 && rawProteinG > 0 && rawProteinG <= rawServingSize;
 
-        if (filters.maxCostPer100gProtein < 600 && isFinite(cost100g)) {
-          if (cost100g > filters.maxCostPer100gProtein) return false;
+        if (filters.maxCostPer100gProtein < 600) {
+          if (!hasValidNutrition) return false;
+          const totalServings = Math.max(1, Math.round((bestVariant?.weight_grams || 1000) / rawServingSize!));
+          const cost100g = costPer100gProtein(g.lowestPrice, totalServings, rawProteinG!);
+          if (!isFinite(cost100g) || cost100g > filters.maxCostPer100gProtein) return false;
         }
 
         // Verification & Purity
@@ -268,11 +354,15 @@ export function CatalogView({ initialProducts, initialCategory }: CatalogViewPro
 
         if (filters.minPurityPct > 0) {
           const maxPurity = Math.max(
-            ...g.variants.map(
-              (v) =>
-                v.calculated_purity_pct ||
-                purityPct(v.label_protein_per_serving_g || 24, v.label_serving_size_g || 33)
-            )
+            ...g.variants.map((v) => {
+              if (v.calculated_purity_pct !== null && v.calculated_purity_pct !== undefined) {
+                return v.calculated_purity_pct;
+              }
+              if (v.label_protein_per_serving_g && v.label_serving_size_g && v.label_serving_size_g > 0) {
+                return purityPct(v.label_protein_per_serving_g, v.label_serving_size_g);
+              }
+              return 0;
+            })
           );
           if (maxPurity < filters.minPurityPct) return false;
         }
@@ -333,11 +423,13 @@ export function CatalogView({ initialProducts, initialCategory }: CatalogViewPro
             return item.bestValueMetric;
           }
           const v0 = item.variants[0];
-          const weight = v0?.weight_grams || 1000;
-          const sSize = v0?.label_serving_size_g || 33;
-          const prot = v0?.label_protein_per_serving_g || 24;
-          const servings = Math.max(1, Math.round(weight / sSize));
-          return costPer100gProtein(item.lowestPrice, servings, prot) || Infinity;
+          const rawServing = v0?.label_serving_size_g;
+          const rawProt = v0?.label_protein_per_serving_g;
+          if (rawServing && rawProt && rawServing > 0 && rawProt > 0 && rawProt <= rawServing) {
+            const servings = Math.max(1, Math.round((v0?.weight_grams || 1000) / rawServing));
+            return costPer100gProtein(item.lowestPrice, servings, rawProt) || Infinity;
+          }
+          return Infinity;
         };
 
         const metricA = getEffectiveMetric(a);
@@ -347,8 +439,8 @@ export function CatalogView({ initialProducts, initialCategory }: CatalogViewPro
         if (filters.sort === "price-asc") return a.lowestPrice - b.lowestPrice;
         if (filters.sort === "price-desc") return b.lowestPrice - a.lowestPrice;
         if (filters.sort === "purity-desc") {
-          const purityA = a.variants[0]?.calculated_purity_pct || 75;
-          const purityB = b.variants[0]?.calculated_purity_pct || 75;
+          const purityA = a.variants[0]?.calculated_purity_pct || 0;
+          const purityB = b.variants[0]?.calculated_purity_pct || 0;
           return purityB - purityA;
         }
 
@@ -434,25 +526,23 @@ export function CatalogView({ initialProducts, initialCategory }: CatalogViewPro
 
           {/* Right Action Controls: Calculator, Alert & View Switcher */}
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setIsCalculatorOpen(true)}
+            <Link
+              href="/calculator"
               className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-bold text-slate-700 bg-white border border-slate-300 hover:border-slate-800 rounded-sm transition-colors shadow-xs"
               title="True Protein Cost & Yield Calculator"
             >
               <Calculator className="size-3.5 text-emerald-700" />
               <span className="hidden md:inline">Calculator</span>
-            </button>
+            </Link>
 
-            <button
-              type="button"
-              onClick={() => setIsAlertOpen(true)}
+            <Link
+              href="/alerts"
               className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-bold text-slate-700 bg-white border border-slate-300 hover:border-slate-800 rounded-sm transition-colors shadow-xs"
               title="Set Price Drop Alert"
             >
               <Bell className="size-3.5 text-emerald-700" />
               <span className="hidden lg:inline">Alert</span>
-            </button>
+            </Link>
 
             {/* Mode Switcher Toggle */}
             <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-sm border border-slate-200">
@@ -499,13 +589,13 @@ export function CatalogView({ initialProducts, initialCategory }: CatalogViewPro
               <span>Filters</span>
             </button>
 
-            {/* Search Input */}
+            {/* Search Input with Debounced Binding */}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                value={filters.query}
-                onChange={(e) => setFilters((prev) => ({ ...prev, query: e.target.value }))}
+                value={searchInputValue}
+                onChange={(e) => setSearchInputValue(e.target.value)}
                 placeholder="Search supplements, brand, or flavor..."
                 aria-label="Search catalog"
                 className="w-full pl-9 pr-3 py-1.5 text-xs font-mono border border-slate-200 rounded-sm outline-none focus:border-slate-900"
@@ -556,17 +646,52 @@ export function CatalogView({ initialProducts, initialCategory }: CatalogViewPro
           {/* Product Grid / Terminal Screener */}
           <div className="flex-1 min-w-0">
             {displayedGroups.length === 0 ? (
-              <div className="flex min-h-[350px] flex-col items-center justify-center rounded-sm border border-dashed border-slate-300 bg-white p-8 text-center">
-                <p className="text-base font-bold text-slate-800 font-mono">
+              <div className="flex min-h-[350px] flex-col items-center justify-center rounded-sm border border-dashed border-slate-300 bg-white p-8 text-center font-mono">
+                <div className="size-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 mb-3">
+                  <Search className="size-5" />
+                </div>
+                <p className="text-base font-bold text-slate-900">
                   No supplements matched your filter criteria
                 </p>
-                <p className="text-xs text-slate-500 mt-1">
-                  Try clearing your brand selections or raising the price ceiling.
-                </p>
+                <div className="mt-2 text-xs text-slate-500 max-w-md">
+                  Active constraints causing zero matches:
+                  <div className="flex flex-wrap gap-1 justify-center mt-2">
+                    {filters.query && (
+                      <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-xs text-[11px] font-bold text-slate-800">
+                        Query: &quot;{filters.query}&quot;
+                      </span>
+                    )}
+                    {filters.category && (
+                      <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-xs text-[11px] font-bold text-slate-800">
+                        Category: {filters.category}
+                      </span>
+                    )}
+                    {filters.selectedBrands.length > 0 && (
+                      <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-xs text-[11px] font-bold text-slate-800">
+                        Brands: {filters.selectedBrands.join(", ")}
+                      </span>
+                    )}
+                    {filters.formulations.length > 0 && (
+                      <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-xs text-[11px] font-bold text-slate-800">
+                        Forms: {filters.formulations.join(", ")}
+                      </span>
+                    )}
+                    {filters.maxPrice < 15000 && (
+                      <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-xs text-[11px] font-bold text-slate-800">
+                        Max Price: ₹{filters.maxPrice}
+                      </span>
+                    )}
+                    {filters.verifiedOnly && (
+                      <span className="bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-xs text-[11px] font-bold text-emerald-800">
+                        Verified Only
+                      </span>
+                    )}
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={resetAllFilters}
-                  className="mt-4 rounded-sm bg-slate-900 px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider text-white hover:bg-slate-800 transition-colors"
+                  className="mt-5 rounded-sm bg-slate-900 px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider text-white hover:bg-slate-800 transition-colors"
                 >
                   Clear all filters
                 </button>

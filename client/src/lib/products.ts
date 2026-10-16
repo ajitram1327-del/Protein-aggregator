@@ -78,16 +78,26 @@ export async function getGroupedProducts(params?: {
       weight_grams: sku.packaging.weightGrams,
       lowest_price_inr: sku.pricing.lowestPriceInr,
       best_value_metric: sku.equalizerMetrics.primaryMetricValue,
-      raw_json_data: null,
-      label_serving_size_g: sku.packaging.servingSizeGrams || 33,
-      label_protein_per_serving_g: sku.nutritionalProfile.activeIngredientPerServingGrams || 24,
-      calculated_purity_pct: sku.nutritionalProfile.proteinPurityPct || 75,
+      raw_json_data: {
+        nutritionStatus: sku.nutritionalProfile.nutritionStatus,
+        diaasScore: sku.nutritionalProfile.diaasScore,
+        diaasBasis: sku.nutritionalProfile.diaasBasis,
+        usefulDoseAnalysis: sku.usefulDoseAnalysis,
+      },
+      label_serving_size_g: sku.packaging.servingSizeGrams || null,
+      label_protein_per_serving_g: sku.nutritionalProfile.activeIngredientPerServingGrams || null,
+      calculated_purity_pct: sku.nutritionalProfile.proteinPurityPct || null,
+      nutrition_status: sku.nutritionalProfile.nutritionStatus,
+      last_observed_at: sku.pricing.lastObservedAt,
+      seller_count: sku.pricing.sellerCount,
       price_listings: sku.pricing.vendorOffers.map((o) => ({
         source: o.platform,
         price_inr: o.priceInr,
         source_url: o.url,
         seller_name: o.sellerName,
         is_authorized_seller: o.isAuthorizedSeller,
+        in_stock: o.inStock,
+        scraped_at: o.observedAt,
       })),
       authenticity_score: undefined,
       has_bot_reviews: undefined,
@@ -98,7 +108,11 @@ export async function getGroupedProducts(params?: {
     if (variant.lowest_price_inr < group.lowestPrice) {
       group.lowestPrice = variant.lowest_price_inr;
     }
-    if (variant.best_value_metric > 0 && variant.best_value_metric < group.bestValueMetric) {
+    if (
+      variant.best_value_metric !== null &&
+      variant.best_value_metric > 0 &&
+      variant.best_value_metric < group.bestValueMetric
+    ) {
       group.bestValueMetric = variant.best_value_metric;
     }
   });
@@ -117,4 +131,26 @@ export async function getGroupedProducts(params?: {
     products: Object.values(grouped),
     errorMsg: "",
   };
+}
+
+export async function getProductBySkuOrId(skuOrId: string): Promise<GroupedProduct | null> {
+  const { products } = await getGroupedProducts({ limit: 100 });
+  const normalized = decodeURIComponent(skuOrId).toLowerCase().trim();
+
+  return (
+    products.find((p) => {
+      if (p.id.toLowerCase() === normalized) return true;
+      if (p.baseProductName.toLowerCase() === normalized) return true;
+      if (
+        p.variants.some(
+          (v) =>
+            v.id.toLowerCase() === normalized ||
+            v.sku_id.toLowerCase() === normalized
+        )
+      ) {
+        return true;
+      }
+      return false;
+    }) || null
+  );
 }

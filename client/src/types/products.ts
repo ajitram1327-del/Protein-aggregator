@@ -1,3 +1,11 @@
+export type NutritionQualityState =
+  | "verified"
+  | "observed"
+  | "pending_verification"
+  | "stale"
+  | "unknown"
+  | "not_applicable";
+
 export interface DbPriceListing {
   source: string;
   price_inr: number;
@@ -6,6 +14,7 @@ export interface DbPriceListing {
   is_authorized_seller?: boolean;
   is_in_stock?: boolean;
   in_stock?: boolean;
+  scraped_at?: string;
 }
 
 export interface DbVariant {
@@ -14,14 +23,17 @@ export interface DbVariant {
   flavor: string;
   weight_grams: number;
   lowest_price_inr: number;
-  best_value_metric: number;
-  label_serving_size_g?: number;
-  label_protein_per_serving_g?: number;
-  calculated_purity_pct?: number;
+  best_value_metric: number | null;
+  label_serving_size_g?: number | null;
+  label_protein_per_serving_g?: number | null;
+  calculated_purity_pct?: number | null;
+  nutrition_status?: NutritionQualityState;
   raw_json_data: any;
   price_listings: DbPriceListing[];
   has_bot_reviews?: boolean;
   authenticity_score?: number;
+  last_observed_at?: string;
+  seller_count?: number;
 }
 
 export interface GroupedProduct {
@@ -33,7 +45,10 @@ export interface GroupedProduct {
   imageUrl: string;
   variants: DbVariant[];
   lowestPrice: number;
-  bestValueMetric: number;
+  bestValueMetric: number | null;
+  nutritionStatus?: NutritionQualityState;
+  lastObservedAt?: string;
+  sellerCount?: number;
   isFairyDusted?: boolean;
   labVerified?: boolean;
   trustScore?: number;

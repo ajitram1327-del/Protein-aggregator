@@ -5,15 +5,16 @@ import Link from "next/link";
 export const revalidate = 60; // 60s cache revalidation
 
 interface PageProps {
-  searchParams: Promise<{ category?: string; q?: string; brand?: string }>;
+  searchParams: Promise<{ category?: string; q?: string; search?: string; brand?: string }>;
 }
 
 export default async function CatalogPage({ searchParams }: PageProps) {
   const resolved = await searchParams;
+  const queryParam = resolved.search || resolved.q;
   const { products, errorMsg } = await getGroupedProducts({
     silo: resolved.category,
     brand: resolved.brand,
-    q: resolved.q,
+    q: queryParam,
   });
 
   if (errorMsg) {

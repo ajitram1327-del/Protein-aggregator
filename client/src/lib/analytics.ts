@@ -111,18 +111,20 @@ export function formatInr(amount: number): string {
   return "₹" + Math.round(amount).toLocaleString("en-IN");
 }
 
-export function indexedAgo(isoString: string): string {
+export function indexedAgo(isoString?: string): string {
   if (!isoString) return "recently";
   const date = new Date(isoString);
-  const now = INDEX_DATE.getTime();
-  const diff = now - date.getTime();
-  if (isNaN(diff)) return "recently";
+  const time = date.getTime();
+  if (isNaN(time)) return "recently";
+  const now = Date.now();
+  const diff = Math.max(0, now - time);
   const mins = Math.max(1, Math.round(diff / (1000 * 60)));
   if (mins < 60) return `${mins}m ago`;
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  if (days < 30) return `${days}d ago`;
+  return `${Math.floor(days / 30)}mo ago`;
 }
 
 export interface ComputedMetrics {
@@ -132,7 +134,8 @@ export interface ComputedMetrics {
   secondaryLabel: string;
   secondaryValue: string;
   badge: string | null;
-  badgeTone: 'emerald' | 'amber' | 'cyan' | 'violet';
+  badgeTone: 'emerald' | 'amber' | 'cyan' | 'violet' | 'slate';
+  isPending: boolean;
 }
 
 export function computeCategoryMetrics(
@@ -146,70 +149,92 @@ export function computeCategoryMetrics(
   switch (normCat) {
     case 'creatine': {
       const c = nutrition || {};
-      const totalGrams = c.totalCreatineGrams || fallbackWeightGrams || 250;
+      const totalGrams = Number(c.totalCreatineGrams) || Number(fallbackWeightGrams) || 0;
       const costPer3g = totalGrams > 0 && priceInr > 0 ? (priceInr / totalGrams) * 3 : 0;
       return {
         primaryLabel: '₹ / 3g Dose',
         primaryValue: costPer3g > 0 ? `₹${costPer3g.toFixed(2)}` : '—',
-        numericSortValue: costPer3g,
+        numericSortValue: costPer3g > 0 ? costPer3g : Infinity,
         secondaryLabel: 'Cost / 100g',
         secondaryValue: totalGrams > 0 && priceInr > 0 ? `₹${((priceInr / totalGrams) * 100).toFixed(0)}` : '—',
         badge: c.creatineForm === 'monohydrate_creapure' ? 'Creapure® Certified' : '200 Mesh Micronized',
         badgeTone: 'cyan',
+        isPending: costPer3g <= 0,
       };
     }
 
     case 'pre_workout': {
       const pw = nutrition || {};
-      const servings = pw.servingsPerContainer || Math.max(1, Math.round(fallbackWeightGrams / 12)) || 30;
+      const servings = Number(pw.servingsPerContainer) || (fallbackWeightGrams > 0 ? Math.max(1, Math.round(fallbackWeightGrams / 12)) : 0);
       const costPerServing = servings > 0 && priceInr > 0 ? priceInr / servings : 0;
-      const citrullineMg = pw.lCitrullinePerServingMg || 6000;
-      const caffeineMg = pw.caffeinePerServingMg || 250;
-      const pumpScore = citrullineMg >= 6000 ? 'Clinical Pump (6g+ Citrulline)' : 'Standard Pump';
+      const citrullineMg = Number(pw.lCitrullinePerServingMg) || 0;
+      const caffeineMg = Number(pw.caffeinePerServingMg) || 0;
+      const pumpScore = citrullineMg >= 6000 ? 'Clinical Pump (6g+ Citrulline)' : citrullineMg > 0 ? 'Standard Pump' : 'Pre-Workout Formula';
       return {
         primaryLabel: '₹ / Scoop',
         primaryValue: costPerServing > 0 ? `₹${costPerServing.toFixed(1)}` : '—',
-        numericSortValue: costPerServing,
+        numericSortValue: costPerServing > 0 ? costPerServing : Infinity,
         secondaryLabel: 'Caffeine / Citrulline',
-        secondaryValue: `${caffeineMg}mg / ${(citrullineMg / 1000).toFixed(1)}g`,
+        secondaryValue: caffeineMg > 0 || citrullineMg > 0 ? `${caffeineMg}mg / ${(citrullineMg / 1000).toFixed(1)}g` : 'Formula Profile',
         badge: pumpScore,
         badgeTone: 'amber',
+        isPending: costPerServing <= 0,
       };
     }
 
     case 'mass_gainer': {
       const mg = nutrition || {};
-      const calories = mg.caloriesPerServing || 1100;
-      const servings = mg.servingsPerContainer || Math.max(1, Math.round(fallbackWeightGrams / 150)) || 15;
+      const calories = Number(mg.caloriesPerServing) || 0;
+      const servings = Number(mg.servingsPerContainer) || (fallbackWeightGrams > 0 && calories > 0 ? Math.max(1, Math.round(fallbackWeightGrams / 150)) : 0);
       const totalCalories = calories * servings;
       const costPer1000Kcal = totalCalories > 0 && priceInr > 0 ? (priceInr / totalCalories) * 1000 : 0;
       return {
         primaryLabel: '₹ / 1,000 kcal',
         primaryValue: costPer1000Kcal > 0 ? `₹${costPer1000Kcal.toFixed(1)}` : '—',
-        numericSortValue: costPer1000Kcal,
+        numericSortValue: costPer1000Kcal > 0 ? costPer1000Kcal : Infinity,
         secondaryLabel: 'Carb:Protein Ratio',
-        secondaryValue: `${mg.carbToProteinRatio?.toFixed(1) || '4.0'} : 1`,
-        badge: mg.carbSource === 'complex_oats_barley' ? 'Complex Carb Base' : 'Maltodextrin Base',
+        secondaryValue: mg.carbToProteinRatio ? `${mg.carbToProteinRatio.toFixed(1)} : 1` : '—',
+        badge: mg.carbSource === 'complex_oats_barley' ? 'Complex Carb Base' : 'Calorie Formula',
         badgeTone: 'violet',
+        isPending: costPer1000Kcal <= 0,
       };
     }
 
     case 'protein':
     default: {
       const p = nutrition || {};
-      const servingSize = Math.max(10, p.servingSizeGrams || p.label_serving_size_g || 33);
-      const proteinG = Math.max(5, p.proteinPerServingGrams || p.label_protein_per_serving_g || 24);
-      const servings = p.servingsPerContainer || Math.max(1, Math.round(fallbackWeightGrams / servingSize));
-      const totalProteinG = p.totalProteinPerTubGrams || (proteinG * servings);
+      const servingSize = Number(p.servingSizeGrams || p.label_serving_size_g || 0);
+      const proteinG = Number(p.proteinPerServingGrams || p.label_protein_per_serving_g || 0);
+
+      // Quarantine check: If servingSize or proteinG is missing, zero, or suspicious, do not invent 24g/33g!
+      const isNutritionValid = servingSize > 0 && proteinG > 0 && proteinG <= servingSize;
+      
+      if (!isNutritionValid) {
+        return {
+          primaryLabel: '₹ / g Protein',
+          primaryValue: 'Pending',
+          numericSortValue: Infinity,
+          secondaryLabel: 'Nutrition Status',
+          secondaryValue: 'Pending Verification',
+          badge: 'Pending Verification',
+          badgeTone: 'slate',
+          isPending: true,
+        };
+      }
+
+      const servings = Number(p.servingsPerContainer) || Math.max(1, Math.round(fallbackWeightGrams / servingSize));
+      const totalProteinG = Number(p.totalProteinPerTubGrams) || (proteinG * servings);
       const costPerGram = totalProteinG > 0 && priceInr > 0 ? priceInr / totalProteinG : 0;
+
       return {
         primaryLabel: '₹ / g Protein',
         primaryValue: costPerGram > 0 ? `₹${costPerGram.toFixed(2)}` : '—',
-        numericSortValue: costPerGram,
-        secondaryLabel: 'Cost / 24g Scoop',
-        secondaryValue: costPerGram > 0 ? `₹${(costPerGram * 24).toFixed(1)}` : '—',
+        numericSortValue: costPerGram > 0 ? costPerGram : Infinity,
+        secondaryLabel: `Cost / ${proteinG}g Scoop`,
+        secondaryValue: costPerGram > 0 ? `₹${(costPerGram * proteinG).toFixed(1)}` : '—',
         badge: p.diaasScore ? `DIAAS ${Number(p.diaasScore).toFixed(2)}` : (p.proteinSource === 'whey_isolate' ? '100% Isolate' : 'Pure Protein'),
         badgeTone: 'emerald',
+        isPending: costPerGram <= 0,
       };
     }
   }

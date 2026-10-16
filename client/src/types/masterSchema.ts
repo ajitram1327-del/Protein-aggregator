@@ -9,27 +9,42 @@ export interface PackagingInfo {
   servingSizeGrams: number;
 }
 
+export type NutritionStatus =
+  | "verified"
+  | "observed"
+  | "pending_verification"
+  | "stale"
+  | "unknown"
+  | "not_applicable";
+
 export interface NutritionalProfile {
-  activeIngredientPerServingGrams: number;
-  pdcaasScore: number;
-  bioavailableProteinPerServing: number;
-  proteinPurityPct: number;
-  caloriesPerServing: number;
-  carbsPerServingGrams: number;
+  activeIngredientPerServingGrams: number | null;
+  pdcaasScore?: number | null;
+  bioavailableProteinPerServing: number | null;
+  proteinPurityPct: number | null;
+  caloriesPerServing: number | null;
+  carbsPerServingGrams: number | null;
+  nutritionStatus: NutritionStatus;
+  nutritionStatusReason?: string;
+  diaasScore?: number | null;
+  diaasBasis?: string | null;
+  diaasSourceEvidence?: any;
+  aminoAcidCompletenessStatus?: string | null;
 }
 
 export interface UsefulDoseAnalysis {
-  leucinePerServingGrams: number;
-  meetsMpsThreshold: boolean;
+  leucinePerServingGrams: number | null;
+  meetsMpsThreshold: boolean | null;
   aminoSpikeRisk: boolean;
   fillersDetected: string[];
 }
 
 export interface EqualizerMetrics {
   primaryMetricLabel: string;
-  primaryMetricValue: number;
+  primaryMetricValue: number | null;
   secondaryMetricLabel: string;
-  secondaryMetricValue: number;
+  secondaryMetricValue: number | null;
+  isReliable: boolean;
 }
 
 export interface VendorOffer {
@@ -39,11 +54,15 @@ export interface VendorOffer {
   inStock?: boolean;
   sellerName?: string;
   isAuthorizedSeller?: boolean;
+  observedAt?: string;
 }
 
 export interface PricingSummary {
   lowestPriceInr: number;
   lowestAuthorizedPriceInr?: number;
+  sellerCount: number;
+  lastObservedAt?: string;
+  inStock: boolean;
   vendorOffers: VendorOffer[];
 }
 
@@ -93,19 +112,21 @@ export interface ProductListingView {
   category: string;
   weightGrams: number;
   flavorName: string;
-  purityPct: number;
-  diaasScore: number;
-  effectiveCostPerBioavailableGram: number;
+  purityPct: number | null;
+  diaasScore: number | null;
+  effectiveCostPerBioavailableGram: number | null;
   lowestPriceInr: number;
   bestPlatform: string;
   isEasyDigest: boolean;
   hasFssaiWarning: boolean;
   ocrVerified: boolean;
+  nutritionStatus?: NutritionStatus;
+  lastObservedAt?: string;
   trustScore?: number;
   authenticityScore?: number;
   labVerified?: boolean;
   affiliateUrl?: string;
-  costPer100gProtein?: number;
+  costPer100gProtein?: number | null;
   fairyDusted?: boolean;
   isGlitchPrice?: boolean;
 }

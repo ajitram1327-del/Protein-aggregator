@@ -101,16 +101,25 @@ export default async function ComparePage({ searchParams }: PageProps) {
     const rawUrl = bestOffer?.source_url || bestOffer?.listing_url || '';
     const affiliateUrl = generateAffiliateUrl(rawUrl, platformName);
 
-    // Nutrition values with dummy placeholder fallbacks
-    const servingSize = Math.max(10.0, Number(v.label_serving_size_g || prod.nutrition_serving_size_g) || 33.0);
-    const proteinPerServing = Math.max(5.0, Number(v.label_protein_per_serving_g || prod.nutrition_protein_per_serving_g) || 24.0);
-    const totalServings = Math.max(1, Math.round(weightGrams / servingSize));
-    const diaas = Math.max(0.5, Number(rawAnalytics?.analytics?.diaas_score || prod.baseline_diaas_score) || 1.15);
+    // Nutrition values without synthetic fallbacks
+    const rawServingSize = v.label_serving_size_g || prod.nutrition_serving_size_g || null;
+    const rawProteinPerServing = v.label_protein_per_serving_g || prod.nutrition_protein_per_serving_g || null;
+    const hasValidNutrition = rawServingSize && rawProteinPerServing && rawServingSize > 0 && rawProteinPerServing > 0 && rawProteinPerServing <= rawServingSize;
+
+    const servingSize = hasValidNutrition ? Number(rawServingSize) : 0;
+    const proteinPerServing = hasValidNutrition ? Number(rawProteinPerServing) : 0;
+    const totalServings = hasValidNutrition && servingSize > 0 ? Math.max(1, Math.round(weightGrams / servingSize)) : 0;
+    
+    // DIAAS score adhering to DC-03: must not be fabricated
+    const declaredDiaas = rawAnalytics?.analytics?.diaas_score || prod.baseline_diaas_score || null;
+    const diaas = declaredDiaas && isFinite(declaredDiaas) && declaredDiaas > 0 ? Number(declaredDiaas) : null;
 
     // Pure analytical metrics
-    const purity = purityPct(proteinPerServing, servingSize);
-    const cost100gProt = costPer100gProtein(lowestPrice, totalServings, proteinPerServing);
-    const bioCostPerG = bioavailableCostPerGram(cost100gProt / 100, diaas);
+    const purity = hasValidNutrition ? purityPct(proteinPerServing, servingSize) : null;
+    const cost100gProt = hasValidNutrition && totalServings > 0 ? costPer100gProtein(lowestPrice, totalServings, proteinPerServing) : null;
+    const bioCostPerG = cost100gProt !== null && isFinite(cost100gProt)
+      ? (diaas ? bioavailableCostPerGram(cost100gProt / 100, diaas) : cost100gProt / 100)
+      : null;
 
     // Fairy dusting check
     let ingredientsList: string[] = [];
@@ -125,14 +134,14 @@ export default async function ComparePage({ searchParams }: PageProps) {
     return {
       productId: prod.id || '',
       variantId: v.id,
-      brandName: prod.brand || 'PureSpec',
+      brandName: prod.brand || 'Unknown',
       productName: prod.base_name || 'Protein Powder',
       category: prod.category_silo || prod.category || 'protein',
       weightGrams,
-      flavorName: v.flavor && v.flavor !== 'Varies' ? v.flavor : 'Rich Chocolate',
+      flavorName: v.flavor && v.flavor !== 'Varies' ? v.flavor : 'Standard',
       purityPct: purity,
       diaasScore: diaas,
-      effectiveCostPerBioavailableGram: isFinite(bioCostPerG) ? bioCostPerG : Number(v.best_value_metric) || 1.8,
+      effectiveCostPerBioavailableGram: bioCostPerG,
       lowestPriceInr: lowestPrice,
       bestPlatform: platformName,
       isEasyDigest: Boolean(v.has_digestive_enzymes || v.is_lactose_free),
@@ -142,7 +151,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
       authenticityScore: authScore,
       labVerified: prod.lab_verified ?? false,
       affiliateUrl,
-      costPer100gProtein: isFinite(cost100gProt) ? cost100gProt : 310,
+      costPer100gProtein: cost100gProt,
       fairyDusted: isFairyDusted,
       isGlitchPrice: lowestPrice > 0 && lowestPrice < 800,
     };
@@ -199,8 +208,10 @@ export default async function ComparePage({ searchParams }: PageProps) {
           </div>
           <div className="space-y-3">
             {items.map((item) => {
+              const hasVal = item.effectiveCostPerBioavailableGram !== null && isFinite(item.effectiveCostPerBioavailableGram);
+              const val = hasVal ? (item.effectiveCostPerBioavailableGram as number) : 0;
               const pct = maxCost > 0 ? Math.min(100, Math.round((item.effectiveCostPerBioavailableGram / maxCost) * 100)) : 0;
-              const isBest = item.effectiveCostPerBioavailableGram === lowestEffectiveCost;
+              const isBest = hasVal && val === lowestEffectiveCost;
               return (
                 <div key={item.variantId} className="space-y-1">
                   <div className="flex justify-between text-xs">
@@ -208,13 +219,13 @@ export default async function ComparePage({ searchParams }: PageProps) {
                       {item.brandName} - {item.productName} ({item.flavorName})
                     </span>
                     <span className={isBest ? "font-bold text-emerald-600" : "text-[#4B5563]"}>
-                      ₹{item.effectiveCostPerBioavailableGram.toFixed(2)}/g
+                      {hasVal ? `₹${val.toFixed(2)}/g` : "Pending Verification"}
                       {isBest && " ★ BEST EFFICIENCY"}
                     </span>
                   </div>
                   <div className="w-full bg-[#E5E7EB] h-5 rounded-none overflow-hidden flex">
                     <div
-                      className={`h-full ${isBest ? "bg-emerald-500" : "bg-[#111827]"}`}
+                      className={`h-full ${isBest ? "bg-emerald-500" : hasVal ? "bg-[#111827]" : "bg-slate-300"}`}
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -243,17 +254,20 @@ export default async function ComparePage({ searchParams }: PageProps) {
                 <td className="p-3.5 font-bold bg-[#F9FAFB]">₹/100g Pure Protein</td>
                 {items.map((item) => (
                   <td key={item.variantId} className="p-3.5 font-bold">
-                    ₹{Math.round(item.costPer100gProtein || 0).toLocaleString("en-IN")}
+                    {item.costPer100gProtein !== null && item.costPer100gProtein !== undefined
+                      ? `₹${Math.round(item.costPer100gProtein).toLocaleString("en-IN")}`
+                      : "Pending"}
                   </td>
                 ))}
               </tr>
               <tr>
                 <td className="p-3.5 font-bold bg-[#F9FAFB]">₹/g Bioavailable Protein</td>
                 {items.map((item) => {
-                  const isBest = item.effectiveCostPerBioavailableGram === lowestEffectiveCost;
+                  const hasVal = item.effectiveCostPerBioavailableGram !== null && item.effectiveCostPerBioavailableGram !== undefined;
+                  const isBest = hasVal && item.effectiveCostPerBioavailableGram === lowestEffectiveCost;
                   return (
                     <td key={item.variantId} className={`p-3.5 font-bold ${isBest ? "bg-emerald-50 text-emerald-700" : ""}`}>
-                      ₹{item.effectiveCostPerBioavailableGram.toFixed(2)}/g
+                      {hasVal ? `₹${item.effectiveCostPerBioavailableGram!.toFixed(2)}/g` : "Pending audit"}
                       {isBest && <span className="ml-2 text-[10px] bg-emerald-600 text-white px-1.5 py-0.5">OPTIMAL</span>}
                     </td>
                   );
@@ -271,7 +285,9 @@ export default async function ComparePage({ searchParams }: PageProps) {
                 <td className="p-3.5 font-bold bg-[#F9FAFB]">Purity %</td>
                 {items.map((item) => (
                   <td key={item.variantId} className="p-3.5">
-                    {item.purityPct.toFixed(1)}%
+                    {item.purityPct !== null && item.purityPct !== undefined
+                      ? `${item.purityPct.toFixed(1)}%`
+                      : "Pending audit"}
                   </td>
                 ))}
               </tr>
@@ -279,7 +295,9 @@ export default async function ComparePage({ searchParams }: PageProps) {
                 <td className="p-3.5 font-bold bg-[#F9FAFB]">DIAAS Digestibility</td>
                 {items.map((item) => (
                   <td key={item.variantId} className="p-3.5">
-                    {item.diaasScore.toFixed(2)}
+                    {item.diaasScore !== null && item.diaasScore !== undefined
+                      ? item.diaasScore.toFixed(2)
+                      : "Not available"}
                   </td>
                 ))}
               </tr>
