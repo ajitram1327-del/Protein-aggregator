@@ -110,12 +110,16 @@ export const SneakopediaCard: React.FC<SneakopediaCardProps> = ({
                 <ShieldCheck className="size-3" /> Lab Verified
               </span>
             ) : null}
-            {product.isFairyDusted ? (
+            {product.aminoSpikeRisk ? (
+              <span className="inline-flex items-center gap-1 rounded-xs bg-rose-700 px-2 py-0.5 text-[10px] font-mono font-bold uppercase text-white shadow-xs">
+                <AlertCircle className="size-3" /> Amino Spiked
+              </span>
+            ) : product.isFairyDusted ? (
               <span className="inline-flex items-center gap-1 rounded-xs bg-amber-600 px-2 py-0.5 text-[10px] font-mono font-bold uppercase text-white shadow-xs">
                 <AlertCircle className="size-3" /> Filler Warning
               </span>
             ) : null}
-            {!product.labVerified && !product.isFairyDusted && (
+            {!product.labVerified && !product.isFairyDusted && !product.aminoSpikeRisk && (
               <span className="inline-flex items-center gap-1 rounded-xs bg-slate-200/90 text-slate-700 px-1.5 py-0.5 text-[9px] font-mono font-semibold uppercase">
                 {product.proteinSource || product.categorySilo.replace(/_/g, " ")}
               </span>

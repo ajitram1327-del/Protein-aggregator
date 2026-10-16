@@ -95,10 +95,31 @@ class IngredientAuditor:
         estimated_leucine = leucine_g if (leucine_g is not None and leucine_g > 0) else 2.6
         meets_mps = estimated_leucine >= 2.5 and not amino_spike_risk
 
+        # Extended rules evaluation if module available
+        try:
+            from trust_safety.amino_spiking_rules import AminoSpikingRulesEngine
+            rules_eval = AminoSpikingRulesEngine.evaluate(
+                raw_ingredients=raw_ingredients,
+                declared_leucine_g=leucine_g,
+                category="protein" if is_protein_powder else "general"
+            )
+        except Exception:
+            rules_eval = {
+                "riskLevel": "CONFIRMED_SPIKED" if amino_spike_risk else "CLEAN",
+                "badge": "⚠️ High Amino Spiking Risk" if amino_spike_risk else "✓ Clean Amino Profile",
+                "trustDeduction": 45 if amino_spike_risk else 0,
+                "quarantineRecommended": amino_spike_risk
+            }
+
         return {
             "leucinePerServingGrams": round(estimated_leucine, 2),
             "meetsMpsThreshold": meets_mps,
             "aminoSpikeRisk": amino_spike_risk,
             "spikingAgents": spiking_agents_found,
-            "fillersDetected": fillers_detected
+            "fillersDetected": fillers_detected,
+            "riskLevel": rules_eval.get("riskLevel", "CONFIRMED_SPIKED" if amino_spike_risk else "CLEAN"),
+            "badge": rules_eval.get("badge", "⚠️ High Amino Spiking Risk" if amino_spike_risk else "✓ Clean Amino Profile"),
+            "trustDeduction": rules_eval.get("trustDeduction", 45 if amino_spike_risk else 0),
+            "quarantineRecommended": rules_eval.get("quarantineRecommended", amino_spike_risk),
+            "summary": rules_eval.get("summary", "Amino acid audit complete")
         }

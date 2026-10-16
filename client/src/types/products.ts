@@ -50,6 +50,8 @@ export interface GroupedProduct {
   lastObservedAt?: string;
   sellerCount?: number;
   isFairyDusted?: boolean;
+  aminoSpikeRisk?: boolean;
+  aminoSpikeBadge?: string;
   labVerified?: boolean;
   trustScore?: number;
   labReportUrl?: string;

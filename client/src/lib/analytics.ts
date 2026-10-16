@@ -72,6 +72,82 @@ export function checkFairyDusting(ingredients: string[]): { isFairyDusted: boole
   return { isFairyDusted: false };
 }
 
+export interface AminoSpikeAudit {
+  isSpiked: boolean;
+  riskLevel: "CLEAN" | "SUSPECTED_SPIKING" | "CONFIRMED_SPIKED";
+  badge: string;
+  detectedAgents: string[];
+  reason?: string;
+  meetsMps: boolean;
+  leucineG?: number;
+}
+
+export function auditAminoSpiking(
+  ingredients: string[] | string,
+  leucineG?: number | null,
+  proteinG?: number | null
+): AminoSpikeAudit {
+  const ingList = Array.isArray(ingredients)
+    ? ingredients
+    : (ingredients || "").split(/[,|\n]/).map((s) => s.trim()).filter(Boolean);
+
+  const spikingAgents = [
+    "glycine", "l-glycine",
+    "taurine", "l-taurine",
+    "creatine", "creatine monohydrate",
+    "glutamine", "l-glutamine",
+    "alanine", "l-alanine",
+    "proline", "l-proline",
+    "arginine", "l-arginine",
+  ];
+
+  const detected: string[] = [];
+  const normalized = ingList.map((i) => i.toLowerCase());
+
+  for (const agent of spikingAgents) {
+    if (normalized.some((ing) => ing.includes(agent))) {
+      detected.push(agent);
+    }
+  }
+
+  const effectiveProt = proteinG && proteinG > 0 ? proteinG : 24.0;
+  const effectiveLeucine = leucineG && leucineG > 0 ? leucineG : detected.length > 0 ? effectiveProt * 0.065 : effectiveProt * 0.108;
+  const meetsMps = effectiveLeucine >= 2.5 && detected.length === 0;
+
+  if (detected.length >= 2) {
+    return {
+      isSpiked: true,
+      riskLevel: "CONFIRMED_SPIKED",
+      badge: "⚠️ High Amino Spiking Risk",
+      detectedAgents: detected,
+      reason: `Added free-form aminos (${detected.join(", ")}) detected inflating nitrogen content`,
+      meetsMps: false,
+      leucineG: Math.round(effectiveLeucine * 10) / 10,
+    };
+  }
+
+  if (detected.length === 1) {
+    return {
+      isSpiked: true,
+      riskLevel: "SUSPECTED_SPIKING",
+      badge: "⚠️ Added Free-Form Aminos",
+      detectedAgents: detected,
+      reason: `Added free-form ${detected[0]} detected`,
+      meetsMps: false,
+      leucineG: Math.round(effectiveLeucine * 10) / 10,
+    };
+  }
+
+  return {
+    isSpiked: false,
+    riskLevel: "CLEAN",
+    badge: "✓ Clean Amino Profile",
+    detectedAgents: [],
+    meetsMps,
+    leucineG: Math.round(effectiveLeucine * 10) / 10,
+  };
+}
+
 export function authenticityScore(stats?: ReviewAuditSummary): number {
   if (!stats) return 100;
   const deduction =

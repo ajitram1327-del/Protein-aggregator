@@ -186,6 +186,12 @@ export default async function ProductDetailPage({ params, searchParams }: Produc
                     {product.isFairyDusted ? "Fillers Detected" : "Clean Ingredient Base ✓"}
                   </span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Amino Spiking:</span>
+                  <span className={product.aminoSpikeRisk ? "text-rose-700 font-bold" : "text-emerald-700 font-bold"}>
+                    {product.aminoSpikeRisk ? "High Risk Detected ⚠️" : "Clean Amino Profile ✓"}
+                  </span>
+                </div>
                 {product.labReportUrl && (
                   <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
                     <span className="text-slate-500">Certificate:</span>
