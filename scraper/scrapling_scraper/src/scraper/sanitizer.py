@@ -45,6 +45,13 @@ MULTI_WEIGHT_PATTERN = re.compile(
 )
 
 
+try:
+    from src.pipeline.catalog_taxonomy import StatefulTitleParser, snap_to_canonical_weight
+except ImportError:
+    StatefulTitleParser = None
+    snap_to_canonical_weight = None
+
+
 def is_promotional_combo(title: str) -> Tuple[bool, Optional[str]]:
     """
     Evaluates product title against blacklist patterns.
@@ -52,6 +59,11 @@ def is_promotional_combo(title: str) -> Tuple[bool, Optional[str]]:
     """
     if not title:
         return False, None
+
+    if StatefulTitleParser is not None:
+        parsed = StatefulTitleParser.parse(title)
+        if parsed.is_bundle:
+            return True, f"BUNDLE:{parsed.bundle_reason}"
 
     if MULTI_WEIGHT_PATTERN.search(title):
         return True, "MULTI_WEIGHT_BUNDLE"
@@ -69,12 +81,19 @@ def extract_normalized_grams(
     description: Optional[str] = None
 ) -> Optional[int]:
     """
-    4-Tier Cascading Weight Normalization Engine:
+    4-Tier Cascading Weight Normalization Engine + Stateful Consumer:
+    Tier 0: Stateful Hierarchical Consume-and-Strip Parser
     Tier 1: Explicit Grams/Kilograms in title or raw_weight_field (Metric)
     Tier 2: Imperial Lbs converted to Metric Grams (453.59237g per lb, rounded)
     Tier 3: Servings x Serving Size (e.g. "60 Servings, 30g scoop")
     Tier 4: Regex match on product description body
     """
+    # Tier 0: Stateful parser with dosage-stripping and canonical snapping
+    if StatefulTitleParser is not None and title:
+        parsed = StatefulTitleParser.parse(title)
+        if parsed.bucketed_weight_g and parsed.bucketed_weight_g > 0:
+            return parsed.bucketed_weight_g
+
     search_corpus = [
         raw_weight_field or "",
         title or "",

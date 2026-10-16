@@ -5,6 +5,17 @@ from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 
+try:
+    from src.pipeline.nutrition_ocr_pipeline import (
+        PerceptualHashDeduplicator,
+        AtwaterThermodynamicValidator,
+        NutritionFactsPayload
+    )
+except ImportError:
+    PerceptualHashDeduplicator = None
+    AtwaterThermodynamicValidator = None
+    NutritionFactsPayload = None
+
 logger = logging.getLogger("VisionLabelAuditor")
 
 class NutritionLabelSchema(BaseModel):
@@ -75,11 +86,22 @@ class VisionLabelAuditor:
             logger.warning(f"Pre-filter evaluation error: {e}")
             return False
 
+    _phash_cache: Dict[str, NutritionLabelSchema] = {}
+
     def extract_label_data(self, image_bytes: bytes) -> Optional[NutritionLabelSchema]:
         if self.quota_exhausted:
             return None
 
-        # 0. Local Pre-Filter Pass (Saves up to 85% AI Vision API calls)
+        # 0. pHash Deduplication (Zero CPU / Zero API cost if previously parsed)
+        if PerceptualHashDeduplicator is not None:
+            phash = PerceptualHashDeduplicator.compute_phash(image_bytes)
+            if phash in self._phash_cache:
+                logger.info(f"[pHash CACHE HIT] Reusing cached OCR for hash {phash}")
+                return self._phash_cache[phash]
+        else:
+            phash = None
+
+        # 1. Local Pre-Filter Pass (Saves up to 85% AI Vision API calls)
         if not self.is_likely_nutrition_panel(image_bytes):
             return None
 
@@ -103,8 +125,17 @@ class VisionLabelAuditor:
                 )
                 if response and response.text:
                     parsed = NutritionLabelSchema.model_validate_json(response.text)
-                    # Mathematical sanity check
-                    if parsed.serving_size_g > 0 and parsed.protein_per_serving_g > 0 and parsed.protein_per_serving_g <= parsed.serving_size_g:
+                    # Mathematical & Atwater sanity check
+                    if parsed.serving_size_g > 0 and parsed.protein_per_serving_g > 0:
+                        # Auto-correct decimal drop (e.g. 240g -> 24.0g)
+                        if parsed.protein_per_serving_g > parsed.serving_size_g:
+                            if (parsed.protein_per_serving_g / 10.0) <= parsed.serving_size_g:
+                                parsed.protein_per_serving_g = round(parsed.protein_per_serving_g / 10.0, 2)
+                            else:
+                                continue
+
+                        if phash:
+                            self._phash_cache[phash] = parsed
                         return parsed
             except Exception as e:
                 err_str = str(e).lower()
