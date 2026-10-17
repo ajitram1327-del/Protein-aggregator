@@ -161,7 +161,31 @@ def run_deduplication(apply_changes: bool = False, client: Optional[Client] = No
         return
 
     products = fetch_all_products(active_client)
+    print(f"Total products fetched: {len(products)}")
     
+    print("Bulk-fetching variants and price listings into memory...")
+    product_variants_map = defaultdict(list)
+    offset = 0
+    while True:
+        v_batch = active_client.table('variants').select('id, product_id, flavor, weight_grams, lowest_price_inr, servings_count').range(offset, offset + 999).execute().data or []
+        for v in v_batch:
+            if v.get('product_id'):
+                product_variants_map[v['product_id']].append(v)
+        if len(v_batch) < 1000:
+            break
+        offset += 1000
+
+    product_listings_map = defaultdict(list)
+    offset = 0
+    while True:
+        pl_batch = active_client.table('price_listings').select('id, variant_id, product_id, source, current_price_inr').range(offset, offset + 999).execute().data or []
+        for pl in pl_batch:
+            if pl.get('product_id'):
+                product_listings_map[pl['product_id']].append(pl)
+        if len(pl_batch) < 1000:
+            break
+        offset += 1000
+
     # 1. Parse and extract metadata for each product
     parsed_products: Dict[str, Dict[str, Any]] = {}
     combos_to_purge = []
@@ -179,12 +203,9 @@ def run_deduplication(apply_changes: bool = False, client: Optional[Client] = No
             combos_to_purge.append((p, norm_info.bundle_reason or stateful_info.bundle_reason))
             continue
 
-        # Fetch variants and listings for scoring
-        v_res = active_client.table('variants').select('id, flavor, weight_grams, lowest_price_inr, servings_count').eq('product_id', pid).execute()
-        variants = v_res.data or []
-
-        pl_res = active_client.table('price_listings').select('id, variant_id, source, current_price_inr').eq('product_id', pid).execute()
-        listings = pl_res.data or []
+        # In-memory fast lookup for variants and listings
+        variants = product_variants_map.get(pid, [])
+        listings = product_listings_map.get(pid, [])
 
         # Extract OCR protein concentration if present
         serving_size = float(p.get('nutrition_serving_size_g') or 0.0)
@@ -369,9 +390,79 @@ def run_deduplication(apply_changes: bool = False, client: Optional[Client] = No
             total_variants_unified += res_data.get('variants_deleted', 0)
             total_listings_relinked += res_data.get('listings_relinked', 0)
         except Exception as e:
-            print(f"  [RPC ERROR] Fallback execution: {e}")
-            # Fallback manual merge if RPC not yet deployed
-            pass
+            print(f"  [RPC NOT FOUND - EXECUTING PYTHON FALLBACK MERGE]: {e}")
+            products_deleted = 0
+            variants_deleted = 0
+            listings_relinked = 0
+
+            # Step A: Update OCR rollup on master product if available
+            if ocr_rollup:
+                try:
+                    update_dict = {}
+                    if ocr_rollup.get("serving_size_g"):
+                        update_dict["nutrition_serving_size_g"] = ocr_rollup["serving_size_g"]
+                    if ocr_rollup.get("protein_per_serving_g"):
+                        update_dict["nutrition_protein_per_serving_g"] = ocr_rollup["protein_per_serving_g"]
+                    if update_dict:
+                        active_client.table("products").update(update_dict).eq("id", master_pid).execute()
+                except Exception as oe:
+                    print(f"    [WARN] Failed to rollup nutrition to master: {oe}")
+
+            # Step B: Unified variant mappings
+            mapped_src_ids = set()
+            for mapping in variant_mappings:
+                src_vid = mapping.get("duplicate_variant_id") or mapping.get("source_variant_id")
+                tgt_vid = mapping.get("target_variant_id")
+                mapped_src_ids.add(src_vid)
+
+                # Re-link or clean price listings
+                try:
+                    src_listings = active_client.table("price_listings").select("*").eq("variant_id", src_vid).execute().data or []
+                    tgt_listings = active_client.table("price_listings").select("*").eq("variant_id", tgt_vid).execute().data or []
+                    tgt_platforms = {tl.get("platform_name") or tl.get("source") for tl in tgt_listings}
+
+                    for sl in src_listings:
+                        pname = sl.get("platform_name") or sl.get("source")
+                        if pname in tgt_platforms:
+                            # Target already has listing for this platform; delete the redundant source listing
+                            active_client.table("price_listings").delete().eq("id", sl["id"]).execute()
+                        else:
+                            # Re-link source listing to target variant
+                            active_client.table("price_listings").update({"variant_id": tgt_vid, "product_id": master_pid}).eq("id", sl["id"]).execute()
+                            listings_relinked += 1
+
+                    # Delete mapped source variant
+                    active_client.table("variants").delete().eq("id", src_vid).execute()
+                    variants_deleted += 1
+                except Exception as ve:
+                    print(f"    [WARN] Failed unifying variant {src_vid} -> {tgt_vid}: {ve}")
+
+            # Step C: Re-point unmapped variants of duplicate products to master product
+            for dup_pid in dup_pids:
+                try:
+                    rem_variants = active_client.table("variants").select("id").eq("product_id", dup_pid).execute().data or []
+                    for rv in rem_variants:
+                        if rv["id"] not in mapped_src_ids:
+                            active_client.table("variants").update({"product_id": master_pid}).eq("id", rv["id"]).execute()
+                            try:
+                                active_client.table("price_listings").update({"product_id": master_pid}).eq("variant_id", rv["id"]).execute()
+                            except Exception:
+                                pass
+                except Exception as re_e:
+                    print(f"    [WARN] Failed re-pointing remaining variants for product {dup_pid}: {re_e}")
+
+            # Step D: Delete duplicate products
+            for dup_pid in dup_pids:
+                try:
+                    active_client.table("products").delete().eq("id", dup_pid).execute()
+                    products_deleted += 1
+                except Exception as pe:
+                    print(f"    [WARN] Failed deleting duplicate product {dup_pid}: {pe}")
+
+            print(f"  [FALLBACK SUCCESS] Products deleted: {products_deleted}, Variants deleted: {variants_deleted}, Listings relinked: {listings_relinked}")
+            total_products_merged += products_deleted
+            total_variants_unified += variants_deleted
+            total_listings_relinked += listings_relinked
 
     # 5. Purge promotional combo products if applied
     if apply_changes and combos_to_purge:
