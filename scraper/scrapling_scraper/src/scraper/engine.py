@@ -385,13 +385,32 @@ class ProteIndexOrchestrator:
             label_protein_g = min(24.0, serving_size_g)
             total_servings = max(1, int(weight_g / serving_size_g))
 
-            analytics_metrics = EqualizerEngine.calculate_metrics(
-                category=psource,
-                price_inr=price_inr,
-                label_protein_g=label_protein_g,
-                serving_size_g=serving_size_g,
-                total_servings=total_servings
-            )
+            try:
+                analytics_metrics = EqualizerEngine.calculate_metrics(
+                    category=psource,
+                    price_inr=price_inr,
+                    label_protein_g=label_protein_g,
+                    serving_size_g=serving_size_g,
+                    total_servings=total_servings
+                )
+            except ValueError as e:
+                logger.error(f"[QUARANTINE TRIGGERED] Data integrity violation: {e}")
+                supabase.table("staging_quarantine").insert({
+                    "platform": platform_name,
+                    "brand_hint": brand,
+                    "raw_title": product_name,
+                    "raw_price": price_inr,
+                    "raw_url": product_url,
+                    "detected_weight_g": int(weight_g),
+                    "failure_category": "SCRAPER_PARSE_ERROR",
+                    "details": {
+                        "quarantine_reason": str(e),
+                        "serving_size_g": serving_size_g,
+                        "label_protein_g": label_protein_g,
+                        "total_servings": total_servings
+                    }
+                }).execute()
+                return None
 
             v_res = supabase.table("variants").select("id, variant_hash").eq("variant_hash", v_hash).execute()
             
@@ -417,13 +436,33 @@ class ProteIndexOrchestrator:
                     serving_size_g = label_ocr_data.serving_size_g
                     label_protein_g = label_ocr_data.protein_per_serving_g
                     total_servings = label_ocr_data.total_servings
-                    analytics_metrics = EqualizerEngine.calculate_metrics(
-                        category=psource,
-                        price_inr=price_inr,
-                        label_protein_g=label_protein_g,
-                        serving_size_g=serving_size_g,
-                        total_servings=total_servings
-                    )
+                    try:
+                        analytics_metrics = EqualizerEngine.calculate_metrics(
+                            category=psource,
+                            price_inr=price_inr,
+                            label_protein_g=label_protein_g,
+                            serving_size_g=serving_size_g,
+                            total_servings=total_servings
+                        )
+                    except ValueError as e:
+                        logger.error(f"[QUARANTINE TRIGGERED] OCR integrity violation: {e}")
+                        supabase.table("staging_quarantine").insert({
+                            "platform": platform_name,
+                            "brand_hint": brand,
+                            "raw_title": product_name,
+                            "raw_price": price_inr,
+                            "raw_url": product_url,
+                            "detected_weight_g": int(weight_g),
+                            "failure_category": "SCRAPER_PARSE_ERROR",
+                            "details": {
+                                "quarantine_reason": f"OCR extraction error: {e}",
+                                "serving_size_g": serving_size_g,
+                                "label_protein_g": label_protein_g,
+                                "total_servings": total_servings,
+                                "ocr_data": label_ocr_data.model_dump() if label_ocr_data else None
+                            }
+                        }).execute()
+                        return None
 
                 raw_json = json.dumps({
                     "description": raw_description[:500],

@@ -81,55 +81,42 @@ def extract_normalized_grams(
     description: Optional[str] = None
 ) -> Optional[int]:
     """
-    4-Tier Cascading Weight Normalization Engine + Stateful Consumer:
-    Tier 0: Stateful Hierarchical Consume-and-Strip Parser
-    Tier 1: Explicit Grams/Kilograms in title or raw_weight_field (Metric)
-    Tier 2: Imperial Lbs converted to Metric Grams (453.59237g per lb, rounded)
-    Tier 3: Servings x Serving Size (e.g. "60 Servings, 30g scoop")
-    Tier 4: Regex match on product description body
+    Tiered regex extraction with explicit noise cancellation.
+    Strips out micro-dosages (mg, mcg) and per-serving callouts before matching tub weight.
     """
-    # Tier 0: Stateful parser with dosage-stripping and canonical snapping
+    # 0. Primary pass with StatefulTitleParser if available
     if StatefulTitleParser is not None and title:
         parsed = StatefulTitleParser.parse(title)
         if parsed.bucketed_weight_g and parsed.bucketed_weight_g > 0:
             return parsed.bucketed_weight_g
 
-    search_corpus = [
-        raw_weight_field or "",
-        title or "",
-        description or ""
-    ]
+    raw_candidates = [raw_weight_field or "", title or "", description or ""]
 
-    # Tier 1: Direct Metric (kg / g)
-    for text in search_corpus:
+    # Pre-clean corpus: Strip serving noise to prevent "5g Creatine" or "1000mg" from corrupting weight
+    search_corpus = []
+    for text in raw_candidates:
         if not text:
             continue
+        cleaned = text
+        # Strip micro dosages (e.g. 1000mg, 500mcg)
+        cleaned = re.sub(r'(?i)\b\d+(?:\.\d+)?\s*(?:mg|mcg)\b', ' ', cleaned)
+        # Strip common additive callouts (e.g. "with 5g Creatine", "5.5g BCAA")
+        cleaned = re.sub(r'(?i)\b(?:\d+(?:\.\d+)?\s*g\s*(?:creatine|bcaa|glutamine|protein|leucine))\b', ' ', cleaned)
+        search_corpus.append(cleaned)
 
-        # Look for KG (handles decimal e.g., 2.27 kg, 1.0 kg, 4kg)
+    # 1. Metric: Kilograms (Priority 1)
+    for text in search_corpus:
         kg_match = re.search(r'(?i)\b(\d+(?:\.\d+)?)\s*k(?:ilo)?g(?:s|ram|rams)?\b', text)
         if kg_match:
             try:
                 kg_val = float(kg_match.group(1))
-                # Bounds check: Single supplement SKU is between 0.1kg and 25kg
                 if 0.1 <= kg_val <= 25.0:
                     return int(round(kg_val * 1000.0))
             except (ValueError, TypeError):
                 pass
 
-        # Look for Grams (e.g., 500g, 1000 grams, 250 gm)
-        g_match = re.search(r'(?i)\b(\d+(?:\.\d+)?)\s*(?:g|gm|gms|gram|grams)\b', text)
-        if g_match:
-            try:
-                g_val = float(g_match.group(1))
-                if 50.0 <= g_val <= 25000.0:
-                    return int(round(g_val))
-            except (ValueError, TypeError):
-                pass
-
-    # Tier 2: Imperial Lbs (e.g., 2 lbs, 5.0 lb, 10 lbs)
+    # 2. Imperial: Pounds (Priority 2)
     for text in search_corpus:
-        if not text:
-            continue
         lb_match = re.search(r'(?i)\b(\d+(?:\.\d+)?)\s*(?:lbs?|pounds?)\b', text)
         if lb_match:
             try:
@@ -139,10 +126,20 @@ def extract_normalized_grams(
             except (ValueError, TypeError):
                 pass
 
-    # Tier 3: Servings count * scoop size (e.g. "60 Servings", "Serving Size: 33g")
+    # 3. Metric: Grams (Priority 3 - Floor set to 150g to ignore single scoops/micro packs)
     for text in search_corpus:
-        if not text:
-            continue
+        g_match = re.search(r'(?i)\b(\d+(?:\.\d+)?)\s*(?:g|gm|gms|gram|grams)\b', text)
+        if g_match:
+            try:
+                g_val = float(g_match.group(1))
+                # Enforce physical tub floor of 150g to prevent capturing leftover additive noise
+                if 150.0 <= g_val <= 25000.0:
+                    return int(round(g_val))
+            except (ValueError, TypeError):
+                pass
+
+    # 4. Servings x Serving Size Fallback
+    for text in search_corpus:
         servings_match = re.search(r'(?i)\b(\d+)\s*servings\b', text)
         scoop_match = re.search(r'(?i)\b(?:serving\s*size|scoop|per\s*serving)[\s:]*(\d+(?:\.\d+)?)\s*g\b', text)
         if servings_match and scoop_match:
@@ -150,7 +147,7 @@ def extract_normalized_grams(
                 servings = int(servings_match.group(1))
                 scoop = float(scoop_match.group(1))
                 total_grams = servings * scoop
-                if 100.0 <= total_grams <= 25000.0:
+                if 150.0 <= total_grams <= 25000.0:
                     return int(round(total_grams))
             except (ValueError, TypeError):
                 pass

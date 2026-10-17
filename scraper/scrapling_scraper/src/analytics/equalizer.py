@@ -51,14 +51,12 @@ class EqualizerEngine:
         label_protein_g: float, 
         serving_size_g: float, 
         total_servings: int,
-        unflavored_cost_per_g: float = None
+        unflavored_cost_per_g: Optional[float] = None
     ) -> dict:
         """
-        Original Core Equalizer Metric for Protein Silo
-        Preserved with 100% backwards compatibility for existing scraper workers.
-        Guarded against negative values, division-by-zero, and extreme prices.
+        Computes yield and economic intelligence with strict biological guardrails.
+        Raises ValueError on physical or logical data corruption.
         """
-        # Standardize category key
         cat_key = str(category or "").lower().replace(" ", "_")
         diaas = cls.DIAAS_INDEX.get(cat_key, 0.80)
         
@@ -67,14 +65,36 @@ class EqualizerEngine:
         safe_serving_size = max(0.0, cls._safe_float(serving_size_g, 0.0))
         safe_servings = max(0, cls._safe_int(total_servings, 0))
 
+        # --- THE PHYSICAL BOUNDS AUDIT ---
+        if safe_serving_size <= 0:
+            raise ValueError("DATA CORRUPTION: Serving size must be greater than 0g.")
+
+        # Guardrail 1: Conservation of mass enforcement
+        if safe_protein > safe_serving_size:
+            raise ValueError(
+                f"PHYSICAL IMPOSSIBILITY: Protein ({safe_protein}g) exceeds serving size ({safe_serving_size}g). "
+                f"OCR columns are likely inverted."
+            )
+
+        # Guardrail 2: Biological ceiling for natural protein powders
+        raw_purity = (safe_protein / safe_serving_size) * 100
+        if cat_key == "protein" and raw_purity > 96.0:
+            raise ValueError(
+                f"BIOLOGICAL VIOLATION: Protein purity ({raw_purity:.1f}%) exceeds the 96% physical processing limit "
+                f"for natural derivatives."
+            )
+
+        # Clean, deterministic calculations
         absorbed_protein_per_serving = round(safe_protein * diaas, 2)
         total_absorbed_protein = round(absorbed_protein_per_serving * safe_servings, 2)
         
-        effective_cost_per_g = round(safe_price / total_absorbed_protein, 2) if total_absorbed_protein > 0 and safe_price > 0 else 0.0
+        effective_cost_per_g = (
+            round(safe_price / total_absorbed_protein, 2) 
+            if total_absorbed_protein > 0 and safe_price > 0 
+            else 0.0
+        )
         
-        # Purity cannot exceed 100% (Rule 4 in PRD)
-        raw_purity = (safe_protein / safe_serving_size) * 100 if safe_serving_size > 0 else 0.0
-        purity_pct = min(100.0, max(0.0, round(raw_purity, 2)))
+        purity_pct = round(raw_purity, 2)
 
         flavor_tax_pct = 0.0
         safe_unflavored = cls._safe_float(unflavored_cost_per_g, 0.0) if unflavored_cost_per_g is not None else 0.0
