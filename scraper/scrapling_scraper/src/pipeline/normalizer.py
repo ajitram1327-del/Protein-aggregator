@@ -78,12 +78,23 @@ class VariantNormalizer:
     def parse_weight(cls, raw_title: Optional[str], default: Optional[int] = 1000) -> Optional[int]:
         """
         Extracts total weight from title and standardizes to integer grams.
-        Handles kg, g, gm, lbs, lb, oz, fl oz, ml, and multipacks (e.g. '2 x 1kg', 'Pack of 2 (1kg each)').
-        Strips marketing nutrient claims (e.g. '65g Protein', '24g Protein per serving') before matching.
+        Leverages StatefulTitleParser (Hierarchical consume-and-strip with canonical snapping)
+        with regex fallback.
         """
         text = cls._clean_title(raw_title)
         if not text:
             return default
+
+        # Delegate to high-precision StatefulTitleParser when available
+        try:
+            from src.pipeline.catalog_taxonomy import StatefulTitleParser
+            parsed = StatefulTitleParser.parse(text)
+            if parsed.bucketed_weight_g and parsed.bucketed_weight_g > 0:
+                return parsed.bucketed_weight_g
+            if parsed.raw_extracted_weight_g and parsed.raw_extracted_weight_g > 0:
+                return int(round(parsed.raw_extracted_weight_g))
+        except (ImportError, Exception):
+            pass
 
         # Strip marketing nutrient claims so '65g Protein' is not misidentified as tub weight
         for pat in cls.NUTRIENT_CLAIM_PATTERNS:
@@ -178,8 +189,6 @@ class VariantNormalizer:
         # Plausibility sanity bounds (10g to 50kg)
         if total_grams <= 0 or total_grams > 50000:
             return default
-
-        return total_grams
 
         return total_grams
 
