@@ -210,7 +210,7 @@ export interface ComputedMetrics {
   secondaryLabel: string;
   secondaryValue: string;
   badge: string | null;
-  badgeTone: 'emerald' | 'amber' | 'cyan' | 'violet' | 'slate';
+  badgeTone: 'emerald' | 'amber' | 'cyan' | 'violet' | 'slate' | 'rose';
   isPending: boolean;
 }
 

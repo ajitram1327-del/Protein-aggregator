@@ -216,7 +216,8 @@ export default async function ComparePage({ searchParams }: PageProps) {
           <div className="space-y-3">
             {items.map((item) => {
               const hasVal = item.effectiveCostPerBioavailableGram !== null && isFinite(item.effectiveCostPerBioavailableGram);
-              const pct = maxCost > 0 ? Math.min(100, Math.round((item.effectiveCostPerBioavailableGram / maxCost) * 100)) : 0;
+              const val = hasVal && item.effectiveCostPerBioavailableGram !== null ? item.effectiveCostPerBioavailableGram : 0;
+              const pct = maxCost > 0 ? Math.min(100, Math.round((val / maxCost) * 100)) : 0;
               const isBest = hasVal && val === lowestEffectiveCost;
               return (
                 <div key={item.variantId} className="space-y-1">

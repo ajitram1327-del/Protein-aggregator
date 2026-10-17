@@ -1,4 +1,4 @@
-import { GroupedProduct, DbVariant } from "@/components/ProductBrowser";
+import { GroupedProduct, DbVariant } from "@/types/products";
 import { MasterUniversalSKU } from "@/types/masterSchema";
 import { GET } from "@/app/api/products/route";
 import { NextRequest } from "next/server";

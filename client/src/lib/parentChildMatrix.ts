@@ -5,7 +5,7 @@
  * and MerchantListing order books, providing unit economics and flavor tax arbitrage.
  */
 
-import { GroupedProduct, DbVariant, DbPriceListing } from "@/components/ProductBrowser";
+import { GroupedProduct, DbVariant, DbPriceListing } from "@/types/products";
 import { formatInr } from "./analytics";
 
 // ==========================================
