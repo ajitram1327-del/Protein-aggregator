@@ -383,6 +383,7 @@ class ProteIndexOrchestrator:
             # Standard baseline nutrition values
             serving_size_g = 33.0
             label_protein_g = min(24.0, serving_size_g)
+            total_servings = max(1, int(round(float(weight_g) / serving_size_g))) if weight_g > 0 else 30
             # --- GUARDRAIL: MULTI-VARIANT PRICE MISMATCH CHECK ---
             current_price_per_g = price_inr / max(1.0, float(weight_g))
             is_price_swapped = False
@@ -602,6 +603,10 @@ class ProteIndexOrchestrator:
                     try:
                         title = p.get("title", "")
                         if not TARGET_FILTER.search(title) or JUNK_FILTER.search(title):
+                            continue
+
+                        is_bundle, _ = CanonicalProductNormalizer.check_is_bundle(title)
+                        if is_bundle:
                             continue
 
                         images = p.get("images", [])

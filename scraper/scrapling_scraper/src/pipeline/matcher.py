@@ -618,3 +618,30 @@ class MasterCatalogMatcher:
             print(f"[LLM Disambiguator Error]: {e}")
 
         return None
+
+
+def insert_quarantine_product(
+    platform: str,
+    raw_title: str,
+    raw_price: float,
+    raw_url: str,
+    detected_brand: str = "",
+    detected_weight_g: int = 0,
+    failure_reason: str = "UNMATCHED_MARKETPLACE_LISTING"
+):
+    """Safely stages ambiguous or unresolvable scraped listings to staging_quarantine table."""
+    if not supabase:
+        return
+    try:
+        supabase.table("staging_quarantine").insert({
+            "platform": platform,
+            "brand_hint": detected_brand,
+            "raw_title": raw_title,
+            "raw_price": raw_price,
+            "raw_url": raw_url,
+            "detected_weight_g": detected_weight_g,
+            "failure_category": "SCRAPER_PARSE_ERROR",
+            "details": {"failure_reason": failure_reason}
+        }).execute()
+    except Exception as e:
+        pass
