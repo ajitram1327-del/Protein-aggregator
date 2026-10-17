@@ -288,7 +288,7 @@ def build_marketplace_targets() -> List[Dict[str, Any]]:
 MARKETPLACE_TARGETS = build_marketplace_targets()
 
 TARGET_FILTER = re.compile(
-    r"\b(?:whey|isolate|casein|plant\s*protein|vegan\s*protein|pea\s*protein|soy\s*protein|yeast\s*protein|"
+    r"\b(?:whey|isolate|casein|protein\s*powder|plant\s*protein|vegan\s*protein|pea\s*protein|soy\s*protein|yeast\s*protein|"
     r"creatine|creapure|mass\s*gainer|weight\s*gainer|pre\s*workout|preworkout|pump|"
     r"wafers?|protein\s*bars?|energy\s*bars?|protein\s*cookies?|protein\s*brownies?|protein\s*bites?|protein\s*chips?|protein\s*granola)\b",
     re.I

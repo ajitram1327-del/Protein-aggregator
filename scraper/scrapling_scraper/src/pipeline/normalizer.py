@@ -89,10 +89,11 @@ class VariantNormalizer:
         try:
             from src.pipeline.catalog_taxonomy import StatefulTitleParser
             parsed = StatefulTitleParser.parse(text)
-            if parsed.bucketed_weight_g and parsed.bucketed_weight_g > 0:
-                return parsed.bucketed_weight_g
+            pack_cnt = int(parsed.pack_count) if (parsed.pack_count and parsed.pack_count > 1) else 1
             if parsed.raw_extracted_weight_g and parsed.raw_extracted_weight_g > 0:
-                return int(round(parsed.raw_extracted_weight_g))
+                return int(round(parsed.raw_extracted_weight_g * pack_cnt))
+            if parsed.bucketed_weight_g and parsed.bucketed_weight_g > 0:
+                return int(round(parsed.bucketed_weight_g * pack_cnt))
         except (ImportError, Exception):
             pass
 
