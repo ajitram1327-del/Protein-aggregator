@@ -380,15 +380,25 @@ class ProteIndexOrchestrator:
             v_hash = norm.variant_hash
             sku_id = f"{brand.lower().replace(' ', '')[:8]}-{flavor[:6]}-{weight_g}g-{v_hash[:6]}"
 
-            # Standard baseline nutrition values
-            serving_size_g = 33.0
-            label_protein_g = min(24.0, serving_size_g)
-            total_servings = max(1, int(round(float(weight_g) / serving_size_g))) if weight_g > 0 else 30
+            # Strict category-aligned deterministic baseline nutrition values
+            silo_lower = str(silo or "").lower()
+            if silo_lower == "creatine":
+                serving_size_g = 3.0
+                label_protein_g = 0.0  # Creatine has 0g protein, 3g pure creatine
+                total_servings = max(1, int(round(float(weight_g) / serving_size_g))) if weight_g > 0 else 100
+            elif silo_lower in ("mass_gainer", "mass_gainers", "gainer"):
+                serving_size_g = 100.0
+                label_protein_g = 20.0
+                total_servings = max(1, int(round(float(weight_g) / serving_size_g))) if weight_g > 0 else 10
+            else:
+                serving_size_g = 30.0
+                label_protein_g = min(24.0, serving_size_g)  # Deterministic 80.0% benchmark purity
+                total_servings = max(1, int(round(float(weight_g) / serving_size_g))) if weight_g > 0 else 30
+
             # --- GUARDRAIL: MULTI-VARIANT PRICE MISMATCH CHECK ---
-            current_price_per_g = price_inr / max(1.0, float(weight_g))
+            current_price_per_g = round(price_inr / max(1.0, float(weight_g)), 2)
             is_price_swapped = False
             
-            silo_lower = str(silo or "").lower()
             if silo_lower == "protein" and current_price_per_g < 0.70:
                 is_price_swapped = True
             elif silo_lower == "creatine" and current_price_per_g < 0.50:
@@ -401,7 +411,7 @@ class ProteIndexOrchestrator:
                         "platform": platform_name,
                         "brand_hint": brand,
                         "raw_title": product_name,
-                        "raw_price": price_inr,
+                        "raw_price": round(float(price_inr), 2),
                         "raw_url": product_url,
                         "detected_weight_g": int(weight_g),
                         "failure_category": "SCRAPER_PARSE_ERROR",
@@ -429,7 +439,7 @@ class ProteIndexOrchestrator:
                     "platform": platform_name,
                     "brand_hint": brand,
                     "raw_title": product_name,
-                    "raw_price": price_inr,
+                    "raw_price": round(float(price_inr), 2),
                     "raw_url": product_url,
                     "detected_weight_g": int(weight_g),
                     "failure_category": "SCRAPER_PARSE_ERROR",
@@ -446,9 +456,9 @@ class ProteIndexOrchestrator:
             
             if v_res.data and len(v_res.data) > 0:
                 variant_id = v_res.data[0]["id"]
-                # In-place update lowest price
+                # In-place update lowest price with clean rounding
                 supabase.table("variants").update({
-                    "lowest_price_inr": price_inr
+                    "lowest_price_inr": round(float(price_inr), 2)
                 }).eq("id", variant_id).execute()
             else:
                 # Check if this is a newly discovered variant requiring one-time vision audit
@@ -463,9 +473,9 @@ class ProteIndexOrchestrator:
                         logger.warning(f"Vision audit attempt error: {e}")
 
                 if label_ocr_data:
-                    serving_size_g = label_ocr_data.serving_size_g
-                    label_protein_g = label_ocr_data.protein_per_serving_g
-                    total_servings = label_ocr_data.total_servings
+                    serving_size_g = round(float(label_ocr_data.serving_size_g), 2)
+                    label_protein_g = round(float(label_ocr_data.protein_per_serving_g), 2)
+                    total_servings = int(label_ocr_data.total_servings)
                     try:
                         analytics_metrics = EqualizerEngine.calculate_metrics(
                             category=psource,
@@ -480,7 +490,7 @@ class ProteIndexOrchestrator:
                             "platform": platform_name,
                             "brand_hint": brand,
                             "raw_title": product_name,
-                            "raw_price": price_inr,
+                            "raw_price": round(float(price_inr), 2),
                             "raw_url": product_url,
                             "detected_weight_g": int(weight_g),
                             "failure_category": "SCRAPER_PARSE_ERROR",
@@ -509,16 +519,16 @@ class ProteIndexOrchestrator:
                     "variant_hash": v_hash,
                     "flavor": flavor,
                     "weight_grams": float(weight_g),
-                    "lowest_price_inr": price_inr,
+                    "lowest_price_inr": round(float(price_inr), 2),
                     "servings_count": total_servings,
-                    "best_value_metric": analytics_metrics.get("effective_cost_per_bioavailable_g_inr", 1.8),
+                    "best_value_metric": round(float(analytics_metrics.get("effective_cost_per_bioavailable_g_inr", 1.8)), 2),
                     "raw_json_data": raw_json,
-                    "authenticity_score": review_audit.get("authenticity_score", 95.0),
+                    "authenticity_score": round(float(review_audit.get("authenticity_score", 95.0)), 1),
                     "has_bot_reviews": review_audit.get("has_bot_reviews", False),
-                    "label_serving_size_g": serving_size_g,
-                    "label_protein_per_serving_g": label_protein_g,
+                    "label_serving_size_g": round(float(serving_size_g), 1),
+                    "label_protein_per_serving_g": round(float(label_protein_g), 1),
                     "label_total_servings": total_servings,
-                    "calculated_purity_pct": analytics_metrics.get("scoop_purity_pct", 72.0),
+                    "calculated_purity_pct": round(float(analytics_metrics.get("scoop_purity_pct", 80.0)), 1),
                     "ocr_verified": bool(label_ocr_data is not None),
                     "ocr_image_url": image_url if label_ocr_data else None
                 }).execute()
@@ -527,7 +537,7 @@ class ProteIndexOrchestrator:
                     return None
                 variant_id = new_var.data[0]["id"]
 
-            # 3. Write / Update Hot Price Listing with connection retry resilience
+            # 3. Write / Update Hot Price Listing explicitly bound to variant_id (child SKU)
             for attempt in range(3):
                 try:
                     supabase.table("price_listings").upsert({
@@ -537,8 +547,8 @@ class ProteIndexOrchestrator:
                         "platform_name": platform_name.lower(),
                         "source_url": product_url,
                         "listing_url": product_url,
-                        "price_inr": price_inr,
-                        "current_price_inr": price_inr,
+                        "price_inr": round(float(price_inr), 2),
+                        "current_price_inr": round(float(price_inr), 2),
                         "in_stock": True,
                         "is_in_stock": True,
                         "seller_name": seller_name or brand,
@@ -689,7 +699,7 @@ class ProteIndexOrchestrator:
         total_catalog_built = 0
 
         # Reload master catalog for formulation-gated matching
-        MasterCatalogMatcher.load_master_catalog()
+        MasterCatalogMatcher.initialize_indexes()
 
         from bs4 import BeautifulSoup
 
@@ -761,7 +771,7 @@ class ProteIndexOrchestrator:
                                 variant_id = matched["id"]
                                 logger.info(f"[{platform}] MATCHED: '{raw_title[:38]}...' -> ID {variant_id} | INR {price}")
                                 
-                                # Upsert hot price listing
+                                # Upsert hot price listing explicitly bound to variant_id (child SKU)
                                 supabase.table("price_listings").upsert({
                                     "variant_id": variant_id,
                                     "product_id": matched.get("product_id"),
@@ -769,8 +779,8 @@ class ProteIndexOrchestrator:
                                     "platform_name": platform.lower(),
                                     "source_url": link,
                                     "listing_url": link,
-                                    "price_inr": price,
-                                    "current_price_inr": price,
+                                    "price_inr": round(float(price), 2),
+                                    "current_price_inr": round(float(price), 2),
                                     "in_stock": True,
                                     "is_in_stock": True,
                                     "seller_name": platform,
@@ -782,7 +792,7 @@ class ProteIndexOrchestrator:
                                 try:
                                     v_curr = supabase.table("variants").select("lowest_price_inr").eq("id", variant_id).execute()
                                     if v_curr.data and (v_curr.data[0].get("lowest_price_inr") is None or price < v_curr.data[0]["lowest_price_inr"]):
-                                        supabase.table("variants").update({"lowest_price_inr": price}).eq("id", variant_id).execute()
+                                        supabase.table("variants").update({"lowest_price_inr": round(float(price), 2)}).eq("id", variant_id).execute()
                                 except Exception:
                                     pass
 

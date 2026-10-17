@@ -23,6 +23,8 @@ const COMPETITOR_AFFILIATE_PARAMS = [
   '_encoding',
 ];
 
+const DANGEROUS_PROTOCOLS = ['javascript:', 'data:', 'vbscript:', 'file:'];
+
 export interface AffiliateMeta {
   rawUrl: string;
   sanitizedUrl: string;
@@ -37,6 +39,14 @@ export function generateAffiliateUrl(rawUrl: string, platform: string = 'direct'
 
   try {
     const url = new URL(rawUrl);
+
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return '#';
+    }
+
+    if (rawUrl.includes('cuelinks.com') || rawUrl.includes('linksredirect.com')) {
+      return rawUrl;
+    }
 
     // 1. Strip competitor tracking parameters
     for (const param of COMPETITOR_AFFILIATE_PARAMS) {

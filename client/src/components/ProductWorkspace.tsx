@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useTransition } from 'react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { Bell, ArrowUpRight, ShieldAlert, ShieldCheck, Activity, DollarSign, Layers } from 'lucide-react';
+import { Bell, ArrowUpRight, ShieldAlert, ShieldCheck, Activity, DollarSign } from 'lucide-react';
 
 export interface HistoricalPricePoint {
   date: string;
@@ -18,14 +18,18 @@ export interface ResellerOffer {
 
 export interface HydratedVariant {
   id: string | number;
+  variantHash?: string;
+  variant_hash?: string;
   flavor: string;
   weightDisplay: string;
+  weightGrams?: number;
   packCount: number;
   lowestPrice: number;
   bestSource: string;
   redirectUrl: string;
   costPer100gPure: number;
   flavorTaxPct: number;
+  calculatedPurityPct?: number;
   offers: ResellerOffer[];
   priceHistory: HistoricalPricePoint[];
 }
@@ -36,7 +40,7 @@ export interface MasterProductData {
   lineName: string;
   categorySilo: string;
   specs: {
-    purity: string;
+    purity: string | number;
     isSpiked: boolean;
     diaasScore: number;
   };
@@ -47,28 +51,93 @@ interface ProductWorkspaceProps {
   data: MasterProductData;
 }
 
+/**
+ * Format helper to screen floating point precision leaks.
+ * Enforces explicit rounding formatting rules across layouts.
+ */
+function formatNumber(val: number | string | undefined | null, decimals: number = 1): string {
+  if (val === undefined || val === null || val === '') return '0.0';
+  const num = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^\d.-]/g, ''));
+  if (isNaN(num) || !isFinite(num)) return '0.0';
+  return num.toFixed(decimals);
+}
+
+function formatCurrency(val: number | undefined | null): string {
+  if (val === undefined || val === null || isNaN(val)) return '0';
+  return Math.round(val).toLocaleString('en-IN');
+}
+
 export function ProductWorkspace({ data }: ProductWorkspaceProps) {
   const { brand, lineName, specs, variants } = data;
+  const [, startTransition] = useTransition();
 
-  // 1. Isolate clean layout options
-  const distinctFlavors = useMemo(() => Array.from(new Set(variants.map(v => v.flavor))), [variants]);
-  const distinctSizes = useMemo(() => Array.from(new Set(variants.map(v => v.weightDisplay))), [variants]);
+  // 1. Isolate clean, deterministic layout option sets
+  const distinctFlavors = useMemo(() => {
+    return Array.from(new Set(variants.map(v => v.flavor))).filter(Boolean);
+  }, [variants]);
 
-  // 2. Local state trackers
-  const [selectedFlavor, setSelectedFlavor] = useState<string>(distinctFlavors[0] || '');
-  const [selectedSize, setSelectedSize] = useState<string>(distinctSizes[0] || '');
+  const distinctSizes = useMemo(() => {
+    return Array.from(new Set(variants.map(v => v.weightDisplay))).filter(Boolean);
+  }, [variants]);
+
+  // 2. Local state trackers initialized safely
+  const initialVariant = variants[0] || null;
+  const [selectedFlavor, setSelectedFlavor] = useState<string>(initialVariant?.flavor || distinctFlavors[0] || '');
+  const [selectedSize, setSelectedSize] = useState<string>(initialVariant?.weightDisplay || distinctSizes[0] || '');
   const [isWatching, setIsWatching] = useState<boolean>(false);
 
-  // 3. Active Variant Resolution Engine
-  const activeVariant = useMemo(() => {
-    return (
-      variants.find(v => v.flavor === selectedFlavor && v.weightDisplay === selectedSize) ||
-      variants.find(v => v.flavor === selectedFlavor) ||
-      variants[0]
+  // 3. SECURE PROPERTY MATCHING CONTRACTS: Synchronized Variant Resolution Engine
+  // Prevents parent-child property bleeding by strictly pairing size and flavor
+  const availableSizesForCurrentFlavor = useMemo(() => {
+    return new Set(
+      variants
+        .filter(v => v.flavor === selectedFlavor)
+        .map(v => v.weightDisplay)
     );
+  }, [variants, selectedFlavor]);
+
+  const availableFlavorsForCurrentSize = useMemo(() => {
+    return new Set(
+      variants
+        .filter(v => v.weightDisplay === selectedSize)
+        .map(v => v.flavor)
+    );
+  }, [variants, selectedSize]);
+
+  const activeVariant = useMemo(() => {
+    // Exact match for current selection
+    const exact = variants.find(
+      v => v.flavor === selectedFlavor && v.weightDisplay === selectedSize
+    );
+    if (exact) return exact;
+
+    // Fallback: Pick first variant of current flavor if size is invalid
+    const flavorFallback = variants.find(v => v.flavor === selectedFlavor);
+    if (flavorFallback) return flavorFallback;
+
+    return variants[0] || null;
   }, [variants, selectedFlavor, selectedSize]);
 
-  // 4. Dynamic consumer evaluation badge system
+  // Handle flavor selection with React 19 concurrent transition and size re-synchronization
+  const handleFlavorSelect = (flavor: string) => {
+    startTransition(() => {
+      setSelectedFlavor(flavor);
+      // If currently selected size doesn't exist for this flavor, auto-snap to flavor's first size
+      const validSizes = variants.filter(v => v.flavor === flavor).map(v => v.weightDisplay);
+      if (!validSizes.includes(selectedSize) && validSizes.length > 0) {
+        setSelectedSize(validSizes[0]);
+      }
+    });
+  };
+
+  // Handle size selection with React 19 concurrent transition
+  const handleSizeSelect = (size: string) => {
+    startTransition(() => {
+      setSelectedSize(size);
+    });
+  };
+
+  // 4. Dynamic consumer evaluation badge system (deterministic mathematical thresholds)
   const marketRating = useMemo(() => {
     const cost = activeVariant?.costPer100gPure || 0;
     if (cost <= 0) return { text: 'Out of Stock', style: 'bg-slate-900 text-slate-500 border-slate-800' };
@@ -76,6 +145,29 @@ export function ProductWorkspace({ data }: ProductWorkspaceProps) {
     if (cost < 340) return { text: '👍 Fair Market Price', style: 'bg-slate-900 text-slate-300 border-slate-800' };
     return { text: '⚠️ Premium Cost Profile', style: 'bg-amber-950/40 text-amber-500 border-amber-900/40' };
   }, [activeVariant]);
+
+  // Masked precision values to eliminate floating decimal drops
+  const displayPurity = useMemo(() => {
+    if (activeVariant?.calculatedPurityPct !== undefined && activeVariant.calculatedPurityPct > 0) {
+      return `${formatNumber(activeVariant.calculatedPurityPct, 1)}%`;
+    }
+    return `${formatNumber(specs.purity, 1)}%`;
+  }, [activeVariant, specs.purity]);
+
+  const displayCostPer100g = useMemo(() => {
+    return formatNumber(activeVariant?.costPer100gPure, 1);
+  }, [activeVariant?.costPer100gPure]);
+
+  const displayFlavorTax = useMemo(() => {
+    const tax = activeVariant?.flavorTaxPct || 0;
+    return tax > 0 ? `+${formatNumber(tax, 1)}% premium charge` : '0% Base SKU Profile';
+  }, [activeVariant?.flavorTaxPct]);
+
+  const displayDiaas = useMemo(() => {
+    return formatNumber(specs.diaasScore, 2);
+  }, [specs.diaasScore]);
+
+  const canonicalVariantId = activeVariant?.variantHash || activeVariant?.variant_hash || activeVariant?.id || 'N/A';
 
   return (
     <div className="max-w-5xl mx-auto border border-slate-900 bg-slate-900/20 rounded-3xl backdrop-blur-xl shadow-2xl overflow-hidden font-sans">
@@ -86,6 +178,9 @@ export function ProductWorkspace({ data }: ProductWorkspaceProps) {
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-mono font-bold tracking-widest text-slate-500 uppercase bg-slate-950 border border-slate-800/80 px-2 py-0.5 rounded">
               MATRIX ID: {data.id}
+            </span>
+            <span className="text-[10px] font-mono font-bold tracking-widest text-slate-600 uppercase bg-slate-950 border border-slate-800/80 px-2 py-0.5 rounded">
+              SKU: {String(canonicalVariantId).slice(0, 10)}
             </span>
             {specs.isSpiked ? (
               <span className="flex items-center gap-1 text-[10px] font-bold bg-rose-950/40 text-rose-400 border border-rose-900/50 px-2 py-0.5 rounded animate-pulse">
@@ -105,7 +200,7 @@ export function ProductWorkspace({ data }: ProductWorkspaceProps) {
               {marketRating.text}
             </span>
             <span className="text-xs font-medium bg-slate-900 text-slate-400 border border-slate-800/80 px-3 py-1 rounded-lg">
-              🎯 {specs.purity} True Protein Content
+              🎯 {displayPurity} True Protein Content
             </span>
           </div>
         </div>
@@ -115,10 +210,10 @@ export function ProductWorkspace({ data }: ProductWorkspaceProps) {
           <div>
             <p className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest">Lowest Scraped Price</p>
             <p className="text-3xl font-black text-neutral-50 tracking-tight mt-1 font-mono">
-              {activeVariant?.lowestPrice > 0 ? `₹${activeVariant.lowestPrice.toLocaleString('en-IN')}` : 'N/A'}
+              {activeVariant && activeVariant.lowestPrice > 0 ? `₹${formatCurrency(activeVariant.lowestPrice)}` : 'N/A'}
             </p>
           </div>
-          <p className="text-xs font-mono text-slate-400 mt-1.5 capitalize">on {activeVariant?.bestSource}</p>
+          <p className="text-xs font-mono text-slate-400 mt-1.5 capitalize">on {activeVariant?.bestSource || 'Verified Resellers'}</p>
         </div>
       </div>
 
@@ -129,43 +224,60 @@ export function ProductWorkspace({ data }: ProductWorkspaceProps) {
           
           {/* Flavor Chips Selector */}
           <div>
-            <label className="text-[11px] font-mono font-bold uppercase tracking-widest text-slate-500 block mb-3">
-              1. Flavour Variation
-            </label>
+            <div className="flex justify-between items-center mb-3">
+              <label className="text-[11px] font-mono font-bold uppercase tracking-widest text-slate-500">
+                1. Flavour Variation
+              </label>
+              <span className="text-[10px] font-mono text-slate-600">
+                {selectedFlavor}
+              </span>
+            </div>
             <div className="flex flex-wrap gap-2">
-              {distinctFlavors.map(flavor => (
-                <button
-                  key={flavor}
-                  onClick={() => setSelectedFlavor(flavor)}
-                  className={`text-xs px-3.5 py-2 rounded-xl border transition-all cursor-pointer font-mono ${
-                    selectedFlavor === flavor
-                      ? 'bg-neutral-50 text-slate-950 border-neutral-50 font-bold shadow-sm'
-                      : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'
-                  }`}
-                >
-                  {flavor}
-                </button>
-              ))}
+              {distinctFlavors.map(flavor => {
+                const isSelected = selectedFlavor === flavor;
+                const hasCurrentSize = variants.some(v => v.flavor === flavor && v.weightDisplay === selectedSize);
+                return (
+                  <button
+                    key={flavor}
+                    onClick={() => handleFlavorSelect(flavor)}
+                    className={`text-xs px-3.5 py-2 rounded-xl border transition-all cursor-pointer font-mono ${
+                      isSelected
+                        ? 'bg-neutral-50 text-slate-950 border-neutral-50 font-bold shadow-sm'
+                        : hasCurrentSize
+                        ? 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'
+                        : 'bg-slate-950/60 text-slate-600 border-slate-900 hover:border-slate-800'
+                    }`}
+                  >
+                    {flavor}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* Sizing Container Chips Selector */}
           <div>
-            <label className="text-[11px] font-mono font-bold uppercase tracking-widest text-slate-500 block mb-3">
-              2. Packaging Weight
-            </label>
+            <div className="flex justify-between items-center mb-3">
+              <label className="text-[11px] font-mono font-bold uppercase tracking-widest text-slate-500">
+                2. Packaging Weight
+              </label>
+              <span className="text-[10px] font-mono text-slate-600">
+                {activeVariant?.weightDisplay || selectedSize}
+              </span>
+            </div>
             <div className="flex flex-wrap gap-2">
               {distinctSizes.map(size => {
-                const isOptionValid = variants.some(v => v.flavor === selectedFlavor && v.weightDisplay === size);
+                const isOptionValid = availableSizesForCurrentFlavor.has(size);
+                const isSelected = activeVariant?.weightDisplay === size || (selectedSize === size && isOptionValid);
                 return (
                   <button
                     key={size}
                     disabled={!isOptionValid}
-                    onClick={() => setSelectedSize(size)}
+                    onClick={() => handleSizeSelect(size)}
                     className={`text-xs px-4 py-2 rounded-xl border transition-all font-mono ${
                       !isOptionValid
-                        ? 'opacity-15 cursor-not-allowed border-slate-900 text-slate-700'
-                        : selectedSize === size
+                        ? 'opacity-25 cursor-not-allowed border-slate-900 text-slate-700 bg-slate-950'
+                        : isSelected
                         ? 'bg-neutral-50 text-slate-950 border-neutral-50 font-bold shadow-sm cursor-pointer'
                         : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700 cursor-pointer'
                     }`}
@@ -225,6 +337,7 @@ export function ProductWorkspace({ data }: ProductWorkspaceProps) {
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#020617', borderColor: '#1e293b', borderRadius: '12px', fontFamily: 'monospace', fontSize: '11px' }}
                     itemStyle={{ color: '#f8fafc' }}
+                    formatter={(val: any) => [`₹${formatCurrency(Number(val))}`, 'Sticker Price']}
                   />
                   <Area type="monotone" dataKey="price" name="Sticker Price" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#chartColor)" />
                 </AreaChart>
@@ -252,21 +365,21 @@ export function ProductWorkspace({ data }: ProductWorkspaceProps) {
             <div className="flex justify-between items-center py-2 border-b border-slate-900">
               <span className="text-slate-400">True Value Efficiency:</span>
               <span className="font-bold text-neutral-100">
-                ₹{activeVariant?.costPer100gPure || 0} / 100g pure protein
+                ₹{displayCostPer100g} / 100g pure protein
               </span>
             </div>
 
             <div className="flex justify-between items-center py-2 border-b border-slate-900">
               <span className="text-slate-400">Arbitrage Flavour Tax:</span>
-              <span className={activeVariant?.flavorTaxPct > 0 ? 'text-amber-500 font-bold' : 'text-slate-500'}>
-                {activeVariant?.flavorTaxPct > 0 ? `+${activeVariant.flavorTaxPct}% premium charge` : '0% Base SKU Profile'}
+              <span className={activeVariant && activeVariant.flavorTaxPct > 0 ? 'text-amber-500 font-bold' : 'text-slate-500'}>
+                {displayFlavorTax}
               </span>
             </div>
 
             <div className="flex justify-between items-center py-2">
               <span className="text-slate-400">Bioavailability (DIAAS Metric):</span>
               <span className="font-bold text-neutral-100">
-                {specs.diaasScore} Index Score
+                {displayDiaas} Index Score
               </span>
             </div>
           </div>
@@ -293,7 +406,7 @@ export function ProductWorkspace({ data }: ProductWorkspaceProps) {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span className="font-black text-neutral-100">₹{offer.price.toLocaleString('en-IN')}</span>
+                    <span className="font-black text-neutral-100">₹{formatCurrency(offer.price)}</span>
                     <a
                       href={offer.url || '#'}
                       target="_blank"

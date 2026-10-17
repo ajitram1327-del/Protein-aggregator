@@ -282,6 +282,11 @@ class MasterCatalogMatcher:
         print(f"[MasterCatalogMatcher] In-memory indexes initialized: {len(cls._master_catalog)} variants, {len(cls._canopy_index)} canopy blocks.")
 
     @classmethod
+    def load_master_catalog(cls, custom_catalog: Optional[List[Dict[str, Any]]] = None, client: Optional[Client] = None):
+        """Alias for initialize_indexes for backward compatibility."""
+        return cls.initialize_indexes(custom_catalog, client)
+
+    @classmethod
     def match_variant(
         cls,
         scraped_title: str,
