@@ -92,17 +92,32 @@ def extract_normalized_grams(
 
     raw_candidates = [raw_weight_field or "", title or "", description or ""]
 
+    # Map text numbers to integer equivalents before running regex logic
+    text_number_map = {
+        r'\bdouble\b': '2',
+        r'\btwin\b': '2',
+        r'\btwo\b': '2',
+        r'\bthree\b': '3',
+        r'\bfour\b': '4',
+        r'\bpack of two\b': '2 x',
+        r'\bpack of three\b': '3 x'
+    }
+
     # Pre-clean corpus: Strip serving noise to prevent "5g Creatine" or "1000mg" from corrupting weight
     search_corpus = []
     for text in raw_candidates:
         if not text:
             continue
-        cleaned = text
-        # Strip micro dosages (e.g. 1000mg, 500mcg)
-        cleaned = re.sub(r'(?i)\b\d+(?:\.\d+)?\s*(?:mg|mcg)\b', ' ', cleaned)
-        # Strip common additive callouts (e.g. "with 5g Creatine", "5.5g BCAA")
-        cleaned = re.sub(r'(?i)\b(?:\d+(?:\.\d+)?\s*g\s*(?:creatine|bcaa|glutamine|protein|leucine))\b', ' ', cleaned)
-        search_corpus.append(cleaned)
+        
+        # 1. Normalize textual quantities
+        normalized_text = text.lower()
+        for pattern, replacement in text_number_map.items():
+            normalized_text = re.sub(pattern, replacement, normalized_text)
+
+        # 2. Strip-and-Consume Layer: Remove micro-dosages and additives
+        clean_text = re.sub(r'(?i)\b\d+(?:\.\d+)?\s*(?:mg|mcg|mcgs)\b', ' ', normalized_text)
+        clean_text = re.sub(r'(?i)\b(?:\d+(?:\.\d+)?\s*(?:g|gm|gms|gram|grams)?\s*(?:bcaa|bcaas|creatine|glutamine|protein|leucine|taurine|tribulus))\b', ' ', clean_text)
+        search_corpus.append(clean_text)
 
     # 1. Metric: Kilograms (Priority 1)
     for text in search_corpus:

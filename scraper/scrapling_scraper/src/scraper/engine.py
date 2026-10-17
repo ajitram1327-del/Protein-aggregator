@@ -383,7 +383,36 @@ class ProteIndexOrchestrator:
             # Standard baseline nutrition values
             serving_size_g = 33.0
             label_protein_g = min(24.0, serving_size_g)
-            total_servings = max(1, int(weight_g / serving_size_g))
+            # --- GUARDRAIL: MULTI-VARIANT PRICE MISMATCH CHECK ---
+            current_price_per_g = price_inr / max(1.0, float(weight_g))
+            is_price_swapped = False
+            
+            silo_lower = str(silo or "").lower()
+            if silo_lower == "protein" and current_price_per_g < 0.70:
+                is_price_swapped = True
+            elif silo_lower == "creatine" and current_price_per_g < 0.50:
+                is_price_swapped = True
+
+            if is_price_swapped:
+                logger.error(f"[QUARANTINE TRIGGERED] Multi-variant price trap caught: ₹{current_price_per_g:.2f}/g for {weight_g}g")
+                try:
+                    supabase.table("staging_quarantine").insert({
+                        "platform": platform_name,
+                        "brand_hint": brand,
+                        "raw_title": product_name,
+                        "raw_price": price_inr,
+                        "raw_url": product_url,
+                        "detected_weight_g": int(weight_g),
+                        "failure_category": "SCRAPER_PARSE_ERROR",
+                        "details": {
+                            "quarantine_reason": f"Mismatched Multi-Variant Price Trap: Computed ₹{current_price_per_g:.2f}/g",
+                            "price_per_g": current_price_per_g,
+                            "category": silo
+                        }
+                    }).execute()
+                except Exception as q_err:
+                    logger.warning(f"Failed to record quarantine entry: {q_err}")
+                return None
 
             try:
                 analytics_metrics = EqualizerEngine.calculate_metrics(
