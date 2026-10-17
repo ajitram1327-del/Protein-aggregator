@@ -576,6 +576,14 @@ class AtwaterThermodynamicValidator:
             payload.physics_validation_notes = notes
             return False, notes
 
+        # Purity check: Even pure whey isolate tops out around 90-93% active yields
+        purity_pct = (payload.protein_per_serving_g / payload.serving_size_g) * 100.0 if payload.serving_size_g > 0 else 0.0
+        if purity_pct > 96.0:
+            notes.append(f"PHYSICS VIOLATION: Calculated purity {purity_pct:.1f}% exceeds maximum natural powder ceiling of 96.0%")
+            payload.is_valid_physics = False
+            payload.physics_validation_notes = notes
+            return False, notes
+
         # -------------------------------------------------------------
         # Rule 3: Atwater Calorie Cross-Check
         # Expected kcal = (4 * protein) + (4 * carbs) + (9 * fat)

@@ -11,7 +11,8 @@ import json
 import time
 import hashlib
 from collections import defaultdict
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any, Optional, List, Tuple, Union
+from pydantic import BaseModel, Field, ValidationError
 from rapidfuzz import fuzz, process
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -55,6 +56,64 @@ except ImportError:
         from trust_safety.amino_spiking_rules import AminoSpikingRulesEngine
     except ImportError:
         AminoSpikingRulesEngine = None
+
+
+# -----------------------------------------------------------------------------
+# 1. Deterministic Structural Contract for Clean Frontend & Database Payload
+# -----------------------------------------------------------------------------
+class CanonicalProductListing(BaseModel):
+    brand_name: str
+    product_silo: str
+    net_weight_grams: float
+    listed_price: float
+    protein_per_serving: float
+    serving_size_grams: float
+    # Calculated analytical layer
+    calculated_purity_percentage: float
+    cost_per_100g_pure_protein: float
+
+
+# -----------------------------------------------------------------------------
+# 2. Agentic Multi-Agent Pipeline Auditor
+# -----------------------------------------------------------------------------
+class AgenticPipelineAuditor:
+    def __init__(self, raw_payload: Union[str, dict]):
+        self.payload = raw_payload
+
+    def agent_ocr_column_validator(self, data: dict) -> Dict[str, Union[bool, str]]:
+        """Agent A: Inspects the payload to ensure 'Per Serving' and 'Per 100g' didn't cross wires."""
+        try:
+            serving = float(data.get("serving_size_grams", 0))
+            protein = float(data.get("protein_per_serving", 0))
+            
+            # Catch Context Clashing: Protein cannot physically exceed total serving size weight
+            if protein > serving:
+                return {"status": False, "reason": "CRITICAL FATAL: Protein mass exceeds total serving weight. OCR Column mismatch."}
+            
+            # Catch Atwater Physics/Yield drift anomalies
+            purity = (protein / serving) * 100 if serving > 0 else 0
+            if purity > 96.0:  # Even pure whey isolate tops out around 90-93% active yields
+                return {"status": False, "reason": "PHYSICS VIOLATION: Calculated purity is physically impossible for natural powder derivatives."}
+                
+            return {"status": True, "reason": "Metrics cleared."}
+        except (ValueError, TypeError):
+            return {"status": False, "reason": "DATA CORRUPTION: Metrics contain non-numeric string values."}
+
+    def agent_llm_json_sanitizer(self) -> Optional[dict]:
+        """Agent B: Strips out Groq/Gemini string markdown garbage if Tier 3 breaks down."""
+        if isinstance(self.payload, dict):
+            return self.payload
+        clean_str = str(self.payload).strip()
+        
+        # Regex to strip common LLM wrapper leakages
+        clean_str = re.sub(r'^```(?:json)?\s*', '', clean_str, flags=re.IGNORECASE)
+        clean_str = re.sub(r'\s*```$', '', clean_str, flags=re.IGNORECASE)
+        
+        try:
+            return json.loads(clean_str)
+        except json.JSONDecodeError:
+            print("❌ SANITIZATION FAILURE: LLM returned corrupted non-JSON text.")
+            return None
 
 
 class CircuitBreaker:
@@ -369,6 +428,16 @@ class MasterCatalogMatcher:
                         bucketed_weight_g=None
                     )
                     if payload and payload.serving_size_g > 0:
+                        # Audit through AgenticPipelineAuditor to catch column misalignment / purity violations
+                        auditor = AgenticPipelineAuditor(payload.to_dict())
+                        ocr_check = auditor.agent_ocr_column_validator({
+                            "serving_size_grams": payload.serving_size_g,
+                            "protein_per_serving": payload.protein_per_serving_g
+                        })
+                        if not ocr_check["status"]:
+                            print(f"[OCR GUARDRAIL REJECT]: {ocr_check['reason']}")
+                            continue
+
                         extracted_ocr_payload = payload
                         if stateful_info.serving_count:
                             ocr_resolved_w = snap_to_canonical_weight(payload.serving_size_g * stateful_info.serving_count)
@@ -521,8 +590,26 @@ class MasterCatalogMatcher:
                 temperature=0.0
             )
 
-            reply = response.choices[0].message.content.strip()
-            digits = re.findall(r"\b([1-4])\b", reply)
+            raw_reply = response.choices[0].message.content
+            auditor = AgenticPipelineAuditor(raw_reply)
+            clean_dict = auditor.agent_llm_json_sanitizer()
+
+            if clean_dict and isinstance(clean_dict, dict):
+                # If LLM returned structured JSON {option: X} or {candidate_id: X}
+                opt_val = clean_dict.get("option") or clean_dict.get("match") or clean_dict.get("id")
+                if opt_val is not None:
+                    try:
+                        chosen_idx = int(str(opt_val).strip()) - 1
+                        if 0 <= chosen_idx < len(candidates):
+                            return candidates[chosen_idx]
+                    except ValueError:
+                        for cand in candidates:
+                            if cand["id"] == str(opt_val):
+                                return cand
+
+            # Plain text fallback
+            clean_reply = re.sub(r'^```(?:json)?\s*', '', raw_reply, flags=re.IGNORECASE).strip()
+            digits = re.findall(r"\b([1-4])\b", clean_reply)
             if digits:
                 chosen_idx = int(digits[0]) - 1
                 if 0 <= chosen_idx < len(candidates):

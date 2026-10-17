@@ -37,7 +37,11 @@ from src.pipeline.nutrition_ocr_pipeline import (
     NutritionFactsPayload,
     PerceptualHashDeduplicator
 )
-from pipeline.matcher import MasterCatalogMatcher
+from pipeline.matcher import (
+    MasterCatalogMatcher,
+    CanonicalProductListing,
+    AgenticPipelineAuditor
+)
 
 
 class TestScaleOCRAndSpiking(unittest.TestCase):
@@ -294,6 +298,56 @@ class TestScaleOCRAndSpiking(unittest.TestCase):
         print(f"[Benchmark] 500 lookups against 10,000-candidate catalog took {elapsed:.3f}s ({elapsed/500*1000:.2f}ms/lookup)")
         self.assertLess(elapsed, 2.0, f"Benchmark failed: 500 lookups took {elapsed:.2f}s (must be < 2.0s)")
         self.assertEqual(matches_found, 500, "All 500 queries should have matched successfully!")
+
+    def test_07_agentic_pipeline_auditor_guardrail(self):
+        """
+        Verify AgenticPipelineAuditor catches column clashing (protein > serving),
+        purity > 96% violations, and sanitizes markdown-wrapped LLM JSON into CanonicalProductListing.
+        """
+        # Test Case 1: Corrupted OCR column clashing (protein 24g > serving 20g) -> 120% purity
+        corrupted_ocr_log = (
+            '```json\n'
+            '{"brand_name": "As-It-Is", "product_silo": "protein", "net_weight_grams": 1000, '
+            '"listed_price": 1749, "protein_per_serving": 24.0, "serving_size_grams": 20.0, '
+            '"calculated_purity_percentage": 120.0, "cost_per_100g_pure_protein": 145.0}\n'
+            '```'
+        )
+
+        auditor = AgenticPipelineAuditor(corrupted_ocr_log)
+        raw_dict = auditor.agent_llm_json_sanitizer()
+        self.assertIsNotNone(raw_dict, "Agent B LLM Sanitizer should strip markdown and parse JSON!")
+
+        val_check = auditor.agent_ocr_column_validator(raw_dict)
+        self.assertFalse(val_check["status"], "Must fail validation due to protein > serving size")
+        self.assertIn("CRITICAL FATAL", val_check["reason"])
+
+        # Test Case 2: Yield ceiling violation (protein 29g on 30g scoop -> 96.7% purity)
+        yield_violation = {
+            "serving_size_grams": 30.0,
+            "protein_per_serving": 29.0
+        }
+        val_check2 = auditor.agent_ocr_column_validator(yield_violation)
+        self.assertFalse(val_check2["status"])
+        self.assertIn("PHYSICS VIOLATION", val_check2["reason"])
+
+        # Test Case 3: Valid canonical listing record
+        valid_log = {
+            "brand_name": "Optimum Nutrition",
+            "product_silo": "protein",
+            "net_weight_grams": 907.0,
+            "listed_price": 3200.0,
+            "protein_per_serving": 24.0,
+            "serving_size_grams": 30.4,
+            "calculated_purity_percentage": 78.9,
+            "cost_per_100g_pure_protein": 175.5
+        }
+        val_check3 = auditor.agent_ocr_column_validator(valid_log)
+        self.assertTrue(val_check3["status"])
+
+        listing = CanonicalProductListing(**valid_log)
+        self.assertEqual(listing.brand_name, "Optimum Nutrition")
+        self.assertEqual(listing.net_weight_grams, 907.0)
+        self.assertEqual(listing.protein_per_serving, 24.0)
 
 
 if __name__ == '__main__':
