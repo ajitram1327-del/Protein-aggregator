@@ -52,7 +52,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const siloParam = searchParams.get("silo")?.trim().toLowerCase();
     const brandParam = searchParams.get("brand")?.trim();
+    const flavorParam = searchParams.get("flavor")?.trim();
     const searchParam = searchParams.get("q")?.trim();
+    const sortParam = searchParams.get("sort")?.trim().toLowerCase();
+    const minPriceParam = searchParams.get("min_price");
+    const maxPriceParam = searchParams.get("max_price");
     const pageParam = searchParams.get("page");
     const limitParam = searchParams.get("limit");
 
@@ -88,6 +92,11 @@ export async function GET(request: NextRequest) {
     // 4. Sanitize search and brand against injection characters
     const sanitizedSearch = searchParam ? searchParam.replace(/[,()]/g, ' ').trim() : "";
     const sanitizedBrand = brandParam ? brandParam.replace(/[,()]/g, ' ').trim() : "";
+    const sanitizedFlavor = flavorParam ? flavorParam.replace(/[,()]/g, ' ').trim() : "";
+
+    // Parse price bounds
+    const minPrice = minPriceParam ? Math.max(0, parseFloat(minPriceParam)) : null;
+    const maxPrice = maxPriceParam ? Math.max(0, parseFloat(maxPriceParam)) : null;
 
     // 5. Query via supabaseAdmin (service role bypasses RLS securely server-side)
     let query = supabaseAdmin
@@ -105,10 +114,18 @@ export async function GET(request: NextRequest) {
             in_stock, seller_name, is_authorized_seller 
           )
         )
-      `)
-      .order("trust_score", { ascending: false })
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
+      `, { count: "exact" });
+
+    // Dynamic Database Sorting
+    if (sortParam === "trust_desc" || sortParam === "featured") {
+      query = query.order("trust_score", { ascending: false }).order("created_at", { ascending: false });
+    } else if (sortParam === "newest") {
+      query = query.order("created_at", { ascending: false });
+    } else {
+      query = query.order("trust_score", { ascending: false }).order("created_at", { ascending: false });
+    }
+
+    query = query.range(offset, offset + limit - 1);
 
     if (silo) {
       query = query.eq("category_silo", silo);
@@ -120,14 +137,14 @@ export async function GET(request: NextRequest) {
       query = query.or(`base_name.ilike.%${sanitizedSearch}%,brand.ilike.%${sanitizedSearch}%`);
     }
 
-    const { data, error } = await query;
+    const { data, count: totalCount, error } = await query;
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     // 6. Transform and sanitize DB rows into Master Universal JSON Schema instances
-    const universalSKUs: MasterUniversalSKU[] = [];
+    let universalSKUs: MasterUniversalSKU[] = [];
 
     (data || []).forEach((product: any) => {
       // Honeypot defense: Filter out canary variants from public responses
@@ -341,10 +358,47 @@ export async function GET(request: NextRequest) {
       });
     });
 
+    // In-Memory Flavor & Price Filters for Child Variants
+    if (sanitizedFlavor) {
+      universalSKUs = universalSKUs.filter((sku) =>
+        sku.flavor.toLowerCase().includes(sanitizedFlavor.toLowerCase())
+      );
+    }
+    if (minPrice !== null) {
+      universalSKUs = universalSKUs.filter(
+        (sku) => sku.pricing.lowestPriceInr >= minPrice
+      );
+    }
+    if (maxPrice !== null) {
+      universalSKUs = universalSKUs.filter(
+        (sku) => sku.pricing.lowestPriceInr <= maxPrice
+      );
+    }
+
+    // Secondary In-Memory Sorting
+    if (sortParam === "price_asc" || sortParam === "price-asc") {
+      universalSKUs.sort((a, b) => a.pricing.lowestPriceInr - b.pricing.lowestPriceInr);
+    } else if (sortParam === "price_desc" || sortParam === "price-desc") {
+      universalSKUs.sort((a, b) => b.pricing.lowestPriceInr - a.pricing.lowestPriceInr);
+    } else if (sortParam === "value_asc" || sortParam === "value-asc") {
+      universalSKUs.sort((a, b) => {
+        const valA = a.equalizerMetrics.primaryMetricValue ?? Infinity;
+        const valB = b.equalizerMetrics.primaryMetricValue ?? Infinity;
+        return valA - valB;
+      });
+    } else if (sortParam === "purity_desc" || sortParam === "purity-desc") {
+      universalSKUs.sort((a, b) => {
+        const purA = a.nutritionalProfile.proteinPurityPct ?? 0;
+        const purB = b.nutritionalProfile.proteinPurityPct ?? 0;
+        return purB - purA;
+      });
+    }
+
     return NextResponse.json(
       {
         page,
         page_size: limit,
+        total_count: totalCount ?? universalSKUs.length,
         count: universalSKUs.length,
         data: universalSKUs,
       },
@@ -352,6 +406,7 @@ export async function GET(request: NextRequest) {
         headers: {
           "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300",
           "X-Content-Type-Options": "nosniff",
+          "X-Total-Count": (totalCount ?? universalSKUs.length).toString(),
         },
       }
     );
