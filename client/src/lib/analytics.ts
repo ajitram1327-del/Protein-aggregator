@@ -31,20 +31,20 @@ export const PLATFORM_LABELS: Record<string, string> = {
 
 export function costPer100gProtein(priceInr: number, servings: number, proteinG: number): number {
   const total = servings * proteinG;
-  return total > 0 && priceInr > 0 ? (priceInr / total) * 100 : Infinity;
+  return total > 0 && priceInr > 0 ? Number(((priceInr / total) * 100).toFixed(2)) : Infinity;
 }
 
 export function bioavailableCostPerGram(costPerG: number, diaas: number): number {
-  return diaas > 0 ? costPerG / diaas : Infinity;
+  return diaas > 0 ? Number((costPerG / diaas).toFixed(2)) : Infinity;
 }
 
 export function purityPct(proteinG: number, servingSizeG: number): number {
-  return servingSizeG > 0 ? (proteinG / servingSizeG) * 100 : 0;
+  return servingSizeG > 0 ? Number(((proteinG / servingSizeG) * 100).toFixed(1)) : 0;
 }
 
 export function flavorTaxPct(unflavoredCostPerG: number, flavoredCostPerG: number): number {
   if (unflavoredCostPerG <= 0 || !isFinite(unflavoredCostPerG)) return 0;
-  return Math.max(0, ((flavoredCostPerG - unflavoredCostPerG) / unflavoredCostPerG) * 100);
+  return Number(Math.max(0, ((flavoredCostPerG - unflavoredCostPerG) / unflavoredCostPerG) * 100).toFixed(1));
 }
 
 export function checkFairyDusting(ingredients: string[]): { isFairyDusted: boolean; reason?: string } {

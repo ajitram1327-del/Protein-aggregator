@@ -67,8 +67,8 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ initialProducts }) => 
           if (p.bestValueMetric && isFinite(p.bestValueMetric)) return p.bestValueMetric;
           const v0 = p.variants[0];
           const w = v0?.weight_grams || 1000;
-          const s = v0?.label_serving_size_g!;
-          const prot = v0?.label_protein_per_serving_g!;
+          const s = v0?.label_serving_size_g || 33;
+          const prot = v0?.label_protein_per_serving_g || 24;
           return costPer100gProtein(p.lowestPrice, Math.round(w / s), prot) || Infinity;
         };
         return getCost(a) - getCost(b);
@@ -80,66 +80,6 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ initialProducts }) => 
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
       {/* 0. Live Drops Ticker Strip (Stitch Screen 1) */}
       <LiveMarketPulse onOpenAlertModal={() => setIsAlertOpen(true)} />
-
-      {/* 1. Global Navigation Bar */}
-      <header className="border-b border-slate-200 px-4 sm:px-8 py-3.5 sticky top-0 bg-white/95 backdrop-blur-md z-40 shadow-xs">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-6">
-            <Link
-              href="/"
-              className="font-black text-2xl tracking-tighter text-slate-900 italic flex items-center shrink-0"
-            >
-              <span className="text-emerald-700">PROTE</span>INDEX
-              <span className="ml-2 text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-xs bg-slate-100 text-slate-700 border border-slate-300 not-italic font-bold hidden sm:inline-block">
-                IN Market
-              </span>
-            </Link>
-
-            <nav className="hidden lg:flex items-center gap-5 text-xs font-mono font-semibold text-slate-600">
-              <Link href="/catalog?category=protein" className="hover:text-slate-900 transition-colors">
-                Whey & Plant
-              </Link>
-              <Link href="/catalog?category=creatine" className="hover:text-slate-900 transition-colors">
-                Creatine
-              </Link>
-              <Link href="/catalog?category=pre_workout" className="hover:text-slate-900 transition-colors">
-                Pre-Workout
-              </Link>
-              <Link href="/catalog?category=mass_gainer" className="hover:text-slate-900 transition-colors">
-                Mass Gainers
-              </Link>
-              <Link href="/catalog?category=snacks" className="hover:text-slate-900 transition-colors">
-                Snacks
-              </Link>
-              <Link href="/calculator" className="hover:text-slate-900 transition-colors text-emerald-700 font-bold">
-                Cost Calculator
-              </Link>
-              <Link href="/compare" className="hover:text-slate-900 transition-colors text-slate-400">
-                Compare Matrix
-              </Link>
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setIsAlertOpen(true)}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 border border-slate-300 hover:border-slate-800 text-slate-700 hover:text-slate-900 text-xs font-mono font-bold uppercase tracking-wider rounded-sm transition-colors"
-            >
-              <Bell className="size-3.5 text-emerald-600" />
-              <span>Set Alert</span>
-            </button>
-
-            <Link
-              href="/catalog"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-900 hover:bg-emerald-800 text-white text-xs font-mono font-bold uppercase tracking-wider rounded-sm transition-colors shadow-xs"
-            >
-              <span>Explore Catalog</span>
-              <ArrowRight className="size-3.5" />
-            </Link>
-          </div>
-        </div>
-      </header>
 
       {/* 2. Hero Section (Nutrabay / Modern Clean Commerce Style) */}
       <section className="relative pt-12 pb-14 px-4 sm:px-6 max-w-5xl mx-auto text-center">

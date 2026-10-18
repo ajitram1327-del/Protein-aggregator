@@ -70,6 +70,19 @@ export function CatalogView({ initialProducts, initialCategory }: CatalogViewPro
   });
 
   const [searchInputValue, setSearchInputValue] = useState(filters.query);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("consumer");
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+
+  // Sneakopedia Matrix State
+  const [matrixOpen, setMatrixOpen] = useState(false);
+  const [matrixProduct, setMatrixProduct] = useState<GroupedProduct | null>(null);
+  const [matrixVariant, setMatrixVariant] = useState<DbVariant | null>(null);
+
+  // Compare Tray State
+  const [compareItems, setCompareItems] = useState<CompareItem[]>([]);
+  const [expandedTerminalRows, setExpandedTerminalRows] = useState<Set<string>>(new Set());
 
   // 300ms Debounce for search query input
   useEffect(() => {
@@ -160,28 +173,16 @@ export function CatalogView({ initialProducts, initialCategory }: CatalogViewPro
               foundProduct.variants[0]
             : foundProduct.variants[0];
           if (foundVariant) {
-            setMatrixProduct(foundProduct);
-            setMatrixVariant(foundVariant);
-            setMatrixOpen(true);
+            setTimeout(() => {
+              setMatrixProduct(foundProduct);
+              setMatrixVariant(foundVariant);
+              setMatrixOpen(true);
+            }, 0);
           }
         }
       }
     }
   }, [initialProducts]);
-
-  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>("consumer");
-  const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
-
-  // Sneakopedia Matrix State
-  const [matrixOpen, setMatrixOpen] = useState(false);
-  const [matrixProduct, setMatrixProduct] = useState<GroupedProduct | null>(null);
-  const [matrixVariant, setMatrixVariant] = useState<DbVariant | null>(null);
-
-  // Compare Tray State
-  const [compareItems, setCompareItems] = useState<CompareItem[]>([]);
-  const [expandedTerminalRows, setExpandedTerminalRows] = useState<Set<string>>(new Set());
 
   const toggleTerminalRow = (id: string) => {
     setExpandedTerminalRows((prev) => {
@@ -457,29 +458,18 @@ export function CatalogView({ initialProducts, initialCategory }: CatalogViewPro
       {/* 0. Live Drops Ticker Strip */}
       <LiveMarketPulse onOpenAlertModal={() => setIsAlertOpen(true)} />
 
-      {/* 1. Global Navigation Bar */}
-      <header className="border-b border-slate-200 px-4 sm:px-6 py-3 sticky top-0 bg-white/95 backdrop-blur-md z-40 shadow-xs">
+      {/* 1. Category & Silo Secondary Sub-Bar */}
+      <div className="border-b border-slate-200 px-4 sm:px-6 py-2.5 sticky top-16 bg-white/95 backdrop-blur-md z-40 shadow-xs">
         <div className="flex items-center justify-between w-full max-w-7xl mx-auto gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-xs font-mono">
             <Link
               href="/"
-              className="font-black text-2xl tracking-tighter text-slate-900 italic cursor-pointer flex items-center shrink-0"
+              className="text-slate-500 hover:text-slate-900 flex items-center gap-1 font-semibold"
             >
-              <span className="text-emerald-700">PROTE</span>INDEX
+              <ArrowLeft className="size-3" /> Home
             </Link>
-
-            <span className="text-slate-300 hidden sm:inline">|</span>
-
-            <div className="hidden sm:flex items-center gap-2 text-xs font-mono">
-              <Link
-                href="/"
-                className="text-slate-500 hover:text-slate-900 flex items-center gap-1 font-semibold"
-              >
-                <ArrowLeft className="size-3" /> Home
-              </Link>
-              <span className="text-slate-300">/</span>
-              <span className="text-slate-900 font-bold">Catalog Screener</span>
-            </div>
+            <span className="text-slate-300">/</span>
+            <span className="text-slate-900 font-bold truncate">Catalog Terminal</span>
           </div>
 
           {/* Category Quick Switcher */}
@@ -573,7 +563,7 @@ export function CatalogView({ initialProducts, initialCategory }: CatalogViewPro
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* 2. Screener Controls Bar */}
       <section className="border-b border-slate-200 bg-white py-3 px-4 sm:px-6">

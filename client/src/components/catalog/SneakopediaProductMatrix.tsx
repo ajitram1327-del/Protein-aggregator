@@ -229,7 +229,9 @@ export const SneakopediaProductMatrix: React.FC<SneakopediaProductMatrixProps> =
 
   const servingSize = Math.max(10, activeVariant.label_serving_size_g || 33);
   const proteinG = Math.max(5, activeVariant.label_protein_per_serving_g || 24);
-  const purity = purityPct(proteinG, servingSize);
+  const purity = (typeof activeVariant.calculated_purity_pct === "number" && activeVariant.calculated_purity_pct > 0)
+    ? Number(activeVariant.calculated_purity_pct.toFixed(1))
+    : purityPct(proteinG, servingSize);
   const totalServings = Math.max(1, Math.round(activeVariant.weight_grams / servingSize));
   const cost100g = costPer100gProtein(currentPrice, totalServings, proteinG);
 
@@ -356,7 +358,7 @@ export const SneakopediaProductMatrix: React.FC<SneakopediaProductMatrixProps> =
                   <div className="w-full mt-3 grid grid-cols-3 gap-2 text-center font-mono text-xs">
                     <div className="p-2 border border-slate-200 rounded-sm bg-slate-50">
                       <div className="text-[10px] text-slate-400 uppercase">PURITY</div>
-                      <div className="font-bold text-slate-900">{purity}%</div>
+                      <div className="font-bold text-slate-900">{typeof purity === "number" ? purity.toFixed(1) : purity}%</div>
                     </div>
                     <div className="p-2 border border-slate-200 rounded-sm bg-slate-50">
                       <div className="text-[10px] text-slate-400 uppercase">DIAAS SCORE</div>
@@ -410,7 +412,7 @@ export const SneakopediaProductMatrix: React.FC<SneakopediaProductMatrixProps> =
                       <div className="flex flex-wrap gap-1.5">
                         {availableWeights.map((w) => {
                           const isSelected = activeVariant.weight_grams === w;
-                          const matchingVar = product.variants.find((v) => v.weight_grams === w);
+                          const matchingVar = product.variants.find((v) => v.weight_grams === w && v.flavor === activeVariant.flavor) || product.variants.find((v) => v.weight_grams === w);
                           const wPrice = matchingVar?.lowest_price_inr || 0;
 
                           return (

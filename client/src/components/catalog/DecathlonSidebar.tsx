@@ -515,7 +515,7 @@ export const DecathlonSidebar: React.FC<DecathlonSidebarProps> = ({
   return (
     <>
       {/* Desktop Sticky Sidebar */}
-      <aside className="hidden lg:block w-64 shrink-0 bg-white border border-slate-200 rounded-sm self-start shadow-xs sticky top-18">
+      <aside className="hidden lg:block w-64 shrink-0 bg-white border border-slate-200 rounded-sm self-start shadow-xs sticky top-32">
         {content}
       </aside>
 

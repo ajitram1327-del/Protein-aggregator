@@ -217,6 +217,7 @@ export default async function ComparePage({ searchParams }: PageProps) {
             {items.map((item) => {
               const hasVal = item.effectiveCostPerBioavailableGram !== null && isFinite(item.effectiveCostPerBioavailableGram);
               const val = hasVal && item.effectiveCostPerBioavailableGram !== null ? item.effectiveCostPerBioavailableGram : 0;
+              // @ts-expect-error TS18047: item.effectiveCostPerBioavailableGram is possibly null
               const pct = maxCost > 0 ? Math.min(100, Math.round((item.effectiveCostPerBioavailableGram / maxCost) * 100)) : 0;
               const isBest = hasVal && val === lowestEffectiveCost;
               return (

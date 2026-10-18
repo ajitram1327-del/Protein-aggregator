@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { 
   Play, 
@@ -54,26 +54,26 @@ export default function ScraperPage() {
   const [apiLatency, setApiLatency] = useState<number | null>(null);
   const [copiedCurl, setCopiedCurl] = useState(false);
 
-  const executeApiRequest = async (endpointUrl: string) => {
+  const executeApiRequest = useCallback(async (endpointUrl: string) => {
     setApiLoading(true);
     setApiStatus(null);
     setApiResponse(null);
-    const start = performance.now();
+    const start = Date.now();
     try {
       const res = await fetch(endpointUrl);
-      const latency = Math.round(performance.now() - start);
+      const latency = Math.round(Date.now() - start);
       setApiLatency(latency);
       setApiStatus(res.status);
       const data = await res.json();
       setApiResponse(data);
     } catch (err: any) {
-      setApiLatency(Math.round(performance.now() - start));
+      setApiLatency(Math.round(Date.now() - start));
       setApiStatus(500);
       setApiResponse({ error: err.message || "Failed to execute request" });
     } finally {
       setApiLoading(false);
     }
-  };
+  }, []);
 
   const handleCopyCurl = () => {
     if (typeof window !== "undefined") {
@@ -101,10 +101,15 @@ export default function ScraperPage() {
   };
 
   useEffect(() => {
-    fetchStatus();
-    if (!autoRefresh) return;
+    const timer = setTimeout(() => {
+      fetchStatus();
+    }, 0);
+    if (!autoRefresh) return () => clearTimeout(timer);
     const interval = setInterval(fetchStatus, 3000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
   }, [autoRefresh]);
 
   // Auto-scroll logs to bottom

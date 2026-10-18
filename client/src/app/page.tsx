@@ -22,12 +22,12 @@ export default async function Home() {
           </div>
           <div className="mt-4 pt-3 border-t border-slate-200 flex items-center justify-between">
             <span className="text-[10px] text-slate-500">Check NEXT_PUBLIC_SUPABASE_URL configuration</span>
-            <a
+            <Link
               href="/"
               className="px-3 py-1.5 bg-slate-900 text-white text-xs font-bold uppercase hover:bg-slate-800 rounded-sm"
             >
               Retry Connection
-            </a>
+            </Link>
           </div>
         </div>
       </main>

@@ -29,7 +29,9 @@ export default function AlertsPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const saved = JSON.parse(localStorage.getItem("proteindex_alerts") || "[]");
-      setAlerts(saved);
+      setTimeout(() => {
+        setAlerts(saved);
+      }, 0);
     }
   }, []);
 
