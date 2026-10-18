@@ -1,0 +1,143 @@
+{
+  "total_products": 514,
+  "total_variants": 1869,
+  "total_listings": 1968,
+  "orphaned_listings": [],
+  "purity_float_leaks": [],
+  "conservation_mass_fails": [],
+  "price_inversions": [
+    {
+      "product_id": "7ea27b23-f1ec-4466-a123-bb518ceeccbc",
+      "product": "Gold Standard 100% Whey",
+      "brand": "Optimum Nutrition",
+      "flavor": "chocolate",
+      "v1_id": "b5018128-4c53-4019-9e00-a7e78358f21b",
+      "w1": 1700.0,
+      "p1": 7999.0,
+      "v2_id": "748ce661-975c-4e3c-803d-e49691a61569",
+      "w2": 2000.0,
+      "p2": 6999.0
+    },
+    {
+      "product_id": "7b1ac45c-80fc-4895-833e-04f95b928bb8",
+      "product": "Creatine Monohydrate",
+      "brand": "GNC India",
+      "flavor": "cola",
+      "v1_id": "406b4675-716e-45c1-a5f8-225242811c3d",
+      "w1": 250.0,
+      "p1": 1349.0,
+      "v2_id": "9d70fc14-85e6-457c-9df0-f2227b0dcc4b",
+      "w2": 1000.0,
+      "p2": 1079.0
+    },
+    {
+      "product_id": "7b1ac45c-80fc-4895-833e-04f95b928bb8",
+      "product": "Creatine Monohydrate",
+      "brand": "GNC India",
+      "flavor": "orange",
+      "v1_id": "27319739-ecd5-4a4b-b338-ab185b94eb55",
+      "w1": 195.0,
+      "p1": 999.0,
+      "v2_id": "8a9bb4ae-9d4c-4b42-9da2-8591b5f6dc07",
+      "w2": 250.0,
+      "p2": 749.0
+    },
+    {
+      "product_id": "7b1ac45c-80fc-4895-833e-04f95b928bb8",
+      "product": "Creatine Monohydrate",
+      "brand": "GNC India",
+      "flavor": "unflavored",
+      "v1_id": "dd62cf36-9214-4bfa-b04e-6a791c2f91eb",
+      "w1": 195.0,
+      "p1": 999.0,
+      "v2_id": "7455e433-e011-481b-9f9b-1029b561d6c1",
+      "w2": 250.0,
+      "p2": 749.0
+    },
+    {
+      "product_id": "846b887b-aeb5-40d5-8c57-954fef257024",
+      "product": "Creatine Monohydrate",
+      "brand": "Repfuel Sports",
+      "flavor": "unflavored",
+      "v1_id": "afde5598-520e-43a0-bdef-faf96d1b8677",
+      "w1": 250.0,
+      "p1": 1300.0,
+      "v2_id": "4c016fac-cf27-4f11-9061-79dec6966b0d",
+      "w2": 300.0,
+      "p2": 899.0
+    },
+    {
+      "product_id": "792df92f-dd9d-4b6f-ae01-d51969505608",
+      "product": "PP 100% Whey Pouches",
+      "brand": "GNC India",
+      "flavor": "coffee",
+      "v1_id": "e3ce43e7-5612-43d4-bb56-2f3694c5dc74",
+      "w1": 907.0,
+      "p1": 4099.0,
+      "v2_id": "2544ef73-840d-43f5-acc2-134a68b99ec5",
+      "w2": 1000.0,
+      "p2": 3899.0
+    },
+    {
+      "product_id": "792df92f-dd9d-4b6f-ae01-d51969505608",
+      "product": "PP 100% Whey Pouches",
+      "brand": "GNC India",
+      "flavor": "chocolate",
+      "v1_id": "11731dfd-1713-43fd-acbd-e98136dd847b",
+      "w1": 907.0,
+      "p1": 4099.0,
+      "v2_id": "69e44a93-6f99-46e1-80e1-872d8adc3624",
+      "w2": 1000.0,
+      "p2": 3899.0
+    },
+    {
+      "product_id": "8c9c64c7-bdbb-4abc-b3c6-e4f753f32cd9",
+      "product": "Micronized Creatine Powder",
+      "brand": "Nakpro",
+      "flavor": "fruit_punch",
+      "v1_id": "a6cf3964-10d3-4f2b-b1bd-5add4b2d2fb0",
+      "w1": 100.0,
+      "p1": 285.0,
+      "v2_id": "7c12016b-f0aa-4b50-94fd-a9aa30cf6eb2",
+      "w2": 150.0,
+      "p2": 278.0
+    },
+    {
+      "product_id": "f229936c-ffda-43ce-b9a3-9f1c4f3b5ef0",
+      "product": "Volcano Pre Workout",
+      "brand": "Scitron",
+      "flavor": "green_apple",
+      "v1_id": "7c7d6ed3-1aa3-445f-8029-a129821f5b49",
+      "w1": 270.0,
+      "p1": 1890.0,
+      "v2_id": "24e02387-8b13-410f-b96e-232d3b89910d",
+      "w2": 300.0,
+      "p2": 1349.0
+    },
+    {
+      "product_id": "9510ebe8-5d98-4f66-b4f1-36ade62457bd",
+      "product": "PP 100% Whey Pouches New Formulation",
+      "brand": "GNC India",
+      "flavor": "coffee",
+      "v1_id": "09501b06-c81c-4c3e-b7f4-9eaca301df8a",
+      "w1": 907.0,
+      "p1": 4099.0,
+      "v2_id": "3217e2cc-9f5b-4c81-95f1-d69b3525e617",
+      "w2": 1000.0,
+      "p2": 3899.0
+    },
+    {
+      "product_id": "9510ebe8-5d98-4f66-b4f1-36ade62457bd",
+      "product": "PP 100% Whey Pouches New Formulation",
+      "brand": "GNC India",
+      "flavor": "chocolate",
+      "v1_id": "6de529c6-5931-46be-b0c7-98c0357a9d99",
+      "w1": 907.0,
+      "p1": 4099.0,
+      "v2_id": "00f9e3b4-9f27-4f9d-a12c-90a5fed44830",
+      "w2": 1000.0,
+      "p2": 3899.0
+    }
+  ],
+  "desynced_lowest": []
+}

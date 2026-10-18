@@ -634,25 +634,41 @@ class ProteIndexOrchestrator:
                                 if price <= 0:
                                     continue
 
+                                var_title_lower = var_title.lower()
+                                title_lower = title.lower()
+
+                                # Explicitly detect sachet, sample, trial packet keywords
+                                is_sample_or_sachet = any(
+                                    tok in var_title_lower for tok in ["sachet", "sample", "trial", "single serve", "packet"]
+                                ) or any(
+                                    tok in title_lower for tok in ["sample pack", "trial pack", "samples"]
+                                )
+
+                                # If it's a sample/sachet pack without an explicit large tub weight, skip to prevent
+                                # contaminating powder tub variants or price per 100g metrics
+                                if is_sample_or_sachet and not any(w in var_title_lower for w in ["kg", "1000g", "2000g", "500g"]):
+                                    continue
+
                                 # 1. First priority: Check variant title directly (e.g. "Mango / 2Kg", "1kg / Chocolate")
                                 weight_g = VariantNormalizer.parse_weight(var_title, default=None)
 
                                 # 2. Second priority: Check variant grams field if valid tub weight (>= 100g)
-                                if not weight_g:
+                                if not weight_g and not is_sample_or_sachet:
                                     v_grams = v.get("grams")
                                     if v_grams and isinstance(v_grams, (int, float)) and v_grams >= 100:
                                         weight_g = int(round(v_grams))
 
                                 # 3. Third priority: Parse from parent product title (nutrient claims stripped)
-                                if not weight_g:
-                                    weight_g = VariantNormalizer.parse_weight(title, default=1000)
+                                # CRITICAL: NEVER default to 1000g if title does not contain an explicit weight!
+                                if not weight_g and not is_sample_or_sachet:
+                                    weight_g = VariantNormalizer.parse_weight(title, default=None)
 
                                 # For flavor: check var_title first, then combined title
                                 flavor = VariantNormalizer.parse_flavor(var_title)
                                 if flavor == "unflavored":
                                     flavor = VariantNormalizer.parse_flavor(f"{title} {var_title}")
 
-                                if not weight_g:
+                                if not weight_g or weight_g <= 0:
                                     continue
 
                                 v_id = await self.upsert_variant_to_db(

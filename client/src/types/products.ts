@@ -60,7 +60,14 @@ export interface GroupedProduct {
 export const CANONICAL_CATEGORIES = [
   {
     id: "protein",
-    siloAliases: ["protein", "whey", "plant"],
+    siloAliases: [
+      "protein",
+      "whey",
+      "plant",
+      "whey_protein",
+      "whey_&_plant_protein",
+      "whey & plant protein"
+    ],
     title: "Whey & Plant Protein",
     shortLabel: "Protein",
     tagline: "Benchmark by ₹ / g Pure Protein",
@@ -77,7 +84,11 @@ export const CANONICAL_CATEGORIES = [
   },
   {
     id: "creatine",
-    siloAliases: ["creatine"],
+    siloAliases: [
+      "creatine",
+      "creatine_monohydrate",
+      "creatine monohydrate"
+    ],
     title: "Creatine Monohydrate",
     shortLabel: "Creatine",
     tagline: "Benchmark by ₹ / 3g Verified Dose",
@@ -94,7 +105,13 @@ export const CANONICAL_CATEGORIES = [
   },
   {
     id: "pre_workout",
-    siloAliases: ["pre_workout", "preworkout"],
+    siloAliases: [
+      "pre_workout",
+      "preworkout",
+      "pre-workout",
+      "pre-workout_&_pump",
+      "pre-workout & pump"
+    ],
     title: "Pre-Workout & Pump",
     shortLabel: "Pre-Workout",
     tagline: "Benchmark by Cost per Clinical Scoop",
@@ -111,7 +128,13 @@ export const CANONICAL_CATEGORIES = [
   },
   {
     id: "mass_gainer",
-    siloAliases: ["mass_gainer", "mass_gainers", "gainer"],
+    siloAliases: [
+      "mass_gainer",
+      "mass_gainers",
+      "gainer",
+      "gainers",
+      "mass gainers"
+    ],
     title: "Mass Gainers",
     shortLabel: "Mass Gainer",
     tagline: "Benchmark by ₹ / 1,000 kcal & Carb Ratio",
@@ -128,7 +151,13 @@ export const CANONICAL_CATEGORIES = [
   },
   {
     id: "snacks",
-    siloAliases: ["snacks", "snack", "protein_snacks"],
+    siloAliases: [
+      "snacks",
+      "snack",
+      "protein_snacks",
+      "protein_snacks_&_bars",
+      "protein snacks & bars"
+    ],
     title: "Protein Snacks & Bars",
     shortLabel: "Snacks",
     tagline: "Benchmark by ₹ / 100g & Protein Density",
