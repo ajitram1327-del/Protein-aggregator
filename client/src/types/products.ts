@@ -65,7 +65,9 @@ export const CANONICAL_CATEGORIES = [
       "whey",
       "plant",
       "whey_protein",
+      "whey_",
       "whey_&_plant_protein",
+      "whey_%26_plant_protein",
       "whey & plant protein"
     ],
     title: "Whey & Plant Protein",
@@ -109,7 +111,10 @@ export const CANONICAL_CATEGORIES = [
       "pre_workout",
       "preworkout",
       "pre-workout",
+      "pre-workout_",
+      "pre_workout_",
       "pre-workout_&_pump",
+      "pre-workout_%26_pump",
       "pre-workout & pump"
     ],
     title: "Pre-Workout & Pump",
@@ -155,7 +160,9 @@ export const CANONICAL_CATEGORIES = [
       "snacks",
       "snack",
       "protein_snacks",
+      "protein_snacks_",
       "protein_snacks_&_bars",
+      "protein_snacks_%26_bars",
       "protein snacks & bars"
     ],
     title: "Protein Snacks & Bars",

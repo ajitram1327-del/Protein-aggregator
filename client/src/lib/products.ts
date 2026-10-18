@@ -27,7 +27,7 @@ export async function getGroupedProducts(params?: {
     if (params?.brand) url.searchParams.set("brand", params.brand);
     if (params?.q) url.searchParams.set("q", params.q);
     if (params?.limit) url.searchParams.set("limit", params.limit.toString());
-    else url.searchParams.set("limit", "100");
+    else url.searchParams.set("limit", "1000");
 
     const req = new NextRequest(url);
     const res = await GET(req);

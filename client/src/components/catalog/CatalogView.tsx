@@ -653,7 +653,7 @@ export function CatalogView({ initialProducts, initialCategory }: CatalogViewPro
                     )}
                     {filters.category && (
                       <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-xs text-[11px] font-bold text-slate-800">
-                        Category: {filters.category}
+                        Category: {activeCategoryConfig?.title || filters.category}
                       </span>
                     )}
                     {filters.selectedBrands.length > 0 && (

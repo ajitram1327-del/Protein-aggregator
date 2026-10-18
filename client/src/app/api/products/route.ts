@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const siloParam = searchParams.get("silo")?.trim().toLowerCase();
+    const siloParam = (searchParams.get("silo") || searchParams.get("category"))?.trim().toLowerCase();
     const brandParam = searchParams.get("brand")?.trim();
     const flavorParam = searchParams.get("flavor")?.trim();
     const searchParam = searchParams.get("q")?.trim();
@@ -60,18 +60,18 @@ export async function GET(request: NextRequest) {
     const pageParam = searchParams.get("page");
     const limitParam = searchParams.get("limit");
 
-    // 2. Strict Pagination Clamping (Hard cap at 100 items to mitigate mass harvesting)
+    // 2. Strict Pagination Clamping (Hard cap at 1000 items for catalog initialization)
     const page = Math.max(1, parseInt(pageParam || "1", 10));
     let limit = 24;
     if (limitParam !== null && limitParam !== undefined) {
       const parsedLimit = parseInt(limitParam, 10);
       if (isNaN(parsedLimit) || parsedLimit <= 0) {
         return NextResponse.json(
-          { error: "Invalid 'limit' parameter. Must be a positive integer between 1 and 100." },
+          { error: "Invalid 'limit' parameter. Must be a positive integer between 1 and 1000." },
           { status: 400 }
         );
       }
-      limit = Math.min(parsedLimit, 100);
+      limit = Math.min(parsedLimit, 1000);
     }
     const offset = (page - 1) * limit;
 
@@ -81,21 +81,33 @@ export async function GET(request: NextRequest) {
       mass_gainers: "mass_gainers",
       gainer: "mass_gainers",
       gainers: "mass_gainers",
+      "mass gainers": "mass_gainers",
       protein: "protein",
       whey: "protein",
       plant: "protein",
       whey_protein: "protein",
+      whey_: "protein",
       "whey_&_plant_protein": "protein",
+      "whey_%26_plant_protein": "protein",
+      "whey & plant protein": "protein",
       creatine: "creatine",
       creatine_monohydrate: "creatine",
+      "creatine monohydrate": "creatine",
       pre_workout: "pre_workout",
       preworkout: "pre_workout",
       "pre-workout": "pre_workout",
+      "pre-workout_": "pre_workout",
+      pre_workout_: "pre_workout",
       "pre-workout_&_pump": "pre_workout",
+      "pre-workout_%26_pump": "pre_workout",
+      "pre-workout & pump": "pre_workout",
       snacks: "snacks",
       snack: "snacks",
       protein_snacks: "snacks",
+      protein_snacks_: "snacks",
       "protein_snacks_&_bars": "snacks",
+      "protein_snacks_%26_bars": "snacks",
+      "protein snacks & bars": "snacks",
     };
 
     let silo: string | undefined = undefined;

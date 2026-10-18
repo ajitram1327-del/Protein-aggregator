@@ -17,16 +17,28 @@ export const normalizeSiloToken = (urlParam?: string | null): string => {
     gainer: "mass_gainers",
     gainers: "mass_gainers",
     "whey_&_plant_protein": "protein",
+    "whey_%26_plant_protein": "protein",
+    "whey & plant protein": "protein",
     whey_protein: "protein",
+    whey_: "protein",
     whey: "protein",
     plant: "protein",
     protein: "protein",
     creatine_monohydrate: "creatine",
+    "creatine monohydrate": "creatine",
     creatine: "creatine",
     "pre-workout_&_pump": "pre_workout",
+    "pre-workout_%26_pump": "pre_workout",
+    "pre-workout & pump": "pre_workout",
+    "pre-workout_": "pre_workout",
+    "pre_workout_": "pre_workout",
+    "pre-workout": "pre_workout",
     pre_workout: "pre_workout",
     preworkout: "pre_workout",
     "protein_snacks_&_bars": "snacks",
+    "protein_snacks_%26_bars": "snacks",
+    "protein snacks & bars": "snacks",
+    protein_snacks_: "snacks",
     protein_snacks: "snacks",
     snacks: "snacks",
     snack: "snacks",
@@ -42,9 +54,10 @@ export default async function CatalogPage({ searchParams }: PageProps) {
   const queryParam = resolved.search || resolved.q;
 
   const { products, errorMsg } = await getGroupedProducts({
-    silo: activeSilo || undefined,
+    silo: undefined,
     brand: resolved.brand,
     q: queryParam,
+    limit: 1000,
   });
 
   if (errorMsg) {
@@ -79,5 +92,5 @@ export default async function CatalogPage({ searchParams }: PageProps) {
     );
   }
 
-  return <CatalogView initialProducts={products} initialCategory={resolved.category} />;
+  return <CatalogView initialProducts={products} initialCategory={activeSilo || resolved.category} />;
 }
