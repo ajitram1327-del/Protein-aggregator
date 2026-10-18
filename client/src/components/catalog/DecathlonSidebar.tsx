@@ -185,13 +185,14 @@ export const DecathlonSidebar: React.FC<DecathlonSidebarProps> = ({
               </label>
 
               {[
-                { id: "protein", label: "Whey & Plant Protein" },
-                { id: "creatine", label: "Creatine Monohydrate" },
-                { id: "pre_workout", label: "Pre-Workout & Pump" },
-                { id: "mass_gainer", label: "Mass Gainers" },
-                { id: "snacks", label: "Protein Snacks & Bars" },
+                { id: "protein", aliases: ["protein", "whey", "plant"], label: "Whey & Plant Protein" },
+                { id: "creatine", aliases: ["creatine"], label: "Creatine Monohydrate" },
+                { id: "pre_workout", aliases: ["pre_workout", "preworkout"], label: "Pre-Workout & Pump" },
+                { id: "mass_gainer", aliases: ["mass_gainer", "mass_gainers", "gainer", "gainers"], label: "Mass Gainers" },
+                { id: "snacks", aliases: ["snacks", "snack", "protein_snacks"], label: "Protein Snacks & Bars" },
               ].map((c) => {
-                const isSelected = filters.category.toLowerCase() === c.id;
+                const activeCat = (filters.category || "").toLowerCase();
+                const isSelected = activeCat === c.id || c.aliases.includes(activeCat);
                 return (
                   <label key={c.id} className="flex items-center gap-2.5 text-xs cursor-pointer text-slate-700 hover:text-slate-900">
                     <input

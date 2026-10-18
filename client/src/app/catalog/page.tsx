@@ -8,11 +8,41 @@ interface PageProps {
   searchParams: Promise<{ category?: string; q?: string; search?: string; brand?: string }>;
 }
 
+// 1. Explicit normalization matrix to map URL parameters and aliases to database silo keys
+export const normalizeSiloToken = (urlParam?: string | null): string => {
+  if (!urlParam) return "";
+  const tokenMap: Record<string, string> = {
+    mass_gainer: "mass_gainers",
+    mass_gainers: "mass_gainers",
+    gainer: "mass_gainers",
+    gainers: "mass_gainers",
+    "whey_&_plant_protein": "protein",
+    whey_protein: "protein",
+    whey: "protein",
+    plant: "protein",
+    protein: "protein",
+    creatine_monohydrate: "creatine",
+    creatine: "creatine",
+    "pre-workout_&_pump": "pre_workout",
+    pre_workout: "pre_workout",
+    preworkout: "pre_workout",
+    "protein_snacks_&_bars": "snacks",
+    protein_snacks: "snacks",
+    snacks: "snacks",
+    snack: "snacks",
+  };
+
+  return tokenMap[urlParam.toLowerCase().trim()] || urlParam.toLowerCase().trim();
+};
+
 export default async function CatalogPage({ searchParams }: PageProps) {
   const resolved = await searchParams;
+  const rawCategoryParam = resolved.category;
+  const activeSilo = normalizeSiloToken(rawCategoryParam);
   const queryParam = resolved.search || resolved.q;
+
   const { products, errorMsg } = await getGroupedProducts({
-    silo: resolved.category,
+    silo: activeSilo || undefined,
     brand: resolved.brand,
     q: queryParam,
   });

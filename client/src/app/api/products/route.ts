@@ -75,10 +75,32 @@ export async function GET(request: NextRequest) {
     }
     const offset = (page - 1) * limit;
 
-    // 3. Parameter Validation: Silo
+    // 3. Parameter Validation & Normalization: Silo
+    const SILO_CANONICAL_MAP: Record<string, string> = {
+      mass_gainer: "mass_gainers",
+      mass_gainers: "mass_gainers",
+      gainer: "mass_gainers",
+      gainers: "mass_gainers",
+      protein: "protein",
+      whey: "protein",
+      plant: "protein",
+      whey_protein: "protein",
+      "whey_&_plant_protein": "protein",
+      creatine: "creatine",
+      creatine_monohydrate: "creatine",
+      pre_workout: "pre_workout",
+      preworkout: "pre_workout",
+      "pre-workout": "pre_workout",
+      "pre-workout_&_pump": "pre_workout",
+      snacks: "snacks",
+      snack: "snacks",
+      protein_snacks: "snacks",
+      "protein_snacks_&_bars": "snacks",
+    };
+
     let silo: string | undefined = undefined;
     if (siloParam) {
-      if (!VALID_SILOS.has(siloParam)) {
+      if (!VALID_SILOS.has(siloParam) && !SILO_CANONICAL_MAP[siloParam]) {
         return NextResponse.json(
           {
             error: `Invalid 'silo' parameter '${siloParam}'. Permitted categories: protein, mass_gainers, creatine, pre_workout, snacks.`,
@@ -86,7 +108,7 @@ export async function GET(request: NextRequest) {
           { status: 400 }
         );
       }
-      silo = siloParam;
+      silo = SILO_CANONICAL_MAP[siloParam] || siloParam;
     }
 
     // 4. Sanitize search and brand against injection characters
