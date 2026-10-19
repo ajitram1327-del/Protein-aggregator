@@ -147,7 +147,7 @@ export const CANONICAL_CATEGORIES = [
     metricExample: "Lowest ask: ₹74 / 1,000 kcal",
     color: "border-violet-500/40 hover:border-violet-500 bg-violet-950/5",
     activePill: "border-violet-500 text-violet-800 bg-violet-50",
-    badge: "Calorie Arbitrage",
+    badge: "Calorie-to-Protein Ratio",
     badgeTone: "bg-violet-50 text-violet-800 border-violet-200",
     primaryHeader: "₹ / 1,000 kcal",
     secondaryHeader: "Carb:Protein Ratio",

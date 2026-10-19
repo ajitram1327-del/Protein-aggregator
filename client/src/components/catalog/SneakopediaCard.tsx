@@ -234,23 +234,33 @@ export const SneakopediaCard: React.FC<SneakopediaCardProps> = ({
           )}
 
           {/* Quantitative Nutrition / Purity Data State */}
-          <div className="text-[10px] font-mono text-slate-600 bg-slate-50 border border-slate-200/80 px-2 py-1 rounded-xs flex items-center justify-between mt-0.5">
+          <div className="text-[10px] font-mono text-slate-600 bg-slate-50 border border-slate-200/80 px-2 py-1.5 rounded-xs flex items-center justify-between mt-0.5">
             {isCreatine ? (
               <>
                 <span>Creatine Monohydrate</span>
-                <span className="font-bold text-cyan-800">100% Purity</span>
+                <span className="font-bold text-cyan-800 bg-cyan-50 px-1.5 py-0.5 rounded-xs border border-cyan-200">100% Purity</span>
               </>
             ) : isGainer ? (
               <>
                 <span>Calorie & Carb Formula</span>
-                <span className="font-bold text-violet-800">{catMetrics.secondaryValue}</span>
+                <span className="font-bold text-violet-800 bg-violet-50 px-1.5 py-0.5 rounded-xs border border-violet-200">{catMetrics.secondaryValue}</span>
               </>
             ) : hasValidProtein ? (
               <>
                 <span>{proteinG}g Prot / {servingSize}g scoop</span>
-                <span className="font-bold text-slate-800">
-                  {Math.round((proteinG / servingSize) * 100)}% Purity
-                </span>
+                {(() => {
+                  const pct = Math.round((proteinG / servingSize) * 100);
+                  const tone = pct >= 75
+                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                    : pct >= 60
+                    ? "bg-amber-50 text-amber-800 border-amber-200"
+                    : "bg-rose-50 text-rose-800 border-rose-200";
+                  return (
+                    <span className={`font-bold px-1.5 py-0.5 rounded-xs border ${tone}`}>
+                      {pct}% Purity
+                    </span>
+                  );
+                })()}
               </>
             ) : (
               <span className="text-slate-400 italic">Nutrition label pending audit</span>
@@ -287,9 +297,9 @@ export const SneakopediaCard: React.FC<SneakopediaCardProps> = ({
         <button
           type="button"
           onClick={() => onOpenMatrix(product, activeVariant)}
-          className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-900 hover:bg-emerald-800 text-white text-xs font-mono font-bold uppercase tracking-wider rounded-sm transition-colors"
+          className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-900 hover:bg-emerald-800 text-white text-xs font-mono font-bold uppercase tracking-wider rounded-sm transition-colors cursor-pointer"
         >
-          <span>View Best Price ({storeCount})</span>
+          <span>Compare {storeCount} {storeCount === 1 ? "Store" : "Stores"}</span>
           <ArrowUpRight className="size-3.5 text-slate-400" />
         </button>
       </div>

@@ -139,7 +139,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ initialProducts }) => 
         {/* Live Genuine Market Metrics Strip */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl mx-auto mb-14 text-left font-mono">
           <div className="p-3.5 rounded-sm border border-slate-200 bg-white">
-            <div className="text-[10px] text-slate-400 font-bold uppercase">TRACKED INSTRUMENTS</div>
+            <div className="text-[10px] text-slate-400 font-bold uppercase">TRACKED PRODUCTS</div>
             <div className="text-2xl font-bold text-slate-900 tabular-nums">
               {initialProducts.length} Products
             </div>
@@ -157,9 +157,9 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ initialProducts }) => 
             </div>
           </div>
           <div className="p-3.5 rounded-sm border border-slate-200 bg-white">
-            <div className="text-[10px] text-slate-400 font-bold uppercase">LAB AUDITED</div>
+            <div className="text-[10px] text-slate-400 font-bold uppercase">AUTHENTIC STORES</div>
             <div className="text-2xl font-bold text-emerald-700 tabular-nums">
-              {labVerifiedCount} Audited
+              100% Verified
             </div>
           </div>
         </div>

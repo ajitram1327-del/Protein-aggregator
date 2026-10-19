@@ -42,15 +42,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 className="text-xs font-bold text-slate-600 hover:text-slate-900 px-3 py-2 rounded-xl hover:bg-slate-50 transition-colors flex items-center gap-1.5"
               >
                 <Layers className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Catalog Terminal</span>
-                <span className="sm:hidden">Catalog</span>
+                <span className="hidden sm:inline">Browse Supplements</span>
+                <span className="sm:hidden">Browse</span>
               </Link>
               <Link
                 href="/compare"
                 className="text-xs font-bold text-slate-600 hover:text-slate-900 px-3 py-2 rounded-xl hover:bg-slate-50 transition-colors flex items-center gap-1.5"
               >
                 <Dumbbell className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Compare Matrix</span>
+                <span className="hidden sm:inline">Compare Stores</span>
                 <span className="sm:hidden">Compare</span>
               </Link>
               <Link
@@ -58,7 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 className="text-xs font-bold text-slate-600 hover:text-slate-900 px-3 py-2 rounded-xl hover:bg-slate-50 transition-colors flex items-center gap-1.5"
               >
                 <Calculator className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Yield Calculator</span>
+                <span className="hidden sm:inline">Protein Value Calculator</span>
                 <span className="sm:hidden">Calculator</span>
               </Link>
               <Link

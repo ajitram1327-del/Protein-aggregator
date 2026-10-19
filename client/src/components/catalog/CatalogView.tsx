@@ -483,7 +483,7 @@ export function CatalogView({ initialProducts, initialCategory }: CatalogViewPro
               <ArrowLeft className="size-3" /> Home
             </Link>
             <span className="text-slate-300">/</span>
-            <span className="text-slate-900 font-bold truncate">Catalog Terminal</span>
+            <span className="text-slate-900 font-bold truncate">Browse Supplements</span>
           </div>
 
           {/* Category Quick Switcher */}
