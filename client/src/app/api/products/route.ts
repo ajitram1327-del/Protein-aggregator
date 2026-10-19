@@ -67,11 +67,11 @@ export async function GET(request: NextRequest) {
       const parsedLimit = parseInt(limitParam, 10);
       if (isNaN(parsedLimit) || parsedLimit <= 0) {
         return NextResponse.json(
-          { error: "Invalid 'limit' parameter. Must be a positive integer between 1 and 1000." },
+          { error: "Invalid 'limit' parameter. Must be a positive integer between 1 and 100." },
           { status: 400 }
         );
       }
-      limit = Math.min(parsedLimit, 1000);
+      limit = Math.min(parsedLimit, 100);
     }
     const offset = (page - 1) * limit;
 

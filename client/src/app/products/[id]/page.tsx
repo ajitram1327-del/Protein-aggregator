@@ -142,10 +142,36 @@ export default async function ProductDetailPage({
   const canonicalProduct = await getProductBySkuOrId(id);
   if (!canonicalProduct) return notFound();
 
+  // Query real price tracking history for variants
+  const variantIds = canonicalProduct.variants.map(v => v.id);
+  const { data: realPriceHistory } = await supabase
+    .from('price_history')
+    .select('price_inr, recorded_at, offers!inner(variant_id)')
+    .in('offers.variant_id', variantIds)
+    .order('recorded_at', { ascending: true });
+
   const fallbackVariants: HydratedVariant[] = canonicalProduct.variants.map(v => {
     const purityRatio = 0.8;
     const pureYield = (v.weight_grams || 1000) * purityRatio;
     const costPer100gPure = pureYield > 0 ? ((v.lowest_price_inr || 0) / pureYield) * 100 : 0;
+
+    // Build real price history series for this variant
+    const vLogs = (realPriceHistory || [])
+      .filter((h: any) => h.offers?.variant_id === v.id)
+      .map((h: any) => ({
+        date: new Date(h.recorded_at).toLocaleDateString('en-IN', {
+          month: 'short',
+          day: 'numeric'
+        }),
+        price: Number(h.price_inr)
+      }));
+
+    const priceHistory = vLogs.length > 0 
+      ? vLogs 
+      : [
+          { date: 'Initial', price: v.lowest_price_inr || 2000 },
+          { date: 'Current', price: v.lowest_price_inr || 2000 }
+        ];
 
     return {
       id: v.id,
@@ -162,11 +188,7 @@ export default async function ProductDetailPage({
         url: o.source_url,
         isAvailable: o.is_in_stock !== false
       })),
-      priceHistory: [
-        { date: '10 days ago', price: Math.round((v.lowest_price_inr || 2000) * 1.05) },
-        { date: '5 days ago', price: Math.round((v.lowest_price_inr || 2000) * 1.02) },
-        { date: 'Today', price: v.lowest_price_inr || 2000 }
-      ],
+      priceHistory,
       flavorTaxPct: 0
     };
   });

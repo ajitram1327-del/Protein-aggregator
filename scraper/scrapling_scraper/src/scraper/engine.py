@@ -324,6 +324,33 @@ class ProteIndexOrchestrator:
     def __init__(self):
         self.fetcher = ResilientStealthFetcher()
 
+    @staticmethod
+    def record_price_history(variant_id: str, platform_name: str, url: str, price_inr: float, in_stock: bool = True):
+        """Links price observation to offers and records price history audit trail."""
+        if not supabase or not variant_id or price_inr <= 0:
+            return
+        try:
+            clean_price = round(float(price_inr), 2)
+            off_res = supabase.table("offers").upsert({
+                "variant_id": variant_id,
+                "platform": platform_name.lower(),
+                "url": url or "#",
+                "current_price_inr": clean_price,
+                "stock_status": "in_stock" if in_stock else "out_of_stock",
+                "last_scraped_at": "now()"
+            }, on_conflict="variant_id,platform").execute()
+
+            if off_res.data and len(off_res.data) > 0:
+                off_id = off_res.data[0]["id"]
+                latest = supabase.table("price_history").select("price_inr").eq("offer_id", off_id).order("recorded_at", desc=True).limit(1).execute()
+                if not latest.data or float(latest.data[0].get("price_inr", 0)) != clean_price:
+                    supabase.table("price_history").insert({
+                        "offer_id": off_id,
+                        "price_inr": clean_price
+                    }).execute()
+        except Exception as e:
+            logger.debug(f"Price history recording skipped: {e}")
+
     async def upsert_variant_to_db(
         self,
         brand: str,
@@ -561,6 +588,9 @@ class ProteIndexOrchestrator:
                         logger.warning(f"Failed to upsert price listing after 3 attempts: {e}")
                     else:
                         await asyncio.sleep(1)
+
+            # Record Price History linked to variant and offers
+            self.record_price_history(variant_id, platform_name, product_url, price_inr, in_stock=True)
 
             return variant_id
 
@@ -811,6 +841,9 @@ class ProteIndexOrchestrator:
                                         supabase.table("variants").update({"lowest_price_inr": round(float(price), 2)}).eq("id", variant_id).execute()
                                 except Exception:
                                     pass
+
+                                # Record Price History linked to variant and offers
+                                self.record_price_history(variant_id, platform, link, price, in_stock=True)
 
                                 total_matched += 1
                             else:
