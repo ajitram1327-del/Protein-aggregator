@@ -299,20 +299,34 @@ export function CatalogView({ initialProducts, initialCategory }: CatalogViewPro
           g.variants.some((v) => (v.flavor || "").toLowerCase().includes(queryLower));
         if (!matchesQuery) return false;
 
-        // Category Silo Match
+        // Category Silo Match - Strict Boundary Enforcement
         if (filters.category) {
-          const catLower = filters.category.toLowerCase();
+          const catLower = filters.category.toLowerCase().trim();
           const targetConfig = CANONICAL_CATEGORIES.find(
             (c) => c.id === catLower || c.siloAliases.includes(catLower)
           );
-          if (targetConfig) {
-            const matchesSilo = targetConfig.siloAliases.includes(g.categorySilo.toLowerCase());
-            const matchesName = targetConfig.siloAliases.some((alias) =>
-              `${g.baseProductName} ${g.proteinSource}`.toLowerCase().includes(alias)
-            );
-            if (!matchesSilo && !matchesName) return false;
-          } else if (g.categorySilo.toLowerCase() !== catLower) {
-            return false;
+          const targetId = targetConfig ? targetConfig.id : catLower;
+          const currentSilo = (g.categorySilo || "").toLowerCase().trim();
+
+          if (targetId === "protein") {
+            // Strictly whey & plant protein powders; EXPLICITLY block snacks and mass gainers
+            if (currentSilo !== "protein") return false;
+          } else if (targetId === "snacks") {
+            // Strictly snacks & bars
+            if (currentSilo !== "snacks") return false;
+          } else if (targetId === "creatine") {
+            if (currentSilo !== "creatine") return false;
+          } else if (targetId === "pre_workout") {
+            if (currentSilo !== "pre_workout") return false;
+          } else if (targetId === "mass_gainer") {
+            if (currentSilo !== "mass_gainers" && currentSilo !== "mass_gainer") return false;
+          } else {
+            // Fallback for custom category strings
+            if (targetConfig) {
+              if (!targetConfig.siloAliases.includes(currentSilo)) return false;
+            } else if (currentSilo !== catLower) {
+              return false;
+            }
           }
         }
 
