@@ -547,14 +547,14 @@ class ProteIndexOrchestrator:
                     "flavor": flavor,
                     "weight_grams": float(weight_g),
                     "lowest_price_inr": round(float(price_inr), 2),
-                    "servings_count": total_servings,
+                    "servings_count": int(round(float(total_servings))),
                     "best_value_metric": round(float(analytics_metrics.get("effective_cost_per_bioavailable_g_inr", 1.8)), 2),
                     "raw_json_data": raw_json,
-                    "authenticity_score": round(float(review_audit.get("authenticity_score", 95.0)), 1),
+                    "authenticity_score": int(round(float(review_audit.get("authenticity_score", 95.0)))),
                     "has_bot_reviews": review_audit.get("has_bot_reviews", False),
                     "label_serving_size_g": round(float(serving_size_g), 1),
                     "label_protein_per_serving_g": round(float(label_protein_g), 1),
-                    "label_total_servings": total_servings,
+                    "label_total_servings": int(round(float(total_servings))) if total_servings is not None else None,
                     "calculated_purity_pct": round(float(analytics_metrics.get("scoop_purity_pct", 80.0)), 1),
                     "ocr_verified": bool(label_ocr_data is not None),
                     "ocr_image_url": image_url if label_ocr_data else None
@@ -745,7 +745,7 @@ class ProteIndexOrchestrator:
         total_catalog_built = 0
 
         # Reload master catalog for formulation-gated matching
-        MasterCatalogMatcher.initialize_indexes()
+        MasterCatalogMatcher.initialize_indexes(client=supabase)
 
         from bs4 import BeautifulSoup
 
